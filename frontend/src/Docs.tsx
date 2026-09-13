@@ -1,0 +1,288 @@
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Brand, External } from "./components/ui";
+
+export default function Docs() {
+  return (
+    <div className="docs">
+      <header className="header">
+        <Brand />
+        <span className="eyebrow">DOCUMENTATION</span>
+        <Link to="/terminal" className="button">
+          Open terminal
+          <ArrowUpRight size={13} />
+        </Link>
+      </header>
+      <div className="docs-layout">
+        <aside>
+          <Link to="/" className="text-button">
+            <ArrowLeft size={12} />
+            Back to Silicon
+          </Link>
+          {[
+            ["overview", "Overview"],
+            ["reference", "Rental reference"],
+            ["positions", "Calls and puts"],
+            ["collateral", "Writer collateral"],
+            ["settlement", "Settlement"],
+            ["token", "Token and fees"],
+            ["data", "Data and alerts"],
+            ["status", "Launch status"],
+          ].map(([id, title]) => (
+            <a key={id} href={`#${id}`}>
+              {title}
+            </a>
+          ))}
+        </aside>
+        <main>
+          <span className="eyebrow">SILICON / PRODUCT AND MECHANICS</span>
+          <h1>Understand your position.</h1>
+          <p className="docs-lead">
+            Silicon follows the cost of renting GPUs. Its first market is
+            designed for capped contracts on a published H100 rental-price
+            reference.
+          </p>
+          <section id="overview">
+            <h2>What the product follows</h2>
+            <p>
+              The underlying is a rental rate, measured in USD per GPU-hour. A
+              position does not buy a GPU, rent compute, own a chip or represent
+              NVIDIA stock. USDG is the settlement asset.
+            </p>
+            <p>
+              Anyone can browse current rates, provider comparisons and market
+              information. Opening a trade requires a positive balance of the
+              Silicon token and an active, funded contract.
+            </p>
+          </section>
+          <section id="reference">
+            <h2>The H100 reference</h2>
+            <p>
+              Methodology <code>silicon-h100-v1</code> takes the median of five
+              fixed USD on-demand full-instance listings, expressed per H100 SXM
+              GPU-hour:
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th>Published configuration</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Lambda</td>
+                  <td>H100 SXM</td>
+                </tr>
+                <tr>
+                  <td>Hyperstack</td>
+                  <td>NVIDIA H100 SXM</td>
+                </tr>
+                <tr>
+                  <td>Verda</td>
+                  <td>1H100.80S.30V</td>
+                </tr>
+                <tr>
+                  <td>Crusoe</td>
+                  <td>H100 80GB HGX</td>
+                </tr>
+                <tr>
+                  <td>Nebius</td>
+                  <td>NVIDIA HGX H100</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Each provider has equal weight. These full-instance products can
+              include different CPU, memory and service terms; the reference is
+              a fixed basket of listed rental costs, not a claim that all
+              instances are identical. Quotes are supplied by{" "}
+              <External href="https://gpueconomy.com/data">
+                GPU Economy
+              </External>{" "}
+              under{" "}
+              <External href="https://creativecommons.org/licenses/by/4.0/">
+                CC BY 4.0
+              </External>
+              , with source links in each asset’s details.
+            </p>
+            <p>
+              All five exact listing identities must be present and confirmed
+              within three hours. Spot rates, reserved commitments, non-USD
+              listings, GPU-only rates and marketplace floors are excluded. A
+              missing or changed constituent withholds a new reference; it is
+              never silently replaced.
+            </p>
+            <p>
+              The display index starts at 100 at Silicon’s first observation.
+              Each funded series fixes its own starting reference, strike, cap,
+              expiry and methodology hash. A100 and B200 are comparison
+              references using the median of each provider’s cheapest eligible
+              region. They are not initially tradable.
+            </p>
+          </section>
+          <section id="positions">
+            <h2>Capped calls and puts</h2>
+            <p>
+              A call pays for a rise above its strike. A put pays for a fall
+              below its strike. A contract caps that payment. The premium and
+              platform fee are the buyer’s maximum loss; the buyer has no
+              liquidation price or additional margin obligation.
+            </p>
+            <div className="docs-example">
+              <span className="eyebrow">ILLUSTRATION · ONE CALL</span>
+              <p>
+                Starting index: 100. Premium: 2 USDG. Payout: 1 USDG per point
+                above 100, capped at 10 USDG.
+              </p>
+              <div className="example-row">
+                <span>Final index 100 or lower</span>
+                <strong>0 USDG</strong>
+              </div>
+              <div className="example-row">
+                <span>Final index 104</span>
+                <strong>4 USDG</strong>
+              </div>
+              <div className="example-row">
+                <span>Final index 110 or higher</span>
+                <strong>10 USDG</strong>
+              </div>
+            </div>
+            <p>
+              A 4 USDG payout is 2 USDG profit before platform fees. Increasing
+              size scales premium, payout and required collateral. It does not
+              change the percentage move needed to break even. The terminal’s
+              calculator is illustrative until it is replaced by the terms of a
+              funded series.
+            </p>
+          </section>
+          <section id="collateral">
+            <h2>Writers supply the payout.</h2>
+            <p>
+              Writers deposit USDG into a specific series before trading begins.
+              Once the series opens, deposits and withdrawals close until
+              settlement. This avoids transferring existing payout risk to a new
+              depositor. A later series can accept new collateral.
+            </p>
+            <p>
+              Every filled position reserves its entire maximum payout. Trading
+              stops when uncommitted collateral is exhausted. Premiums and
+              platform fees stay inside the series and can increase its
+              capacity. Writers share the remaining assets after all payouts are
+              accounted for, in proportion to their deposits.
+            </p>
+            <p>
+              Writer principal is at risk. Premiums are not guaranteed yield.
+              The planned founder contribution is 300 USDG; only an observed
+              onchain deposit counts as funded collateral. For scale, 300 USDG
+              could conservatively cover 30 positions capped at 10 USDG each,
+              before premiums and fees.
+            </p>
+          </section>
+          <section id="settlement">
+            <h2>Published result, then claims.</h2>
+            <p>
+              Each series records its opening reference and a fixed expiry. A
+              designated Silicon publisher submits the first eligible
+              observation at or after expiry, with a source receipt hash. That
+              observation must be within three hours of expiry. This publisher
+              is a trusted role; source data is not independently verified by
+              the contract.
+            </p>
+            <p>
+              A one-hour challenge window separates result publication and
+              finalization. A designated guardian may cancel a disputed result,
+              which refunds every buyer’s premium and platform fee. If no final
+              result is available within 24 hours of expiry, anyone can cancel
+              the series. A challenged series is cancelled rather than repriced.
+            </p>
+            <p>
+              After a finalized result, buyers claim their calculated USDG.
+              Writer withdrawals leave enough funds reserved for all unclaimed
+              payouts. Claims and withdrawals remain available even if the
+              wallet no longer holds Silicon tokens. There is no automatic
+              promise to pay losses beyond the funded cap.
+            </p>
+          </section>
+          <section id="token">
+            <h2>One token. Two thresholds.</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Balance</th>
+                  <th>Access</th>
+                  <th>Platform trading fee</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>0</td>
+                  <td>Market data and public terminal</td>
+                  <td>No new trades</td>
+                </tr>
+                <tr>
+                  <td>More than 0, up to 5,000</td>
+                  <td>Trading and advanced tools</td>
+                  <td>1% of premium</td>
+                </tr>
+                <tr>
+                  <td>Strictly more than 5,000</td>
+                  <td>Trading and advanced tools</td>
+                  <td>0%</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              The threshold is checked from the actual token balance when a
+              trade executes. Exactly 5,000 tokens does not qualify for the fee
+              exemption. Platform trading fees stay in the contract’s collateral
+              pool. Network transaction fees are separate.
+            </p>
+            <p>
+              The token address will be provided at launch. Until it is
+              configured and verified, new trading and holder-only tools remain
+              locked.
+            </p>
+          </section>
+          <section id="data">
+            <h2>Updates, history and alerts</h2>
+            <p>
+              The collector checks the published feed every three minutes. The
+              upstream source usually refreshes hourly. The terminal receives
+              fresh observations and network status over a live connection.
+              Prices move only when a source changes.
+            </p>
+            <p>
+              Charts contain observations actually stored by Silicon. 1h, 6h and
+              24h changes appear only when the relevant historical observation
+              exists. A source refresh is not a price change. The interface
+              preserves the last observed price during an outage and labels it
+              stale.
+            </p>
+            <p>
+              Price alerts are saved on your current browser and run while
+              Silicon is open. They compare your level with the published
+              reference. They are not background push notifications or automatic
+              trade orders.
+            </p>
+          </section>
+          <section id="status">
+            <h2>Launch status</h2>
+            <p>
+              The public data terminal and payout calculator are available
+              before the token and funded market launch. Contract addresses,
+              reserves, transactions, positions and leaderboard results appear
+              only after their onchain state is verified.
+            </p>
+            <p>
+              Current contract source is implementation code awaiting deployment
+              and independent review. A working interface does not imply an
+              active settlement pool. Silicon is an independent project, not
+              affiliated with NVIDIA, GPU Economy or the cloud providers shown.
+            </p>
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}
