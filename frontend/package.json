@@ -1,0 +1,40 @@
+{
+  "name": "silicon-terminal",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint src",
+    "preview": "vite preview --host 127.0.0.1",
+    "sync:api": "openapi-typescript http://127.0.0.1:4286/api/openapi.json -o src/api-schema.ts",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/manrope": "^5.2.8",
+    "@privy-io/react-auth": "^3.40.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
+    "three": "^0.181.2",
+    "viem": "^2.40.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.181.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "openapi-typescript": "^7.13.0",
+    "oxlint": "^1.32.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4"
+  },
+  "overrides": {
+    "ws": "8.21.3"
+  }
+}
