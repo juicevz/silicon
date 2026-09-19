@@ -21,7 +21,6 @@ export default function Landing({
   notify: (value: string) => void;
 }) {
   const { snapshot } = useData();
-  const [scenario, setScenario] = useState(4);
   const root = useRef<HTMLDivElement>(null);
   const motion = useLandingMotion();
   useLayoutEffect(() => {
@@ -64,7 +63,6 @@ export default function Landing({
       landing.classList.remove("motion-ready");
     };
   }, [snapshot?.markets.length]);
-  const payout = Math.min(10, Math.max(0, scenario)) * 10;
   return (
     <div ref={root} className="landing">
       <Atmosphere tone="light" />
@@ -182,42 +180,7 @@ export default function Landing({
               Build a position <ArrowUpRight size={18} />
             </Link>
           </div>
-          <AppWindow className="calculator-window" title="H100 call example">
-          <div className="landing-calculator">
-            <PayoffChart move={scenario} cost={20.2} maxPayout={100} onMove={setScenario} />
-            <label htmlFor="landing-scenario">
-              Explore a price move
-            </label>
-            <SmoothRange
-              id="landing-scenario"
-              label="Reference price change"
-              min={-15}
-              max={15}
-              step={.5}
-              value={scenario}
-              display={`${scenario > 0 ? "+" : ""}${scenario.toFixed(1)}%`}
-              onChange={setScenario}
-            />
-            <div className="landing-results">
-              <div>
-                <span>Cost incl. fee</span>
-                <strong>
-                  20.20 <small>USDG</small>
-                </strong>
-              </div>
-              <div>
-                <span>Contract payout</span>
-                <strong>
-                  <AnimatedNumber value={money(payout)} /> <small>USDG</small>
-                </strong>
-              </div>
-            </div>
-            <p>
-              Illustration: 10 units at 2 USDG each, a 1% fee and a 10 USDG cap
-              per unit. Live contracts set their own terms.
-            </p>
-          </div>
-          </AppWindow>
+          <LandingCalculator />
         </section>
         <section className="landing-questions" aria-labelledby="questions-title">
           <div className="questions-heading" data-reveal>
@@ -260,5 +223,49 @@ export default function Landing({
         <span>© 2026 Silicon</span>
       </footer>
     </div>
+  );
+}
+
+// Slider state stays local so scrubbing does not redraw the hero or market list.
+function LandingCalculator() {
+  const [scenario, setScenario] = useState(4);
+  const payout = Math.min(10, Math.max(0, scenario)) * 10;
+  return (
+          <AppWindow className="calculator-window" title="H100 call example">
+          <div className="landing-calculator">
+            <PayoffChart move={scenario} cost={20.2} maxPayout={100} onMove={setScenario} />
+            <label htmlFor="landing-scenario">
+              Explore a price move
+            </label>
+            <SmoothRange
+              id="landing-scenario"
+              label="Reference price change"
+              min={-15}
+              max={15}
+              step={.5}
+              value={scenario}
+              display={`${scenario > 0 ? "+" : ""}${scenario.toFixed(1)}%`}
+              onChange={setScenario}
+            />
+            <div className="landing-results">
+              <div>
+                <span>Cost incl. fee</span>
+                <strong>
+                  20.20 <small>USDG</small>
+                </strong>
+              </div>
+              <div>
+                <span>Contract payout</span>
+                <strong>
+                  <AnimatedNumber value={money(payout)} /> <small>USDG</small>
+                </strong>
+              </div>
+            </div>
+            <p>
+              Illustration: 10 units at 2 USDG each, a 1% fee and a 10 USDG cap
+              per unit. Live contracts set their own terms.
+            </p>
+          </div>
+          </AppWindow>
   );
 }
