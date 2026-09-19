@@ -2,6 +2,8 @@ import { useState } from "react";
 import { money } from "../api";
 import { useData } from "../data";
 import { Modal } from "./ui";
+import { SmoothRange } from "./SmoothRange";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 export default function StrategyTool({
   mode,
@@ -86,45 +88,43 @@ export default function StrategyTool({
             </p>
             <div className="field-label">
               <label htmlFor="strategy-units">Units per leg</label>
-              <span>{units}</span>
             </div>
-            <input
+            <SmoothRange
               id="strategy-units"
-              type="range"
-              min="1"
-              max="10"
+              label="Units per leg"
+              min={1}
+              max={10}
+              step={1}
               value={units}
-              onChange={(e) => setUnits(Number(e.target.value))}
+              display={`${units} units`}
+              onChange={setUnits}
             />
             <div className="field-label">
               <label htmlFor="strategy-move">Move from the strike</label>
-              <span>
-                {move > 0 ? "+" : ""}
-                {move}%
-              </span>
             </div>
-            <input
+            <SmoothRange
               id="strategy-move"
-              type="range"
-              min="-15"
-              max="15"
-              step=".5"
+              label="Move from the strike"
+              min={-15}
+              max={15}
+              step={.5}
               value={move}
-              onChange={(e) => setMove(Number(e.target.value))}
+              display={`${move > 0 ? "+" : ""}${move.toFixed(1)}%`}
+              onChange={setMove}
             />
             <div className="ticket-values">
               <div>
                 <span>Combined premium + fees</span>
-                <strong>{money(cost)} USDG</strong>
+                <strong><AnimatedNumber value={money(cost)} /> USDG</strong>
               </div>
               <div>
                 <span>Combined payout</span>
-                <strong>{money(payout)} USDG</strong>
+                <strong><AnimatedNumber value={money(payout)} /> USDG</strong>
               </div>
               <div>
                 <span>Net result</span>
                 <strong className={payout >= cost ? "green" : "red"}>
-                  {money(payout - cost)} USDG
+                  <AnimatedNumber value={money(payout - cost)} /> USDG
                 </strong>
               </div>
               <div>
@@ -157,16 +157,16 @@ export default function StrategyTool({
             </select>
             <div className="field-label">
               <label htmlFor="ladder-step">Distance between levels</label>
-              <span>{step}%</span>
             </div>
-            <input
+            <SmoothRange
               id="ladder-step"
-              type="range"
-              min=".5"
-              max="10"
-              step=".5"
+              label="Distance between levels"
+              min={.5}
+              max={10}
+              step={.5}
               value={step}
-              onChange={(e) => setStep(Number(e.target.value))}
+              display={`${step.toFixed(1)}%`}
+              onChange={setStep}
             />
             <div className="ticket-values">
               {[-2, -1, 1, 2].map((level) => (
