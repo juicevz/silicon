@@ -28,6 +28,25 @@
 .hardware-showcase .hardware-glow { bottom: 25%; }
 .hardware-showcase .hardware-shadow { bottom: 28%; }
 
+/* A quiet label in the space above the model; the hardware keeps its scale. */
+.hardware-callout { position: absolute; top: -45px; right: 3%; z-index: 4; width: 222px; color: var(--landing-ink); }
+.hardware-callout-copy { display: grid; justify-items: start; gap: 5px; animation: hardware-label-in .14s ease-out; }
+.hardware-callout-name { font-size: 15px; line-height: 1.35; font-weight: 560; letter-spacing: -.025em; }
+.hardware-callout-release { font-size: 12px; line-height: 1.4; color: var(--landing-secondary); text-underline-offset: 3px; }
+.hardware-callout-release:hover { color: var(--landing-ink); text-decoration: underline; }
+.hardware-callout-rate { display: flex; align-items: baseline; gap: 9px; margin-top: 3px; font-size: 12px; line-height: 1.4; color: var(--landing-secondary); white-space: nowrap; }
+.hardware-callout-price { color: var(--landing-ink); font-weight: 560; font-variant-numeric: tabular-nums; }
+.hardware-callout-price small { font-size: 11px; font-weight: 448; color: var(--landing-secondary); }
+.hardware-callout-arrow { position: absolute; left: -132px; top: 20px; width: 140px; height: 140px; overflow: visible; pointer-events: none; }
+.hardware-callout-arrow path { fill: none; stroke: color-mix(in srgb, var(--landing-secondary) 72%, transparent); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes hardware-label-in { from { opacity: .65; } to { opacity: 1; } }
+@media (max-width: 760px) {
+  .landing .compute-stage { height: 420px; }
+  .landing .hardware-showcase .hero-hardware-canvas, .landing .hardware-showcase .hardware-poster, .landing .compute-stage .hardware-first-frame { top: 68px; bottom: 126px; }
+  .hardware-callout { top: 0; right: 2%; width: 202px; }
+  .hardware-callout-arrow { left: 0; top: 70px; width: 80px; height: 80px; transform: scaleX(-1); }
+}
+
 .gpu-market-catalog { min-width: 0; margin-bottom: 22px; }
 .catalog-filters { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
 .catalog-filters > div { display: flex; min-width: 0; overflow-x: auto; gap: 4px; scrollbar-width: none; }
