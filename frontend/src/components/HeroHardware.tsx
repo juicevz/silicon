@@ -8,6 +8,7 @@ import { createHardware, disposeHardware, HARDWARE, type HardwareId } from "./ca
 type Spring = { value: number; velocity: number };
 import { hardwarePoster as posterUrl, hardwareThumbnail } from "./hardwareCatalog";
 import frameBounds from "./hardwareFrameBounds.json";
+import { HardwareCallout } from "./HardwareCallout";
 /** Exact critically damped spring. Its response does not depend on refresh rate. */
 function advance(spring: Spring, target: number, dt: number) {
   const frequency = 24;
@@ -284,6 +285,7 @@ export default function HeroHardware({ motion }: { motion: LandingMotion }) {
       </div>
       <div className="hardware-glow" aria-hidden="true" />
       <div className="hardware-shadow" aria-hidden="true" />
+      <HardwareCallout hardware={hardware} />
       <div className="hardware-previews hardware-catalog-previews" aria-label="Hardware model" data-lenis-prevent>
         {HARDWARE.map(({ id, name, description }) => (
           <button key={id} type="button" aria-label={name} aria-pressed={selected === id} onClick={() => choose(id)} onPointerEnter={(event) => { if (event.pointerType === "mouse") choose(id); }} onFocus={() => choose(id)}>
