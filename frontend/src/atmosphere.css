@@ -1,0 +1,463 @@
+/* Silicon's copper, mineral blue and jade palette, shared by both surfaces. */
+:root {
+  --bg: #10171c;
+  --panel: #192329;
+  --raised: #233038;
+  --border: #3b484e;
+  --subtle: #2b373d;
+  --ink: #eee8df;
+  --secondary: #c1ccca;
+  --muted: #a3b2b4;
+  background: var(--bg);
+}
+
+.landing,
+.docs,
+.terminal {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+}
+
+.landing,
+.docs {
+  --ink: #233233;
+  --secondary: #4d6263;
+  --muted: #576967;
+  --border: #c8d0cb;
+  --panel: #f6f2eb;
+  background: #f6f3ed;
+  color: var(--ink);
+}
+
+.terminal {
+  --ink: #eee8df;
+  --secondary: #c1ccca;
+  --muted: #a3b2b4;
+  background: #10171c;
+}
+
+/* Radial falloffs blend without full-screen blur filters or a second canvas. */
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  --ambient-x: 0px;
+  --ambient-y: 0px;
+  --copper: 248 121 57;
+  --blue: 53 129 208;
+  --jade: 77 147 144;
+  --copper-strength: 0.46;
+  --blue-strength: 0.39;
+  --jade-strength: 0.13;
+}
+
+.atmosphere-parallax {
+  position: absolute;
+  inset: -5%;
+  transform: translate3d(var(--ambient-x), var(--ambient-y), 0);
+  transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.atmosphere-field {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+
+.atmosphere-copper {
+  background-image:
+    radial-gradient(ellipse at 68% 27%, rgb(255 201 116 / .32), transparent 27%),
+    radial-gradient(ellipse at 70% 26%, rgb(var(--copper) / var(--copper-strength)), transparent 57%),
+    radial-gradient(ellipse at 8% 94%, rgb(var(--copper) / 0.11), transparent 43%);
+  animation: copper-drift 32s ease-in-out -9s infinite alternate;
+}
+
+.atmosphere-blue {
+  background-image: radial-gradient(ellipse at 91% 70%, rgb(var(--blue) / var(--blue-strength)), transparent 59%);
+  animation: blue-drift 38s ease-in-out -17s infinite alternate;
+}
+
+.atmosphere-jade {
+  background-image: radial-gradient(ellipse at 19% 82%, rgb(var(--jade) / var(--jade-strength)), transparent 54%);
+  animation: jade-drift 44s ease-in-out -23s infinite alternate;
+}
+
+.atmosphere-dark,
+:root[data-silicon-theme="dark"] .landing .atmosphere-light {
+  --copper: 241 109 43;
+  --blue: 50 134 227;
+  --jade: 45 143 114;
+  --copper-strength: 0.41;
+  --blue-strength: 0.42;
+  --jade-strength: 0.15;
+}
+
+.docs .atmosphere { opacity: 0.65; }
+.atmosphere[data-paused="true"] .atmosphere-field,
+body:has(.modal-backdrop) .atmosphere-field {
+  animation-play-state: paused;
+}
+
+.landing .landing-header,
+.docs .header {
+  background: rgb(248 245 239 / 0.76);
+  border-color: rgb(72 92 94 / 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.compute-stage {
+  background:
+    radial-gradient(ellipse at 27% 16%, #f1b69335, transparent 66%),
+    linear-gradient(135deg, #fffaf252, #bfd4d224);
+  border-color: #ffffff8c;
+  box-shadow: inset 0 1px 0 #ffffff80, 0 25px 70px -45px #535d6052;
+  isolation: isolate;
+}
+
+.compute-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 44% 33%, #f0b1904a, transparent 64%),
+    radial-gradient(ellipse at 68% 72%, #77a7b945, transparent 60%);
+  animation: stage-light 18s ease-in-out -4s infinite alternate;
+}
+
+.compute-stage .hero-model-tabs {
+  background: #fcf8f0b3;
+  border-color: #9eaead66;
+  backdrop-filter: blur(12px);
+}
+.compute-stage .hero-model-tabs button.active {
+  background: #2b4144;
+}
+.stage-heading,
+.stage-heading span:last-child,
+.stage-hint { color: #4b6163; }
+
+.rates-strip {
+  background: #fffaf33b;
+  border-color: #91a5a452;
+}
+.rate-item { border-color: #91a5a452; }
+.rate-item:hover { background: #fff8ed80; }
+
+.compute-explainer {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #142128;
+  color: #f2e9df;
+}
+.compute-explainer::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 90% 7%, #c071483d, transparent 56%),
+    radial-gradient(ellipse at 0% 82%, #4a8c8638, transparent 53%),
+    radial-gradient(ellipse at 74% 103%, #507ea137, transparent 49%);
+}
+.explainer-heading .section-label { color: #f2b68e; }
+.explainer-heading > p,
+.compute-steps p,
+.explainer-foot { color: #bbcaca; }
+.compute-steps article,
+.explainer-foot { border-color: #78979752; }
+
+.landing-calculator {
+  background: linear-gradient(135deg, #fffaf2b8, #e1ece6a6);
+  border-color: #ffffffb3;
+  box-shadow: 0 18px 60px -40px #415d6570;
+}
+.closing-section { border-color: #9aaead59; }
+.site-footer {
+  background: linear-gradient(100deg, #ead1b752, #d6e5e366);
+  border-color: #9aaead59;
+  color: #4e6464;
+}
+
+/* Dense market panels pick up the palette at their edges; values stay clear. */
+.terminal .header {
+  background: #141d22c9;
+  border-color: #a7bfc32b;
+  backdrop-filter: blur(18px);
+}
+.terminal-status,
+.terminal-footer {
+  background: #15212799;
+  border-color: #91a9ad26;
+  color: #afc1c1;
+}
+.terminal-status .status-right { color: #afc1c1; }
+.terminal-nav a { color: #b9c9cc; }
+.terminal-nav a.active { color: #f3a77c; }
+.wallet-button { border-color: #849c9f85; color: #d4dfde; }
+.workspace-toolbar h1,
+.page-intro h1 { color: #eee5da; }
+.workspace-tools .icon-button { background: #2431389e; border-color: #78959752; }
+
+.panel,
+.contract-entry,
+.strategy-card {
+  background: linear-gradient(125deg, #2c3a3e66, #182328d9 65%);
+  border-color: #8ca6ac3b;
+  box-shadow: inset 0 1px 0 #e2edf305, 0 14px 35px -30px #02090e80;
+}
+.asset-card {
+  background:
+    radial-gradient(ellipse at 90% 8%, #779faf24, transparent 70%),
+    linear-gradient(135deg, #2b383bc7, #1a252bdd);
+  border-color: #8ca6ac47;
+  box-shadow: inset 0 1px 0 #edf4f509;
+  transition: border-color 0.35s, box-shadow 0.5s, translate 0.6s var(--ease);
+}
+.asset-card.active,
+.asset-card.gold.active,
+.asset-card.green.active {
+  background:
+    radial-gradient(ellipse at 14% 0%, #d88d5840, transparent 68%),
+    linear-gradient(135deg, #30383bc9, #1c2d33e6);
+  border-color: #e5a078b3;
+  box-shadow: inset 0 1px 0 #ffd6b61a, 0 8px 32px -18px #da855535;
+}
+.asset-footer,
+.panel-heading,
+.contract-entry-footer { border-color: #8ca6ac30; }
+.asset-main h2,
+.asset-price > strong,
+.benchmark-summary > strong { color: #e8dfd2; }
+.asset-memory,
+.asset-price small,
+.benchmark-summary small,
+.benchmark-index,
+.chart-axis,
+.asset-card-top .eyebrow { color: #b5c9c7; }
+.panel-heading h2 { color: #d1dfdc; }
+.asset-info { color: #b5ceca; }
+.chart-rules span { border-color: #98b5bc24; }
+.benchmark-chart .sparkline { color: #efae79; }
+.panel-footnote { color: #acbfbd; }
+.segmented { background: #111e2599; border-color: #829da34a; }
+.segmented button { color: #b6c7c8; }
+.segmented button.active { background: #bf82532b; color: #f5b58b; }
+
+.ticket {
+  background:
+    radial-gradient(ellipse at 90% 0%, #a86b4430, transparent 45%),
+    linear-gradient(155deg, #27353cf5, #1a272fe8);
+  border-color: #acb3ad52;
+}
+.ticket > .panel-heading { background: #c8956210; }
+.ticket-values,
+.payoff-sim { border-color: #8ca6ac38; }
+.amount-input,
+.payoff-sim { background-color: #142329a3; }
+.ticket-asset strong,
+.ticket-values strong { color: #eee4d8; }
+.ticket-values strong.green { color: #8de5c2; }
+.ticket-bottom { background: #15222a6b; }
+.contract-entry-main:hover { background: #abc9c00a; }
+.contract-asset-name strong,
+.contract-backing strong { color: #e1e5d9; }
+.contract-type,
+.contract-entry-footer,
+.contract-asset-name > span,
+.page-intro p { color: #b9c9c5; }
+
+.modal {
+  background:
+    radial-gradient(ellipse at 100% 0%, #b6784830, transparent 55%),
+    linear-gradient(145deg, #25353b, #1b292f);
+  border-color: #8ca6ac66;
+  color: #e2e9e3;
+}
+.modal-backdrop { background: #0d182155; }
+.tutorial {
+  background: linear-gradient(120deg, #f6e4d2, #e0ebe4);
+  border-color: #d1d9c9;
+}
+.tutorial h3 { color: #263f40; }
+.tutorial p,
+.tutorial-top { color: #506566; }
+.site-menu .modal {
+  background:
+    radial-gradient(ellipse at 5% 0%, #f1c09a61, transparent 65%),
+    linear-gradient(130deg, #f7f1e7, #e6eeea);
+  color: #253c3d;
+  border-color: #cbd5cd;
+}
+.site-menu .modal-backdrop { background: #e8eee95c; }
+.docs-layout .docs-lead,
+.docs-layout p,
+.docs-layout li { color: #4e6364; }
+.docs-callout {
+  background: linear-gradient(120deg, #f1decc8c, #dce9e1b3);
+  border-color: #9bb4ac;
+  color: #3e5c57;
+}
+.docs-layout code { background: #e1e9e380; }
+
+.boot {
+  background:
+    radial-gradient(ellipse at 75% 25%, #bc754d29, transparent 60%),
+    radial-gradient(ellipse at 15% 85%, #53919526, transparent 60%),
+    #10171c;
+}
+.boot-light {
+  background:
+    radial-gradient(ellipse at 75% 25%, #f1b88e38, transparent 60%),
+    radial-gradient(ellipse at 15% 85%, #8fb5b22b, transparent 60%),
+    #f6f3ed;
+}
+
+/* Share the palette with the landing's independently loaded theme controls. */
+:root .landing,
+:root .site-menu {
+  --landing-bg: #f6f3ed;
+  --landing-header: #f8f5efc2;
+  --landing-ink: #233233;
+  --landing-secondary: #4d6263;
+  --landing-border: #91a5a452;
+  --landing-hover: #e9eeea;
+}
+:root .landing .compute-stage {
+  background:
+    radial-gradient(ellipse at 27% 16%, #f1b69335, transparent 66%),
+    linear-gradient(135deg, #fffaf252, #bfd4d224);
+  border-color: #ffffff8c;
+}
+:root .landing .landing-calculator {
+  background: linear-gradient(135deg, #fffaf2b8, #e1ece6a6);
+  border-color: #ffffffb3;
+}
+:root .site-menu .modal {
+  background:
+    radial-gradient(ellipse at 5% 0%, #f1c09a61, transparent 65%),
+    linear-gradient(130deg, #f7f1e7, #e6eeea);
+}
+:root .site-menu .modal-title,
+:root .site-menu .modal-body { background: transparent; }
+:root .site-menu .modal-title h2 { color: var(--landing-secondary, #4d6263); }
+:root[data-silicon-theme="dark"] .landing,
+:root[data-silicon-theme="dark"] .site-menu {
+  --landing-bg: #10171c;
+  --landing-surface: #18252b;
+  --landing-header: #141d22c9;
+  --landing-ink: #eee6db;
+  --landing-secondary: #b8cacc;
+  --landing-border: #8ca6ac40;
+  --landing-hover: #29404a;
+  --landing-calc: #1d2c33;
+}
+:root[data-silicon-theme="dark"] .landing .atmosphere {
+  /* Dark pigment strengths are already calibrated above, without a second fade. */
+  opacity: 1;
+}
+:root[data-silicon-theme="dark"] .landing .compute-stage {
+  background:
+    radial-gradient(ellipse at 27% 16%, #d68b5830, transparent 66%),
+    linear-gradient(135deg, #30434a52, #18252b40);
+  border-color: #a1bcc342;
+  box-shadow: inset 0 1px 0 #edf4f509, 0 25px 70px -45px #0008;
+}
+:root[data-silicon-theme="dark"] .landing .rates-strip {
+  background: #20323a50;
+}
+:root[data-silicon-theme="dark"] .landing .landing-calculator,
+:root[data-silicon-theme="dark"] .site-menu .modal {
+  background:
+    radial-gradient(ellipse at 100% 0%, #b6784830, transparent 55%),
+    linear-gradient(145deg, #25353b, #1b292f);
+  border-color: #8ca6ac50;
+}
+:root[data-silicon-theme="dark"] .landing .site-footer {
+  background: linear-gradient(100deg, #83553524, #3a737829);
+}
+:root[data-silicon-theme="dark"] .site-menu .site-menu-grid p {
+  color: #b8cacc;
+}
+:root[data-silicon-theme="dark"] .site-menu .modal-backdrop {
+  background: #0d182155;
+}
+:root[data-silicon-theme="dark"] .boot-light {
+  background:
+    radial-gradient(ellipse at 75% 25%, #bc754d29, transparent 60%),
+    radial-gradient(ellipse at 15% 85%, #53919526, transparent 60%),
+    #10171c;
+  color: #eee6db;
+}
+:root[data-silicon-theme="dark"] .boot-light span { color: #b8cacc; }
+
+/* Stage content instead of revealing the entire screen in a single jump. */
+@media (prefers-reduced-motion: no-preference) {
+  .compute-copy { animation: none; }
+  .compute-copy > * { animation: enter-copy .78s var(--ease) both; }
+  .compute-copy > :nth-child(1) { animation-delay: 0s; }
+  .compute-copy > :nth-child(2) { animation-delay: 0.08s; }
+  .compute-copy > :nth-child(3) { animation-delay: 0.17s; }
+  .compute-copy > :nth-child(4) { animation-delay: 0.36s; }
+  .compute-copy > :nth-child(5) { animation-delay: 0.46s; }
+  .compute-stage { animation: none; }
+  .rates-strip { animation: enter-copy 1s 0.45s var(--ease) both; }
+  .terminal-body { animation: none; }
+  .workspace-toolbar { animation: enter-copy 0.8s var(--ease) both; }
+  .asset-card { animation: enter-copy 0.9s var(--ease) both; }
+  .asset-card:nth-child(2) { animation-delay: 0.08s; }
+  .asset-card:nth-child(3) { animation-delay: 0.16s; }
+  .market-workspace > .benchmark,
+  .market-workspace > .providers,
+  .terminal-body > .ticket { animation: enter-copy 0.95s 0.15s var(--ease) both; }
+  .full-page { animation-duration: 0.85s; }
+  .gpu-model canvas { animation: none; opacity: 0; }
+  .gpu-model canvas[data-rendered="true"] { animation: hardware-arrive .85s var(--ease) both; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .asset-card:hover { translate: 0 -3px; border-color: #acc6c5a6; }
+  .asset-card.active:hover { border-color: #f2b58b; }
+}
+
+@keyframes copper-drift {
+  from { transform: translate3d(-3%, -2%, 0) scale(1.03); }
+  to { transform: translate3d(4%, 6%, 0) scale(1.12); }
+}
+@keyframes blue-drift {
+  from { transform: translate3d(4%, 3%, 0) scale(1.08); }
+  to { transform: translate3d(-5%, -4%, 0) scale(1.02); }
+}
+@keyframes jade-drift {
+  from { transform: translate3d(-2%, 5%, 0) scale(1.04); }
+  to { transform: translate3d(5%, -3%, 0) scale(1.1); }
+}
+@keyframes stage-light {
+  from { transform: translate3d(-3%, 2%, 0) scale(0.98); opacity: 0.7; }
+  to { transform: translate3d(3%, -2%, 0) scale(1.07); opacity: 1; }
+}
+@keyframes hardware-arrive {
+  from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 760px) {
+  .atmosphere { --copper-strength: 0.38; --blue-strength: 0.32; --jade-strength: 0.13; }
+  .atmosphere-field { animation-duration: 45s; }
+  .terminal-nav.open { background: #1c2c34f5; border-color: #667d8359; }
+  .atmosphere-parallax { transition: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere-field,
+  .compute-stage::before { animation: none !important; will-change: auto; }
+  .atmosphere-parallax { transform: none; transition: none; }
+  .gpu-model canvas { opacity: 1; animation: none !important; }
+  .asset-card:hover { translate: none; }
+}

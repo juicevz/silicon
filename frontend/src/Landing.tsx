@@ -1,20 +1,19 @@
-import { lazy, Suspense, useState } from "react";
-import {
-  ArrowDown,
-  ArrowRight,
-  ArrowUpRight,
-  ChevronRight,
-  Crosshair,
-  MoveUpRight,
-  ShieldCheck,
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUpRight, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Header } from "./components/Header";
-import { Brand, Change, Dot, External } from "./components/ui";
+import Atmosphere from "./components/Atmosphere";
+import { Brand, External } from "./components/ui";
 import { useData } from "./data";
-import { useWallet } from "./wallet";
 import { money } from "./api";
-const Gpu = lazy(() => import("./components/Gpu"));
+import { useLandingMotion } from "./landingMotion";
+import { SmoothRange } from "./components/SmoothRange";
+import { AnimatedNumber } from "./components/AnimatedNumber";
+import { PayoffChart } from "./components/PayoffChart";
+import TerminalPreview from "./components/TerminalPreview";
+import { AppWindow } from "./components/AppWindow";
+import "@fontsource-variable/space-grotesk";
+const HeroHardware = lazy(() => import("./components/HeroHardware"));
 
 export default function Landing({
   notify,
@@ -22,268 +21,243 @@ export default function Landing({
   notify: (value: string) => void;
 }) {
   const { snapshot } = useData();
-  const wallet = useWallet();
-  const navigate = useNavigate();
-  const [heroModel, setHeroModel] = useState("h100-sxm");
-  const enter = async () => {
-    try {
-      await wallet.connect();
-      navigate("/terminal");
-    } catch (e) {
-      notify((e as Error).message);
-    }
-  };
-  const model = snapshot?.markets.find((m) => m.id === heroModel);
+  const [scenario, setScenario] = useState(4);
+  const root = useRef<HTMLDivElement>(null);
+  const motion = useLandingMotion();
+  useLayoutEffect(() => {
+    const landing = root.current;
+    if (!landing || !("IntersectionObserver" in window)) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let observer: IntersectionObserver | undefined;
+    const reveal = (element: Element) => {
+      element.classList.add("is-visible");
+      observer?.unobserve(element);
+    };
+    const sync = () => {
+      observer?.disconnect();
+      landing.classList.toggle("motion-ready", !motion.matches);
+      const targets = landing.querySelectorAll("[data-reveal]:not(.is-visible)");
+      if (motion.matches) {
+        targets.forEach(reveal);
+        return;
+      }
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries)
+            if (entry.isIntersecting) reveal(entry.target);
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -6% 0px" },
+      );
+      targets.forEach((element) => observer?.observe(element));
+    };
+    const revealFocused = (event: FocusEvent) => {
+      const target = (event.target as HTMLElement).closest("[data-reveal]");
+      if (target) reveal(target);
+    };
+    sync();
+    motion.addEventListener("change", sync);
+    landing.addEventListener("focusin", revealFocused);
+    return () => {
+      observer?.disconnect();
+      motion.removeEventListener("change", sync);
+      landing.removeEventListener("focusin", revealFocused);
+      landing.classList.remove("motion-ready");
+    };
+  }, [snapshot?.markets.length]);
+  const payout = Math.min(10, Math.max(0, scenario)) * 10;
   return (
-    <div className="landing">
+    <div ref={root} className="landing">
+      <Atmosphere tone="light" />
       <Header landing notify={notify} />
       <main>
-        <section className="hero">
-          <div className="hero-grid" />
-          <div className="hero-topline eyebrow">
-            <span>
-              <Dot state="purple" /> COMPUTE, AS A MARKET
-            </span>
-            <span>01 / SILICON TERMINAL</span>
-          </div>
-          <div className="hero-copy">
-            <div className="hero-kicker">
-              <span className="tiny-chip" />
-              GPU RENTAL MARKETS
-            </div>
+        <section className="compute-hero">
+          <div className="compute-copy">
             <h1>
               Trade the cost
               <br />
-              of <span>compute.</span>
+              of compute.
             </h1>
             <p>
-              GPU rental prices move.
-              <br />
-              Take a view on where they go next.
+              Silicon brings GPU rental prices into one place. Compare providers
+              and model a position on H100 rates rising or falling, with a capped
+              payout in USDG.
             </p>
-            <p className="hero-explainer">
-              Follow H100, A100 and B200 rental rates. Trade price changes with
-              capped calls and puts, settled in USDG.
-            </p>
-            <div className="hero-actions">
-              <button
-                className="button primary large-button"
-                disabled={wallet.busy}
-                onClick={() => void enter()}
-              >
-                Access terminal
-                <ArrowUpRight size={16} />
-              </button>
-              <Link to="/terminal" className="text-button">
-                Explore markets
-                <ArrowRight size={14} />
+            <div className="compute-actions">
+              <Link className="button primary" to="/terminal">
+                Open terminal <ArrowUpRight size={19} />
               </Link>
+              <a className="text-button" href="#how-it-works">
+                How it works <ArrowDown size={17} />
+              </a>
             </div>
-            <span className="hero-footnote">
-              <ShieldCheck size={12} />
-              See the maximum loss before every trade.
-            </span>
           </div>
-          <div className="hero-hardware">
+          <div className="compute-stage">
             <div className="hero-model">
               <Suspense
                 fallback={
-                  <img
-                    className="gpu-placeholder"
-                    src="/assets/gpu-editorial.webp"
-                    alt="GPU compute module"
-                  />
+                  <div className="hardware-poster hardware-first-frame">
+                    <img className="active" src="/assets/hardware/catalog-h100.webp" alt="NVIDIA H100 accelerator" width="1600" height="1100" fetchPriority="high" />
+                  </div>
                 }
               >
-                <Gpu large model={heroModel} />
+                <HeroHardware motion={motion} />
               </Suspense>
             </div>
-            <div className="hardware-tag tag-one">
-              <span className="eyebrow">ACCELERATOR</span>
-              <strong>NVIDIA {model?.name ?? "H100"}</strong>
-              <span>{model?.memory ?? "80 GB HBM3"}</span>
-            </div>
-            <div className="hardware-tag tag-two">
-              <span className="eyebrow">RENTAL REFERENCE</span>
-              <strong>
-                ${money(model?.price)}
-                <small>/ GPU · hr</small>
-              </strong>
-              <span>
-                <Dot state={model?.stale ? "gold" : "green"} />
-                {model?.stale ? "Checking sources" : "Published provider rates"}
-              </span>
-            </div>
-            <div className="hardware-corner">
-              <Crosshair size={14} />
-              <span>MOVE TO INSPECT</span>
-              <span className="corner-line" />
-            </div>
-            <div className="hero-model-tabs">
-              {["h100-sxm", "a100-80", "b200"].map((id, i) => (
-                <button
-                  key={id}
-                  className={heroModel === id ? "active" : ""}
-                  onClick={() => setHeroModel(id)}
-                >
-                  <span>0{i + 1}</span>
-                  {["H100", "A100", "B200"][i]}
-                </button>
-              ))}
-            </div>
           </div>
-          <div className="hero-bottom eyebrow">
-            <span>BUILT ON ROBINHOOD CHAIN</span>
-            <a href="#markets">
-              SCROLL TO EXPLORE
-              <ArrowDown size={12} />
-            </a>
-            <span>COMPUTE HAS A PRICE. NOW IT HAS A MARKET.</span>
-          </div>
+          <a className="hero-scroll-cue" href="#market-overview" aria-label="Explore Silicon below">
+            <ArrowDown size={20} strokeWidth={1.5} />
+          </a>
         </section>
-        <section className="landing-ticker" id="markets">
-          <div className="ticker-heading">
-            <span className="eyebrow">ON THE BOARD</span>
-            <strong>Follow the hardware.</strong>
-            <span className="muted">USD per GPU-hour</span>
+        <section className="product-section" id="market-overview" aria-labelledby="product-title">
+          <div className="product-heading" data-reveal>
+            <h2 id="product-title">What does a<br />GPU hour cost?</h2>
+            <p>Cloud providers charge by the hour. Silicon brings their published
+              rates for 16 GPU models together, so you can compare providers,
+              follow price changes and check the source of each quote.</p>
           </div>
-          {(snapshot?.markets ?? []).map((m) => (
-            <Link
-              to={`/terminal?asset=${m.id}`}
-              key={m.id}
-              className="ticker-market"
-            >
-              <div>
-                <img className="nvidia" src="/assets/nvidia.svg" alt="NVIDIA" />
-                <strong>{m.name}</strong>
-                <span className={`mini-label ${m.color}`}>
-                  {m.id === "h100-sxm" ? "BENCHMARK" : "TRACKING"}
-                </span>
-              </div>
-              <div>
-                <span className="ticker-price mono">${money(m.price)}</span>
-                <Change value={m.changes?.["24h"]} />
-                <ArrowUpRight size={16} />
-              </div>
-            </Link>
-          ))}
+          <TerminalPreview />
         </section>
-        <section className="landing-section how" id="how-it-works">
-          <div className="section-heading">
-            <span className="eyebrow">01 / THE IDEA</span>
-            <h2>
-              A market for the machines
+        <section
+          className="compute-explainer"
+          id="how-it-works"
+          aria-labelledby="how-it-works-title"
+        >
+          <div className="explainer-heading" data-reveal>
+            <h2 id="how-it-works-title">
+              A position on
               <br />
-              behind the models.
+              the price of compute.
             </h2>
             <p>
-              Cloud providers charge by the hour. Silicon follows those rental
-              prices and gives you a defined way to take a position.
+              H100 contracts follow a reference built from five fixed provider
+              listings. Each contract sets its expiry, price and maximum payout.
             </p>
           </div>
-          <div className="how-grid">
+          <div className="compute-steps">
             {[
-              {
-                n: "01",
-                title: "Choose your hardware.",
-                text: "Compare rental rates across providers. The first benchmark follows five fixed H100 listings.",
-              },
-              {
-                n: "02",
-                title: "Pick a direction.",
-                text: "A call pays when the reference rises. A put pays when it falls. Choose your size and see the full payout range.",
-              },
-              {
-                n: "03",
-                title: "Settle in USDG.",
-                text: "Every filled position reserves its maximum payout. At expiry, the published reference determines what you can claim.",
-              },
-            ].map((item) => (
-              <article key={item.n}>
-                <span className="step-number mono">{item.n}</span>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-                <ChevronRight size={15} />
+              [
+                "01",
+                "Follow the reference.",
+                "The median of five eligible provider rates sets the H100 reference. You can inspect the listings behind it.",
+              ],
+              [
+                "02",
+                "Choose your position.",
+                "A call pays when the reference rises; a put pays when it falls. Preview the premium, fee and payout before entering.",
+              ],
+              [
+                "03",
+                "Settle in USDG.",
+                "Funded contracts reserve the maximum payout. The published reference at expiry determines what you can claim.",
+              ],
+            ].map(([n, title, body]) => (
+              <article key={n} data-reveal>
+                <h3>{title}</h3>
+                <p>{body}</p>
               </article>
             ))}
           </div>
-        </section>
-        <section className="landing-section structure">
-          <div className="editorial-art">
-            <img
-              loading="lazy"
-              src="/assets/gpu-editorial.webp"
-              alt="Original Silicon illustration of a GPU accelerator module"
-            />
-            <span className="eyebrow">SILICON / HARDWARE STUDY 001</span>
-          </div>
-          <div className="structure-copy">
-            <span className="eyebrow">02 / KNOW YOUR POSITION</span>
-            <h2>
-              One trade.
-              <br />A defined outcome.
-            </h2>
-            <p>
-              The premium is your cost. The cap is the most your contract can
-              pay. Both are visible before you sign.
-            </p>
-            <div className="structure-row">
-              <ShieldCheck size={17} />
-              <div>
-                <strong>Collateral stays with the contract.</strong>
-                <span>
-                  Writers supply USDG and earn premiums. Their funds cover the
-                  payout risk.
-                </span>
-              </div>
-            </div>
-            <div className="structure-row">
-              <MoveUpRight size={17} />
-              <div>
-                <strong>Holding Silicon opens the market.</strong>
-                <span>
-                  Any positive token balance unlocks trading and advanced tools.
-                  Hold more than 5,000 tokens for zero platform trading fees.
-                </span>
-              </div>
-            </div>
-            <Link to="/docs" className="text-button">
-              Read the mechanics
-              <ArrowUpRight size={14} />
+          <div className="explainer-foot" data-reveal>
+            <span>
+              Market data is open. Trading opens with funded contracts.
+            </span>
+            <Link to="/terminal/contracts">
+              View contracts <ArrowUpRight size={17} />
             </Link>
           </div>
         </section>
-        <section className="landing-close">
-          <span className="eyebrow">YOUR VIEW ON COMPUTE STARTS HERE</span>
-          <div>
+        <section className="position-section">
+          <div className="position-copy" data-reveal>
             <h2>
-              Watch the rates.
+              See what a
               <br />
-              Find your position.
+              price move means.
             </h2>
-            <button
-              className="button primary large-button"
-              onClick={() => void enter()}
-              disabled={wallet.busy}
-            >
-              Access terminal
-              <ArrowUpRight size={17} />
-            </button>
+            <p>
+              Move the H100 reference to explore a call. Its payout grows as the
+              price rises, up to the contract&apos;s cap. The premium and fee set
+              the position&apos;s maximum cost.
+            </p>
+            <Link className="text-button" to="/terminal">
+              Build a position <ArrowUpRight size={18} />
+            </Link>
           </div>
-          <p>
-            Market data is open to everyone. Trading opens with the token and
-            funded contracts.
-          </p>
+          <AppWindow className="calculator-window" title="H100 call example">
+          <div className="landing-calculator">
+            <PayoffChart move={scenario} cost={20.2} maxPayout={100} onMove={setScenario} />
+            <label htmlFor="landing-scenario">
+              Explore a price move
+            </label>
+            <SmoothRange
+              id="landing-scenario"
+              label="Reference price change"
+              min={-15}
+              max={15}
+              step={.5}
+              value={scenario}
+              display={`${scenario > 0 ? "+" : ""}${scenario.toFixed(1)}%`}
+              onChange={setScenario}
+            />
+            <div className="landing-results">
+              <div>
+                <span>Cost incl. fee</span>
+                <strong>
+                  20.20 <small>USDG</small>
+                </strong>
+              </div>
+              <div>
+                <span>Contract payout</span>
+                <strong>
+                  <AnimatedNumber value={money(payout)} /> <small>USDG</small>
+                </strong>
+              </div>
+            </div>
+            <p>
+              Illustration: 10 units at 2 USDG each, a 1% fee and a 10 USDG cap
+              per unit. Live contracts set their own terms.
+            </p>
+          </div>
+          </AppWindow>
+        </section>
+        <section className="landing-questions" aria-labelledby="questions-title">
+          <div className="questions-heading" data-reveal>
+            <h2 id="questions-title">Before you<br />take a position.</h2>
+            <Link className="text-button" to="/docs">Read the documentation <ArrowUpRight size={18} /></Link>
+          </div>
+          <div className="questions-list" data-reveal>
+            {[
+              ["What does a position track?", "The price of renting GPU capacity from cloud providers. A position settles against a rental-price reference; it does not give you ownership of a GPU or access to compute."],
+              ["How is the H100 reference calculated?", "Silicon takes the median of five fixed, on-demand provider listings, with equal weight for each provider. A new reference is published only when all five quotes meet the freshness and configuration rules."],
+              ["Can I take a position on every GPU?", "You can compare rental rates across 16 GPU models. H100 is the first defined contract reference. The other models are monitoring markets for now."],
+              ["Is trading open?", "Market data and position calculators are open. Live trading requires deployed, funded contracts. The Contracts page shows which series are configured and available."],
+            ].map(([question, answer]) => <details key={question}>
+              <summary>{question}<Plus size={19} strokeWidth={1.5} aria-hidden="true" /></summary>
+              <p>{answer}</p>
+            </details>)}
+          </div>
+        </section>
+        <section className="closing-section">
+          <h2 data-reveal>
+            Explore the
+            <br />
+            GPU markets.
+          </h2>
+          <Link className="button primary" to="/terminal" data-reveal>
+            Open terminal <ArrowUpRight size={22} />
+          </Link>
         </section>
       </main>
-      <footer className="landing-footer">
+      <footer className="site-footer" data-reveal>
         <Brand />
-        <span>GPU rental markets on Robinhood Chain.</span>
-        <External href="https://gpueconomy.com/data">
-          Data: GPU Economy · CC BY 4.0
-        </External>
-        <Link to="/docs">Docs</Link>
-        <span className="mono">© 2026 SILICON</span>
+        <div>
+          <Link to="/docs">
+            Documentation <ArrowUpRight size={15} />
+          </Link>
+          <External href="https://gpueconomy.com/data">
+            Data: GPU Economy · CC BY 4.0
+          </External>
+        </div>
+        <span>© 2026 Silicon</span>
       </footer>
     </div>
   );
