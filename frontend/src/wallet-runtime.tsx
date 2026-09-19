@@ -69,8 +69,8 @@ export default function Runtime({ appId, ...props }: Props) {
         loginMethods: ["wallet"],
         appearance: {
           theme: "dark",
-          accentColor: "#ac96e7",
-          logo: "/silicon.svg",
+          accentColor: "#f18b54",
+          logo: "/silicon.svg?v=2",
           showWalletLoginFirst: true,
           walletChainType: "ethereum-only",
           walletList: [

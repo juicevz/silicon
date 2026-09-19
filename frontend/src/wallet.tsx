@@ -37,7 +37,7 @@ export function WalletRoot({
   config,
   children,
 }: {
-  config: Config;
+  config: Config | null;
   children: ReactNode;
 }) {
   const [address, setAddress] = useState<string | null>(null);
@@ -99,7 +99,7 @@ export function WalletRoot({
           resolve();
           return;
         }
-        if (!config.privy_app_id) {
+        if (!config?.privy_app_id) {
           reject(
             new Error(
               "Wallet connection is being configured. You can explore all markets.",
@@ -122,7 +122,7 @@ export function WalletRoot({
         setMounted(true);
         setRequest((v) => v + 1);
       }),
-    [address, config.privy_app_id],
+    [address, config?.privy_app_id],
   );
   const provider = useCallback(async () => {
     if (!getter.current) throw new Error("Connect your wallet first");
@@ -131,7 +131,7 @@ export function WalletRoot({
   return (
     <Context.Provider value={{ address, busy, connect, disconnect, provider }}>
       {children}
-      {mounted && (
+      {mounted && config && (
         <Suspense fallback={null}>
           <Runtime
             appId={config.privy_app_id}
