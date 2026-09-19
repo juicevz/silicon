@@ -14,17 +14,21 @@ import { X } from "lucide-react";
 import { api, type Config } from "./api";
 import { DataRoot } from "./data";
 import { WalletRoot } from "./wallet";
-import "@fontsource/manrope/latin-400.css";
-import "@fontsource/manrope/latin-500.css";
-import "@fontsource/manrope/latin-600.css";
-import "@fontsource/manrope/latin-700.css";
+import Landing from "./Landing";
+import Docs from "./Docs";
+import { Header } from "./components/Header";
+import Atmosphere from "./components/Atmosphere";
 import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
+import "@fontsource/ibm-plex-mono/latin-600.css";
 import "./style.css";
+import "./redesign.css";
+import "./atmosphere.css";
+import "./interactions.css";
+import "./landing.css";
+import "./catalog.css";
 
-const Landing = lazy(() => import("./Landing"));
 const Terminal = lazy(() => import("./Terminal"));
-const Docs = lazy(() => import("./Docs"));
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }
@@ -38,8 +42,10 @@ class ErrorBoundary extends Component<
   }
   render() {
     return this.state.failed ? (
-      <div className="boot">
-        <img src="/silicon.svg" alt="Silicon" />
+      <div
+        className={`boot ${window.location.pathname === "/" || window.location.pathname === "/docs" ? "boot-light" : ""}`}
+      >
+        <img src="/silicon.svg?v=2" alt="Silicon" />
         <h1>This view needs a refresh.</h1>
         <p>Your wallet and funds are unaffected.</p>
         <button
@@ -66,60 +72,63 @@ function Scroll() {
   }, [pathname, hash]);
   return null;
 }
+function TerminalPending({ error }: { error: string }) {
+  return (
+      <main aria-busy={!error} className="terminal-placeholder">
+        <h1>GPU markets</h1>
+        {error ? <p role="alert">{error} <button className="text-button" onClick={() => location.reload()}>Retry</button></p> : <div className="terminal-placeholder-panels" aria-label="Loading market data"><span /><span /><span /></div>}
+      </main>
+  );
+}
+function TerminalRoute({ ready, error, notify }: { ready: boolean; error: string; notify: (value: string) => void }) {
+  return <div className="terminal">
+    <Atmosphere tone="dark" />
+    <Header notify={notify} />
+    <Suspense fallback={<TerminalPending error={error} />}>
+      {ready ? <Terminal notify={notify} /> : <TerminalPending error={error} />}
+    </Suspense>
+  </div>;
+}
 function App() {
   const [config, setConfig] = useState<Config | null>(null),
     [error, setError] = useState(""),
     [toast, setToast] = useState("");
   const notify = useCallback((value: string) => setToast(value), []);
   useEffect(() => {
+    const preload = setTimeout(() => {
+      void import("./Terminal");
+    }, 1200);
     void api<Config>("/config")
       .then(setConfig)
       .catch(() =>
         setError("The terminal is reconnecting. Please refresh in a moment."),
       );
+    return () => clearTimeout(preload);
   }, []);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(""), 6500);
     return () => clearTimeout(t);
   }, [toast]);
-  if (!config)
-    return (
-      <div className="boot">
-        <img src="/silicon.svg" alt="Silicon" />
-        <span>{error || "Connecting to compute."}</span>
-        {error && (
-          <button className="button" onClick={() => window.location.reload()}>
-            Retry
-          </button>
-        )}
-      </div>
-    );
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <Scroll />
         <DataRoot config={config}>
           <WalletRoot config={config}>
-            <Suspense
-              fallback={
-                <div className="boot">
-                  <img src="/silicon.svg" alt="Silicon" />
-                  <span>Opening Silicon.</span>
-                </div>
-              }
-            >
               <Routes>
                 <Route path="/" element={<Landing notify={notify} />} />
                 <Route
                   path="/terminal/*"
-                  element={<Terminal notify={notify} />}
+                  element={<TerminalRoute ready={!!config} error={error} notify={notify} />}
                 />
                 <Route path="/docs" element={<Docs />} />
                 <Route
                   path="*"
                   element={
-                    <div className="boot">
+                    <div
+                      className={`boot ${window.location.pathname === "/" || window.location.pathname === "/docs" ? "boot-light" : ""}`}
+                    >
                       <h1>Page not found.</h1>
                       <a className="button" href="/terminal">
                         Open terminal
@@ -128,7 +137,6 @@ function App() {
                   }
                 />
               </Routes>
-            </Suspense>
           </WalletRoot>
         </DataRoot>
         {toast && (

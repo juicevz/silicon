@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, X } from "lucide-react";
 import type { Point } from "../api";
@@ -6,7 +7,7 @@ import type { Point } from "../api";
 export function Brand() {
   return (
     <Link to="/" className="brand" aria-label="Silicon home">
-      <img src="/silicon.svg" alt="" />
+      <img src="/silicon.svg?v=2" alt="" />
       <span>
         silicon<span className="brand-period">.</span>
       </span>
@@ -57,6 +58,7 @@ export function Sparkline({
   color?: string;
   large?: boolean;
 }) {
+  const areaId = useId();
   const actual = points.length > 1;
   const values = points.map((p) => p.price);
   const min = Math.min(...values),
@@ -80,6 +82,10 @@ export function Sparkline({
         actual ? "Recorded rental price history" : "Price history is collecting"
       }
     >
+      {large && actual && <>
+        <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".12" /><stop offset="100%" stopColor="currentColor" stopOpacity="0" /></linearGradient></defs>
+        <path d={`${path} L500 90 L0 90Z`} fill={`url(#${areaId})`} />
+      </>}
       <path
         d={path}
         fill="none"
@@ -105,15 +111,29 @@ export function Modal({
   children,
   close,
   wide = false,
+  appearance = "",
 }: {
   title: string;
   children: ReactNode;
   close: () => void;
   wide?: boolean;
+  appearance?: string;
 }) {
   const panel = useRef<HTMLDivElement>(null);
+  const [closing, setClosing] = useState(false);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const requestClose = () => {
+    if (exitTimer.current) return;
+    setClosing(true);
+    exitTimer.current = setTimeout(
+      close,
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200,
+    );
+  };
   const closeRef = useRef(close);
-  closeRef.current = close;
+  closeRef.current = requestClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
     const before = document.body.style.overflow;
@@ -143,39 +163,43 @@ export function Modal({
     };
     document.addEventListener("keydown", handler);
     return () => {
+      clearTimeout(exitTimer.current);
       document.body.style.overflow = before;
       document.removeEventListener("keydown", handler);
       previous?.focus();
     };
   }, []);
-  return (
-    <div
-      className="modal-backdrop"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
+  return createPortal(
+    <div className={appearance}>
       <div
-        ref={panel}
-        className={`modal ${wide ? "wide" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
+        className={`modal-backdrop ${closing ? "is-closing" : ""}`}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) requestClose();
+        }}
       >
-        <div className="modal-title">
-          <h2>{title}</h2>
-          <button
-            className="icon-button"
-            onClick={close}
-            aria-label="Close dialog"
-          >
-            <X size={17} />
-          </button>
+        <div
+          ref={panel}
+          className={`modal ${wide ? "wide" : ""} ${closing ? "is-closing" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          tabIndex={-1}
+        >
+          <div className="modal-title">
+            <h2>{title}</h2>
+            <button
+              className="icon-button"
+              onClick={requestClose}
+              aria-label="Close dialog"
+            >
+              <X size={17} />
+            </button>
+          </div>
+          {children}
         </div>
-        {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 export function Empty({
