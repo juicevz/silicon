@@ -580,7 +580,7 @@ export interface components {
              * @default h100-sxm
              * @enum {string}
              */
-            market: "h100-sxm" | "a100-80" | "b200";
+            market: "h100-sxm" | "a100-80" | "b200" | "h200" | "b300" | "l40s" | "l40" | "l4" | "a10" | "t4" | "rtx-pro-6000" | "rtx-6000-ada" | "rtx-a6000" | "rtx-5090" | "rtx-4090" | "a100-40";
             /**
              * Side
              * @default call
@@ -830,7 +830,7 @@ export interface operations {
     receipts_api_v1_receipts_get: {
         parameters: {
             query?: {
-                market?: "h100-sxm" | "a100-80" | "b200";
+                market?: "h100-sxm" | "a100-80" | "b200" | "h200" | "b300" | "l40s" | "l40" | "l4" | "a10" | "t4" | "rtx-pro-6000" | "rtx-6000-ada" | "rtx-a6000" | "rtx-5090" | "rtx-4090" | "a100-40";
             };
             header?: never;
             path?: never;

@@ -2,6 +2,7 @@ from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field
+from .catalog import MarketId
 
 
 class Point(BaseModel):
@@ -92,7 +93,7 @@ class Access(BaseModel):
 
 
 class QuoteRequest(BaseModel):
-    market: Literal["h100-sxm", "a100-80", "b200"] = "h100-sxm"
+    market: MarketId = "h100-sxm"
     side: Literal["call", "put"] = "call"
     premium: Decimal = Field(default=Decimal("2"), ge=Decimal("0.1"), le=Decimal("300"))
     move_pct: Decimal = Field(default=Decimal("4"), ge=Decimal("-50"), le=Decimal("50"))
