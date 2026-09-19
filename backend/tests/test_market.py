@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 
 from app.chain import fee_for
+from app.catalog import SPECS, MarketId
 from app.market_data import H100_BASKET, calculate
 from app.models import QuoteRequest
 from app.pricing import preview
@@ -62,6 +63,28 @@ def test_provider_duplicate_does_not_get_extra_weight():
     source = payload()
     source["prices"].extend([source["prices"][0]] * 20)
     assert calculate("h100-sxm", source)[0] == Decimal("4")
+
+
+def test_catalogue_models_accept_preview_quotes_without_enabling_execution():
+    from typing import get_args
+
+    assert set(SPECS) == set(get_args(MarketId))
+    assert len(SPECS) == 16
+    for model in SPECS:
+        quote = preview(QuoteRequest(market=model), 2, 100)
+        assert quote.indicative is True
+        assert quote.contract_address is None
+
+
+@pytest.mark.parametrize("model", [m for m in SPECS if m != "h100-sxm"])
+def test_monitoring_models_need_three_distinct_eligible_providers(model):
+    source = payload()
+    source["prices"] = source["prices"][:3]
+    value, _, count = calculate(model, source)
+    assert value == Decimal("3") and count == 3
+    source["prices"][2]["price_type"] = "spot"
+    source["prices"].extend([source["prices"][0]] * 8)
+    assert calculate(model, source)[0] is None
 
 
 def test_fee_threshold_is_strict_and_decimal_aware():

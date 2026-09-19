@@ -8,21 +8,11 @@ from typing import Any
 import httpx
 
 from .config import Settings
+from .catalog import SPECS
 from .models import Market, Point, ProviderQuote
 from .store import Store, now
 
 log = logging.getLogger("silicon.data")
-SPECS = {
-    "h100-sxm": dict(
-        name="H100", architecture="Hopper", memory="80 GB HBM3", color="purple"
-    ),
-    "a100-80": dict(
-        name="A100", architecture="Ampere", memory="80 GB HBM2e", color="gold"
-    ),
-    "b200": dict(
-        name="B200", architecture="Blackwell", memory="192 GB HBM3e", color="green"
-    ),
-}
 # Each identity includes region and exact instance. A changed identity cannot silently
 # replace a constituent. All five are required for the H100 reference to be published.
 H100_BASKET = {
@@ -106,7 +96,7 @@ class MarketData:
         self.markets = {key: Market(id=key, **spec) for key, spec in SPECS.items()}
         for key, payload in store.snapshots().items():
             if key in self.markets:
-                self.markets[key] = Market.model_validate(payload)
+                self.markets[key] = Market.model_validate(payload).model_copy(update=SPECS[key])
 
     async def collect_one(self, client: httpx.AsyncClient, model: str) -> None:
         try:
