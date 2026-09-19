@@ -3,12 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0a0b0f" />
+    <meta name="theme-color" content="#f6f3ed" />
+    <script>
+      try {
+        const theme = localStorage.getItem("silicon:theme") === "dark" ? "dark" : "light";
+        document.documentElement.dataset.siliconTheme = theme;
+        if (theme === "dark") document.querySelector('meta[name="theme-color"]').content = "#10171c";
+      } catch { document.documentElement.dataset.siliconTheme = "light"; }
+    </script>
     <meta name="description" content="Follow GPU rental prices. Take a view on the cost of compute with capped, USDG-settled contracts on Silicon." />
     <meta property="og:title" content="Silicon · Trade the cost of compute" />
     <meta property="og:description" content="GPU rental benchmarks, provider comparisons and capped compute markets." />
-    <meta property="og:image" content="/assets/gpu-editorial.jpg" />
-    <link rel="icon" type="image/svg+xml" href="/silicon.svg" />
+    <meta property="og:image" content="/assets/silicon-preview-v2.png" />
+    <link rel="icon" type="image/svg+xml" href="/silicon.svg?v=2" />
+    <link rel="preload" as="image" href="/assets/hardware/catalog-h100.webp" fetchpriority="high" />
     <title>Silicon · Compute markets</title>
   </head>
   <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
