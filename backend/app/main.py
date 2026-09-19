@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from .chain import Chain
+from .catalog import MarketId
 from .config import settings
 from .market_data import H100_BASKET, METHOD, MarketData, age
 from .models import (
@@ -127,7 +128,9 @@ def public_config():
 
 
 @app.get("/api/v1/markets", response_model=Snapshot)
-def snapshot():
+async def snapshot():
+    # SQLite collection and SSE run on this event loop. Keep these short reads
+    # here too, rather than sharing its statement cache across worker threads.
     return Snapshot(
         markets=data.snapshot(),
         network=chain.network,
@@ -138,7 +141,7 @@ def snapshot():
 
 
 @app.get("/api/v1/history/{market}")
-def history(market: str, range: Literal["1h", "6h", "24h"] = "24h"):
+async def history(market: str, range: Literal["1h", "6h", "24h"] = "24h"):
     if market not in data.markets:
         raise HTTPException(404, "Unknown market")
     return {"points": store.history(market, int(range[:-1])), "range": range}
@@ -166,12 +169,12 @@ def methodology():
             "unconfirmed quotes",
         ],
         "settlement": "Operator-published result with a one-hour challenge window; unresolved or missing result cancels after 24 hours and refunds premiums and fees.",
-        "monitoring_models": "A100 and B200 use the median of each provider’s cheapest eligible listed region. They are comparison references, not tradable benchmarks.",
+        "monitoring_models": "All other GPU models use the median of each provider’s cheapest eligible USD on-demand instance listing, with at least three distinct providers. They are comparison references, not tradable benchmarks.",
     }
 
 
 @app.get("/api/v1/receipts")
-def receipts(market: Literal["h100-sxm", "a100-80", "b200"] = "h100-sxm"):
+async def receipts(market: MarketId = "h100-sxm"):
     return {
         "receipts": store.receipts(market),
         "hash_method": "keccak256 of canonical JSON, sorted keys, compact separators",
@@ -179,7 +182,7 @@ def receipts(market: Literal["h100-sxm", "a100-80", "b200"] = "h100-sxm"):
 
 
 @app.get("/api/v1/receipts/{digest}")
-def receipt(digest: str):
+async def receipt(digest: str):
     value = store.receipt(digest)
     if value is None:
         raise HTTPException(404, "Unknown observation receipt")
@@ -242,7 +245,7 @@ def leaderboard(period: Literal["24h", "7d", "30d"] = "7d"):
 async def stream(request: Request):
     async def events():
         while not await request.is_disconnected():
-            yield "data: " + json.dumps(snapshot().model_dump()) + "\n\n"
+            yield "data: " + json.dumps((await snapshot()).model_dump()) + "\n\n"
             await asyncio.sleep(15)
 
     return StreamingResponse(
