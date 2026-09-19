@@ -1,0 +1,68 @@
+.payoff-detail {
+  --payoff-ink: var(--landing-ink, #e0e9e5);
+  --payoff-muted: var(--landing-secondary, #b0c2c2);
+  --payoff-border: var(--landing-border, #476067);
+  --payoff-positive: var(--landing-positive, #9ed6b5);
+  --payoff-accent: var(--landing-accent, #f2ae7d);
+  --payoff-surface: var(--landing-calc, #1b2e35);
+  --payoff-negative: var(--red, #eea29b);
+  color: var(--payoff-positive);
+  margin: 25px 0;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.payoff-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--payoff-muted); font-size: 10px; }
+.payoff-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.payoff-legend i { width: 13px; height: 2px; background: var(--payoff-positive); }
+.payoff-legend > span:nth-child(2) i { height: 0; background: none; border-top: 1.5px dashed var(--payoff-accent); }
+.payoff-legend > small { font-size: 10px; margin-left: auto; }
+.payoff-detail .payoff-chart { display: block; width: 100%; height: 222px; margin-top: 12px; overflow: visible; touch-action: pan-y; }
+.payoff-detail .payoff-chart text { font: 10px var(--mono); fill: var(--payoff-muted); font-variant-numeric: tabular-nums; }
+.payoff-chart path, .payoff-chart polyline, .payoff-chart circle { vector-effect: non-scaling-stroke; }
+.payoff-grid-minor path, .payoff-grid-major path { fill: none; stroke: var(--payoff-border); stroke-width: .65; }
+.payoff-grid-minor { opacity: .28; }
+.payoff-grid-major path { opacity: .6; }
+.payoff-zero { fill: none; stroke: var(--payoff-muted); stroke-width: .8; opacity: .45; }
+.payoff-curve { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.payoff-knot { fill: var(--payoff-surface); stroke: currentColor; stroke-width: 1.2; }
+.payoff-cap-guide { fill: none; stroke: currentColor; stroke-dasharray: 2 4; stroke-width: .75; opacity: .5; }
+.payoff-cost { fill: none; stroke: var(--payoff-accent); stroke-dasharray: 4 4; stroke-width: 1; opacity: .9; }
+.payoff-detail .payoff-chart .payoff-cost-label { fill: var(--payoff-accent); }
+.payoff-detail .payoff-chart .payoff-cap-label { fill: var(--payoff-positive); font-size: 10px; }
+.payoff-breakeven path { fill: none; stroke: var(--payoff-accent); stroke-width: 1; stroke-dasharray: 2 3; opacity: .65; }
+.payoff-breakeven circle { fill: var(--payoff-surface); stroke: var(--payoff-accent); stroke-width: 1.3; }
+.payoff-marker { pointer-events: none; }
+.payoff-marker path { fill: none; stroke: var(--payoff-accent); stroke-width: .75; stroke-dasharray: 3 4; opacity: .6; }
+.payoff-marker circle { fill: var(--payoff-accent); stroke: var(--payoff-surface); stroke-width: 1.5; }
+.payoff-marker .payoff-halo { fill: var(--payoff-accent); fill-opacity: .12; stroke: none; }
+.payoff-value-label { pointer-events: none; }
+.payoff-value-label rect { fill: var(--payoff-surface); stroke: var(--payoff-border); stroke-width: .8; }
+.payoff-detail .payoff-value-label text { fill: var(--payoff-ink); font-size: 11px; font-weight: 500; }
+.payoff-detail .payoff-value-label .payoff-selected-move { fill: var(--payoff-accent); font-size: 9px; font-weight: 400; }
+.payoff-selected-unit { fill: var(--payoff-muted); font-size: 9px; font-weight: 400; }
+.payoff-foot { display: flex; justify-content: space-between; gap: 10px; color: var(--payoff-muted); font-size: 10px; line-height: 1.5; }
+.payoff-foot > span:last-child { opacity: .8; white-space: nowrap; }
+.payoff-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px 10px; margin: 15px 0 0; padding: 14px 0; border-block: 1px solid color-mix(in srgb, var(--payoff-border) 65%, transparent); }
+.payoff-facts > div { min-width: 0; }
+.payoff-facts dt { display: flex; align-items: center; gap: 5px; color: var(--payoff-muted); font-size: 10px; line-height: 1.5; }
+.payoff-facts dd { margin: 4px 0 0; color: var(--payoff-ink); font-size: 12px; font-weight: 500; line-height: 1.4; }
+.payoff-facts dd small, .payoff-net-detail small { font-size: 9px; font-weight: 400; color: var(--payoff-muted); }
+.payoff-facts .payoff-fact-breakeven { color: var(--payoff-accent); }
+.payoff-facts .payoff-fact-gain[data-positive="true"] { color: var(--payoff-positive); }
+.payoff-fact-dot { width: 5px; height: 5px; border: 1px solid var(--payoff-accent); border-radius: 50%; }
+.payoff-net-detail { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0 0; color: var(--payoff-muted); font-size: 11px; }
+.payoff-net-detail strong { font-size: 14px; font-weight: 500; color: var(--payoff-negative); }
+.payoff-net-detail strong[data-positive="true"] { color: var(--payoff-positive); }
+.ticket .payoff-detail { margin: 4px 0 22px; }
+.landing .payoff-detail { --payoff-negative: #b34039; }
+html[data-silicon-theme="dark"] .landing .payoff-detail { --payoff-negative: #eea29b; }
+.landing .payoff-legend, .landing .payoff-foot, .landing .payoff-facts dt { font-size: 12px; }
+.landing .payoff-facts dd { font-size: 16px; }
+.landing .payoff-facts dd small, .landing .payoff-net-detail small { font-size: 11px; }
+.landing .payoff-net-detail { font-size: 13px; }
+.landing .payoff-net-detail strong { font-size: 17px; }
+@media (max-width: 480px) {
+  .landing .payoff-legend, .landing .payoff-foot, .landing .payoff-facts dt { font-size: 10px; }
+  .landing .payoff-facts dd { font-size: 14px; }
+  .landing .payoff-net-detail { font-size: 12px; }
+}
