@@ -10,102 +10,41 @@ import {
 } from "lucide-react";
 import { money, timeAgo, type Market } from "../api";
 import { Change, Dot, External, Modal, Sparkline } from "./ui";
+import { AnimatedNumber } from "./AnimatedNumber";
+import { RentalChart } from "./RentalChart";
 const Gpu = lazy(() => import("./Gpu"));
 
-export function AssetCards({
-  markets,
-  selected,
-  select,
-  range,
-  info,
-}: {
-  markets: Market[];
-  selected: string;
-  select: (id: string) => void;
-  range: string;
-  info: (m: Market) => void;
+export function AssetCards({ markets, selected, select, range, info }: {
+  markets: Market[]; selected: string; select: (id: string) => void;
+  range: string; info: (m: Market) => void;
 }) {
-  return (
-    <div className="asset-grid">
-      {markets.map((market, i) => (
-        <article
-          key={market.id}
-          className={`asset-card ${market.color} ${selected === market.id ? "active" : ""}`}
-        >
-          <div
-            className="asset-click"
-            tabIndex={0}
-            role="button"
-            aria-label={`Select ${market.name}`}
-            onClick={() => select(market.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                select(market.id);
-              }
-            }}
-          >
-            <div className="asset-card-top">
-              <span className="eyebrow">
-                0{i + 1} / {market.architecture.toUpperCase()}
-              </span>
-              <span
-                className={`asset-status ${market.id === "h100-sxm" ? "purple" : ""}`}
-              >
-                <Dot
-                  state={
-                    market.stale
-                      ? "gold"
-                      : market.id === "h100-sxm"
-                        ? "purple"
-                        : "neutral"
-                  }
-                />
-                {market.stale
-                  ? "CHECKING"
-                  : market.id === "h100-sxm"
-                    ? "BENCHMARK"
-                    : "TRACKING"}
-              </span>
-            </div>
-            <div className="asset-main">
-              <div>
-                <img className="nvidia" src="/assets/nvidia.svg" alt="NVIDIA" />
-                <h2>{market.name}</h2>
-                <span className="asset-memory mono">{market.memory}</span>
-              </div>
-              <div className="asset-gpu">
-                <Suspense fallback={<div className="gpu-model gpu-fallback" />}>
-                  <Gpu model={market.id} />
-                </Suspense>
-              </div>
-            </div>
-            <div className="asset-price">
-              <strong className="mono">
-                ${money(market.price, 3)}
-                <small>/hr</small>
-              </strong>
-              <div className="asset-spark">
-                <Sparkline points={market.history ?? []} color={market.color} />
-              </div>
-            </div>
-            <div className="asset-footer">
-              <Change value={market.changes?.[range]} />
-              <span>{market.coverage} providers</span>
-              <ArrowUpRight size={13} />
-            </div>
-          </div>
-          <button
-            className="asset-info icon-button"
-            aria-label={`${market.name} source information`}
-            onClick={() => info(market)}
-          >
-            <Info size={13} />
-          </button>
-        </article>
-      ))}
+  const [family, setFamily] = useState("All GPUs");
+  const families = ["All GPUs", "Blackwell", "Hopper", "Ada", "Ampere", "Turing"];
+  const rows = markets.filter(m => family === "All GPUs" || m.architecture.includes(family));
+  return <section className="gpu-market-catalog" aria-label="GPU market catalogue">
+    <div className="catalog-filters">
+      <div aria-label="GPU architecture">{families.map(value => <button type="button" key={value} aria-pressed={family === value} onClick={() => setFamily(value)}>{value}</button>)}</div>
+      <span>{rows.length} models</span>
     </div>
-  );
+    <div className="catalog-column-head" aria-hidden="true"><span>GPU model</span><span>Reference / hr</span><span>{range} change</span><span>Providers</span><span>History</span><span /></div>
+    <div className="asset-grid catalog-rows" data-lenis-prevent>
+      {rows.map((market, i) => <article key={market.id} className={`asset-card catalog-row ${market.color} ${selected === market.id ? "active" : ""}`} style={{ animationDelay: `${Math.min(i, 7) * 22}ms` }}>
+        <button type="button" className="asset-click" aria-label={`Select ${market.name}`} aria-pressed={selected === market.id} onClick={() => select(market.id)}>
+          <span className="catalog-identity">
+            <span className="asset-gpu"><Suspense fallback={<span className="gpu-model gpu-fallback" />}><Gpu model={market.id} /></Suspense></span>
+            <span><strong>{market.name}</strong><small>{market.memory} <span>· {market.architecture}</span></small></span>
+          </span>
+          <span className="catalog-rate"><AnimatedNumber value={market.price == null ? "—" : `$${money(market.price, 3)}`} /><small>{market.stale ? (market.price == null ? "Awaiting coverage" : "Last reference") : market.id === "h100-sxm" ? "Benchmark" : "Reference"}</small></span>
+          <span className="catalog-change"><Change value={market.changes?.[range]} /></span>
+          <span className="catalog-coverage"><Dot state={market.stale ? "gold" : "green"} />{market.coverage}<small>sources</small></span>
+          <span className="asset-spark"><Sparkline points={market.history ?? []} color={market.color} /></span>
+          <ArrowUpRight className="catalog-arrow" size={14} />
+        </button>
+        <button type="button" className="asset-info icon-button" aria-label={`${market.name} source information`} onClick={() => info(market)}><Info size={13} /></button>
+      </article>)}
+      {!rows.length && <div className="table-empty">No GPUs match this search. Try another model or architecture.</div>}
+    </div>
+  </section>;
 }
 
 export function ProviderTable({
@@ -242,118 +181,32 @@ export function ProviderTable({
   );
 }
 
-export function Benchmark({
-  market,
-  range,
-  setRange,
-  info,
-  alert,
-}: {
-  market: Market;
-  range: string;
-  setRange: (r: string) => void;
-  info: () => void;
-  alert: () => void;
+export function Benchmark({ market, range, setRange, info, alert }: {
+  market: Market; range: string; setRange: (r: string) => void;
+  info: () => void; alert: () => void;
 }) {
-  const points = (market.history ?? []).filter(
-    (p) =>
-      new Date(p.time).getTime() >
-      Date.now() - Number(range.replace("h", "")) * 3600000,
-  );
-  const enough = points.length > 1;
-  return (
-    <section className="panel benchmark">
-      <div className="panel-heading">
-        <h2>
-          {market.name} rental reference
-          <button
-            className="icon-button"
-            aria-label="Benchmark methodology"
-            onClick={info}
-          >
-            <Info size={12} />
-          </button>
-        </h2>
-        <div className="benchmark-tools">
-          <button className="text-button alert-action" onClick={alert}>
-            <Bell size={12} />
-            Set alert
-          </button>
-          <div className="segmented">
-            {["1h", "6h", "24h"].map((v) => (
-              <button
-                key={v}
-                className={range === v ? "active" : ""}
-                onClick={() => setRange(v)}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-        </div>
+  const [hover, setHover] = useState<number | null>(null);
+  const points = (market.history ?? []).filter(p => new Date(p.time).getTime() > Date.now() - Number(range.replace("h", "")) * 3600000);
+  const selectedPoint = hover == null ? null : points[Math.min(hover, points.length - 1)];
+  return <section className="panel benchmark">
+    <div className="panel-heading">
+      <h2>{market.name} rental reference<button className="icon-button" aria-label="Benchmark methodology" onClick={info}><Info size={12} /></button></h2>
+      <div className="benchmark-tools">
+        <button className="text-button alert-action" onClick={alert}><Bell size={12} />Set alert</button>
+        <div className="segmented">{["1h", "6h", "24h"].map(v => <button key={v} className={range === v ? "active" : ""} onClick={() => { setHover(null); setRange(v); }}>{v}</button>)}</div>
       </div>
-      <div className="benchmark-summary">
-        <strong className="mono">
-          ${money(market.price, 3)}
-          <small>/ GPU-hour</small>
-        </strong>
-        <Change value={market.changes?.[range]} />
-        <span className="benchmark-index mono">
-          INDEX <strong>{money(market.index)}</strong>
-        </span>
-      </div>
-      <div className="benchmark-chart">
-        <div className="chart-rules">
-          <span />
-          <span />
-          <span />
-        </div>
-        <Sparkline points={points} large color={market.color} />
-        {!enough && (
-          <div className="chart-message">
-            <span className="collection-mark" />
-            <div>
-              <strong>History starts here.</strong>
-              <span>
-                New observations appear as providers publish their rates.
-              </span>
-            </div>
-          </div>
-        )}
-        <div className="chart-axis mono">
-          <span>
-            {points[0]
-              ? new Date(points[0].time).toLocaleTimeString("en-GB", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  timeZone: "UTC",
-                })
-              : "COLLECTING"}
-          </span>
-          <span>{enough ? "UTC" : "SOURCE OBSERVATIONS ONLY"}</span>
-          <span>
-            {points.length
-              ? new Date(points[points.length - 1].time).toLocaleTimeString(
-                  "en-GB",
-                  { hour: "2-digit", minute: "2-digit", timeZone: "UTC" },
-                )
-              : "NOW"}
-          </span>
-        </div>
-      </div>
-      <div className="benchmark-footer">
-        <span>
-          <Dot state={market.stale ? "gold" : "green"} />
-          {market.stale ? "Source needs refresh" : "Sources confirmed"} ·{" "}
-          {timeAgo(market.source_updated_at)}
-        </span>
-        <button className="text-button" onClick={info}>
-          View methodology
-          <ArrowUpRight size={12} />
-        </button>
-      </div>
-    </section>
-  );
+    </div>
+    <div className="benchmark-summary">
+      <strong className="mono"><AnimatedNumber value={selectedPoint?.price != null || market.price != null ? `$${money(selectedPoint?.price ?? market.price, 3)}` : "—"} /><small>/ GPU-hour</small></strong>
+      <Change value={market.changes?.[range]} />
+      <span className="benchmark-index mono">INDEX <strong>{money(market.index)}</strong></span>
+    </div>
+    <RentalChart key={market.id} market={market} points={points} hover={hover} setHover={setHover} />
+    <div className="benchmark-footer">
+      <span><Dot state={market.stale ? "gold" : "green"} />{market.stale ? market.price == null ? "More provider coverage needed" : "Source needs refresh" : "Sources confirmed"} · {timeAgo(market.source_updated_at)}</span>
+      <button className="text-button" onClick={info}>View methodology<ArrowUpRight size={12} /></button>
+    </div>
+  </section>;
 }
 
 export function AssetDetail({

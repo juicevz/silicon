@@ -8,19 +8,17 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
-  FileCode2,
   Layers3,
   LockKeyhole,
   Radio,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
   Trophy,
   Wallet,
   X,
 } from "lucide-react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { useData } from "./data";
+import { useData, useConfig } from "./data";
 import { useWallet } from "./wallet";
 import {
   api,
@@ -30,7 +28,6 @@ import {
   type Leaderboard as LeaderData,
   type Market,
 } from "./api";
-import { Header } from "./components/Header";
 import { Dot, Empty, External, Modal } from "./components/ui";
 import {
   AssetCards,
@@ -40,7 +37,8 @@ import {
 } from "./components/MarketViews";
 import Ticket from "./components/Ticket";
 import StrategyTool from "./components/StrategyTool";
-import { LiveContract, PositionRows, usePortfolio } from "./components/Live";
+import { PositionRows, usePortfolio } from "./components/Live";
+import Contracts from "./components/Contracts";
 
 type PriceAlert = {
   id: string;
@@ -81,22 +79,29 @@ function Tutorial({ close }: { close: () => void }) {
   const [step, setStep] = useState(0);
   const steps = [
     {
-      title: "A new way to follow compute.",
-      body: "These cards track what providers charge to rent a GPU. Select one to inspect its rates.",
+      title: "Start with a GPU.",
+      body: "Find a GPU by model or architecture. Move across its chart to inspect recorded prices, and compare the providers below.",
     },
     {
-      title: "Choose a view. Know the risk.",
-      body: "Rise is a call. Fall is a put. The ticket shows your premium, maximum loss and capped payout.",
+      title: "Try a position.",
+      body: "Pick Rise or Fall in the position panel. Move either slider to see the cost and payout update immediately.",
     },
     {
-      title: "Your token opens the market.",
-      body: "Any holding unlocks trades. Above 5,000 tokens, platform trading fees are zero.",
+      title: "Ready when you are.",
+      body: "Market data is open to everyone. A Silicon balance unlocks funded trades. Reopen this guide with the ? button anytime.",
     },
   ];
   return (
-    <aside className="tutorial" aria-label="Terminal introduction">
+    <aside
+      className="tutorial"
+      aria-label="Terminal introduction"
+      data-step={step}
+    >
       <div className="tutorial-top">
-        <span className="eyebrow">WELCOME TO SILICON</span>
+        <span>
+          Welcome to Silicon{" "}
+          <span className="tutorial-count">{step + 1} / 3</span>
+        </span>
         <button
           className="icon-button"
           onClick={close}
@@ -130,146 +135,9 @@ function Tutorial({ close }: { close: () => void }) {
   );
 }
 
-function Contracts({
-  open,
-  notify,
-}: {
-  open: (m: Market) => void;
-  notify: (s: string) => void;
-}) {
-  const { snapshot, protocol, config } = useData();
-  const market = snapshot?.markets[0];
-  if (protocol?.contracts?.length)
-    return (
-      <div className="full-page">
-        <div className="page-intro">
-          <span className="eyebrow">THE ONCHAIN LEDGER</span>
-          <h1>Contracts</h1>
-          <p>Funded series, reserved payouts and your writer capital.</p>
-        </div>
-        {protocol.contracts.map((series) => (
-          <LiveContract key={series.address} series={series} notify={notify} />
-        ))}
-      </div>
-    );
-  return (
-    <div className="full-page">
-      <div className="page-intro">
-        <span className="eyebrow">THE ONCHAIN LEDGER</span>
-        <h1>Contracts</h1>
-        <p>Every series, its collateral and its settlement, in one place.</p>
-      </div>
-      <div className="protocol-stats">
-        <div>
-          <span>Verified collateral</span>
-          <strong className="mono">
-            {money(protocol?.funded ?? 0)}
-            <small> USDG</small>
-          </strong>
-        </div>
-        <div>
-          <span>Committed to payouts</span>
-          <strong className="mono">
-            {money(protocol?.reserved ?? 0)}
-            <small> USDG</small>
-          </strong>
-        </div>
-        <div>
-          <span>Available capacity</span>
-          <strong className="mono">
-            {money(protocol?.available ?? 0)}
-            <small> USDG</small>
-          </strong>
-        </div>
-        <div>
-          <span>Contract status</span>
-          <strong className="gold compact-value">
-            {protocol?.verified ? "Verified" : "Preparing first series"}
-          </strong>
-        </div>
-      </div>
-      <div className="contract-grid">
-        <section className="panel contract-plan">
-          <div className="panel-heading">
-            <h2>H100 rental reference</h2>
-            <span className="mini-label gold">PREPARING</span>
-          </div>
-          <div className="contract-plan-body">
-            <span className="contract-icon">
-              <FileCode2 size={30} />
-            </span>
-            <div>
-              <h3>The first Silicon market.</h3>
-              <p>
-                Capped calls and puts on the five-provider H100 reference.
-                Address, expiry and premiums will appear here when a funded
-                series is deployed.
-              </p>
-            </div>
-          </div>
-          <div className="contract-facts">
-            <div>
-              <span>Underlying</span>
-              <strong>H100 SXM · 80 GB</strong>
-            </div>
-            <div>
-              <span>Settlement currency</span>
-              <strong>USDG</strong>
-            </div>
-            <div>
-              <span>Payout coverage</span>
-              <strong>100% of maximum liability</strong>
-            </div>
-            <div>
-              <span>Current funding</span>
-              <strong>Awaiting deposit</strong>
-            </div>
-          </div>
-          <div className="contract-actions">
-            <button className="button" disabled>
-              <LockKeyhole size={13} />
-              Funding opens with deployment
-            </button>
-            {market && (
-              <button className="text-button" onClick={() => open(market)}>
-                Inspect benchmark
-                <ArrowUpRight size={13} />
-              </button>
-            )}
-          </div>
-        </section>
-        <section className="panel writer-panel">
-          <ShieldCheck size={23} />
-          <h3>Provide the collateral.</h3>
-          <p>
-            Writers deposit USDG before a series opens and collect premiums.
-            Payouts come from that pool, so writer capital can be lost.
-          </p>
-          <ul>
-            <li>Terms are fixed before funds are locked.</li>
-            <li>New positions reserve their maximum payout.</li>
-            <li>Capital returns after claims are accounted for.</li>
-          </ul>
-          <Link className="text-button" to="/docs#collateral">
-            Read the writer mechanics
-            <ArrowUpRight size={12} />
-          </Link>
-        </section>
-      </div>
-      <div className="contract-source">
-        <Dot state="gold" />
-        <span>
-          {config.market_address
-            ? `Configured contract: ${config.market_address}`
-            : "No deployed market is being presented as funded."}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function ActivityView({ compact = false }: { compact?: boolean }) {
-  const { protocol, config } = useData();
+  const { protocol } = useData();
+  const config = useConfig();
   if (protocol?.activity.length)
     return (
       <section className={`panel activity-panel ${compact ? "compact" : ""}`}>
@@ -381,7 +249,7 @@ function Leaderboard() {
   const [period, setPeriod] = useState("7d");
   const [result, setResult] = useState<LeaderData | null>(null);
   const count = result?.rows.length ?? 0;
-  const { config } = useData();
+  const config = useConfig();
   useEffect(() => {
     const controller = new AbortController();
     void api<LeaderData>(`/leaderboard?period=${period}`, {
@@ -614,7 +482,7 @@ export default function Terminal({
     [showSearch, setShowSearch] = useState(false);
   const [tutorial, setTutorial] = useState(() => {
     try {
-      return !localStorage.getItem("silicon:intro");
+      return !localStorage.getItem("silicon:intro:v2");
     } catch {
       return true;
     }
@@ -650,7 +518,7 @@ export default function Terminal({
   }, []);
   const closeTutorial = () => {
     setTutorial(false);
-    remember("silicon:intro", "seen");
+    remember("silicon:intro:v2", "seen");
   };
   const openAlert = () => {
     setAlertPrice(String(market?.price ?? ""));
@@ -682,8 +550,7 @@ export default function Terminal({
     setAlertOpen(false);
   };
   return (
-    <div className="terminal">
-      <Header notify={notify} />
+    <>
       <div className="terminal-status">
         <span>
           <Dot state={connected ? "green" : "gold"} />
@@ -704,7 +571,7 @@ export default function Terminal({
         </span>
         <span className="status-right">
           <Clock3 size={11} />
-          Market data open · trading prepares for launch
+          Market data open · trading not live
         </span>
       </div>
       {tab === "markets" ? (
@@ -713,7 +580,7 @@ export default function Terminal({
             <div className="workspace-toolbar">
               <div>
                 <h1>GPU markets</h1>
-                <span className="muted">The price of an hour.</span>
+                <span className="muted">Rental rates, across providers.</span>
               </div>
               <div className="workspace-tools">
                 {showSearch && (
@@ -788,7 +655,7 @@ export default function Terminal({
             ) : (
               <div className="data-loading">
                 <span className="loading-chip" />
-                <strong>Connecting to compute.</strong>
+                <strong>Loading markets.</strong>
                 <p>Loading provider quotes and network status.</p>
               </div>
             )}
@@ -796,7 +663,7 @@ export default function Terminal({
           {market && <Ticket market={market} notify={notify} />}
         </main>
       ) : tab === "contracts" ? (
-        <Contracts open={setDetail} notify={notify} />
+        <Contracts notify={notify} />
       ) : tab === "strategies" ? (
         <Strategies notify={notify} />
       ) : tab === "leaderboard" ? (
@@ -836,7 +703,9 @@ export default function Terminal({
           SILICON <span className="purple">/</span> COMPUTE MARKETS
         </span>
       </footer>
-      {tutorial && tab === "markets" && <Tutorial close={closeTutorial} />}{" "}
+      {tutorial && market && tab === "markets" && (
+        <Tutorial close={closeTutorial} />
+      )}{" "}
       {detail && (
         <AssetDetail
           market={markets.find((m) => m.id === detail.id) ?? detail}
@@ -910,6 +779,6 @@ export default function Terminal({
           </div>
         </Modal>
       )}
-    </div>
+    </>
   );
 }

@@ -10,7 +10,7 @@ import { api, type Config, type Protocol, type Snapshot } from "./api";
 type State = {
   snapshot: Snapshot | null;
   protocol: Protocol | null;
-  config: Config;
+  config: Config | null;
   connected: boolean;
 };
 const Context = createContext<State | null>(null);
@@ -18,7 +18,7 @@ export function DataRoot({
   config,
   children,
 }: {
-  config: Config;
+  config: Config | null;
   children: ReactNode;
 }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -77,4 +77,11 @@ export function useData() {
   const value = useContext(Context);
   if (!value) throw new Error("Data context missing");
   return value;
+}
+
+/** Only trading routes require configuration before they mount. */
+export function useConfig() {
+  const { config } = useData();
+  if (!config) throw new Error("Terminal configuration is not ready");
+  return config;
 }

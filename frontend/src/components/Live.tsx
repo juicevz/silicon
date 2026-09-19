@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, FileCode2, Loader2, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, money, short, type Portfolio, type Series } from "../api";
-import { useData } from "../data";
+import { useData, useConfig } from "../data";
 import { useWallet } from "../wallet";
 import { External, Modal } from "./ui";
 
@@ -35,7 +35,8 @@ export function PositionRows({
   portfolio: Portfolio;
   notify: (s: string) => void;
 }) {
-  const { config, protocol } = useData();
+  const { protocol } = useData();
+  const config = useConfig();
   const wallet = useWallet();
   const [pending, setPending] = useState<number | null>(null);
   const claim = async (id: number) => {
@@ -109,7 +110,8 @@ export function LiveContract({
   series: Series;
   notify: (s: string) => void;
 }) {
-  const { config, protocol } = useData();
+  const { protocol } = useData();
+  const config = useConfig();
   const wallet = useWallet();
   const { portfolio, error } = usePortfolio();
   const [action, setAction] = useState<"fund" | "withdraw" | null>(null),

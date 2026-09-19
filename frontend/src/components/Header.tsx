@@ -4,14 +4,16 @@ import {
   Loader2,
   LogOut,
   Menu,
+  Plus,
   Wallet,
   X,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Brand } from "./ui";
+import { Brand, Modal } from "./ui";
 import { useWallet } from "../wallet";
 import { short } from "../api";
+import { ThemeToggle } from "./ThemeToggle";
 
 export const TABS = [
   "Markets",
@@ -46,10 +48,14 @@ export function Header({
         <nav className="landing-nav">
           <a href="/#markets">Markets</a>
           <a href="/#how-it-works">How it works</a>
-          <Link to="/docs">
-            Documentation
-            <ArrowUpRight size={12} />
-          </Link>
+          <button
+            className="about-toggle"
+            onClick={() => setMenu(true)}
+            aria-haspopup="dialog"
+            aria-expanded={menu}
+          >
+            About <Plus size={17} />
+          </button>
         </nav>
       ) : (
         <nav className={`terminal-nav ${menu ? "open" : ""}`}>
@@ -70,13 +76,18 @@ export function Header({
         </nav>
       )}
       <div className="header-right">
+        {landing && <ThemeToggle />}
         {!landing && (
           <Link className="header-docs" to="/docs">
             Docs
             <ArrowUpRight size={12} />
           </Link>
         )}
-        {wallet.address ? (
+        {landing ? (
+          <Link className="button primary" to="/terminal">
+            Open terminal <ArrowUpRight size={17} />
+          </Link>
+        ) : wallet.address ? (
           <div className="wallet-menu">
             <button
               className="button wallet-button"
@@ -134,6 +145,34 @@ export function Header({
           </button>
         )}
       </div>
+      {landing && menu && (
+        <div className="site-menu">
+          <Modal
+            title="Explore Silicon"
+            appearance="site-menu"
+            close={() => setMenu(false)}
+            wide
+          >
+            <div className="site-menu-grid">
+              <Link onClick={() => setMenu(false)} to="/terminal">
+                <span>
+                  Markets <ArrowUpRight size={24} />
+                </span>
+              </Link>
+              <Link onClick={() => setMenu(false)} to="/terminal/contracts">
+                <span>
+                  Contracts <ArrowUpRight size={24} />
+                </span>
+              </Link>
+              <Link onClick={() => setMenu(false)} to="/docs">
+                <span>
+                  Documentation <ArrowUpRight size={24} />
+                </span>
+              </Link>
+            </div>
+          </Modal>
+        </div>
+      )}
     </header>
   );
 }
