@@ -11,8 +11,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, money, type Access, type Market, type Quote } from "../api";
 import { useWallet } from "../wallet";
-import { useData } from "../data";
+import { useConfig } from "../data";
 import { Modal } from "./ui";
+import { previewPosition, withScenario } from "../preview";
+import { SmoothRange } from "./SmoothRange";
+import { AnimatedNumber } from "./AnimatedNumber";
+import { PayoffChart } from "./PayoffChart";
 
 export default function Ticket({
   market,
@@ -22,11 +26,13 @@ export default function Ticket({
   notify: (s: string) => void;
 }) {
   const wallet = useWallet();
-  const { config } = useData();
+  const config = useConfig();
   const [side, setSide] = useState<"call" | "put">("call"),
     [size, setSize] = useState(2),
     [move, setMove] = useState(4);
-  const [quote, setQuote] = useState<Quote | null>(null),
+  const [quoted, setQuoted] = useState<{ key: string; value: Quote } | null>(
+      null,
+    ),
     [access, setAccess] = useState<Access | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -56,6 +62,12 @@ export default function Ticket({
       clearInterval(t);
     };
   }, [wallet.address]);
+  const quoteKey = `${market.id}:${side}:${size}:${wallet.address ?? ""}`;
+  const confirmed = quoted?.key === quoteKey ? quoted.value : null;
+  const fee = access?.fee_bps ?? config.fee_bps;
+  const quote = confirmed
+    ? withScenario(confirmed, side, move)
+    : previewPosition(size, move, side, market.price, fee);
   useEffect(() => {
     const controller = new AbortController();
     setBusy(true);
@@ -66,13 +78,14 @@ export default function Ticket({
           market: market.id,
           side,
           premium: size,
-          move_pct: move,
+          move_pct: 0,
           address: wallet.address,
         }),
         signal: controller.signal,
       })
         .then((v) => {
-          setQuote(v);
+          if (!controller.signal.aborted)
+            setQuoted({ key: quoteKey, value: v });
           setError("");
         })
         .catch((e) => {
@@ -86,7 +99,7 @@ export default function Ticket({
       clearTimeout(t);
       controller.abort();
     };
-  }, [market.id, market.price, side, size, move, wallet.address, refresh]);
+  }, [market.id, market.price, side, size, wallet.address, refresh, quoteKey]);
   const connect = async () => {
     try {
       await wallet.connect();
@@ -94,7 +107,6 @@ export default function Ticket({
       notify((e as Error).message);
     }
   };
-  const fee = access?.fee_bps ?? config.fee_bps;
   const execute = async () => {
     if (!review || !wallet.address) return;
     setSending(true);
@@ -194,15 +206,15 @@ export default function Ticket({
           <span className="stable-icon">$</span>
           <strong>USDG</strong>
         </div>
-        <input
+        <SmoothRange
           className="amount-slider"
-          aria-label="Adjust premium in USDG"
-          type="range"
-          min=".1"
-          max="60"
-          step=".1"
+          label="Adjust premium in USDG"
+          min={.1}
+          max={60}
+          step={.1}
           value={Math.min(size, 60)}
-          onChange={(e) => setSize(Number(e.target.value))}
+          display={`${money(Math.min(size, 60))} USDG`}
+          onChange={setSize}
         />
         <div className="slider-labels mono">
           <span>0.1</span>
@@ -218,23 +230,23 @@ export default function Ticket({
             <Info size={12} />
           </span>
         </div>
-        <div className={`ticket-values ${busy ? "updating" : ""}`}>
+        <div className="ticket-values" aria-live="off">
           <div>
             <span>Maximum loss</span>
             <strong className="mono">
-              {money(quote?.max_loss)} <small>USDG</small>
+              <AnimatedNumber value={money(quote?.max_loss)} /> <small>USDG</small>
             </strong>
           </div>
           <div>
             <span>Maximum payout</span>
             <strong className="mono green">
-              {money(quote?.max_payout)} <small>USDG</small>
+              <AnimatedNumber value={money(quote?.max_payout)} /> <small>USDG</small>
             </strong>
           </div>
           <div>
             <span>Breakeven rental price</span>
             <strong className="mono">
-              ${money(quote?.breakeven, 4)}
+              <AnimatedNumber value={`$${money(quote?.breakeven, 4)}`} />
               <small>/hr</small>
             </strong>
           </div>
@@ -243,7 +255,7 @@ export default function Ticket({
               Platform fee <span className="fee-chip">{fee / 100}%</span>
             </span>
             <strong className="mono">
-              {money(quote?.fee, 3)} <small>USDG</small>
+              <AnimatedNumber value={money(quote?.fee, 3)} /> <small>USDG</small>
             </strong>
           </div>
         </div>
@@ -257,27 +269,25 @@ export default function Ticket({
         </button>
         {showPayoff && (
           <div className="payoff-sim">
+            <PayoffChart move={move} cost={Number(quote.cost)} maxPayout={Number(quote.max_payout)} side={side} onMove={setMove} />
             <div className="field-label">
               <label htmlFor="settlement-move">If the reference moves</label>
-              <span className={`mono ${move < 0 ? "red" : "green"}`}>
-                {move > 0 ? "+" : ""}
-                {move}%
-              </span>
             </div>
-            <input
+            <SmoothRange
               id="settlement-move"
-              type="range"
-              min="-15"
-              max="15"
-              step=".5"
+              label="If the reference moves"
+              min={-15}
+              max={15}
+              step={.5}
               value={move}
-              onChange={(e) => setMove(Number(e.target.value))}
+              display={`${move > 0 ? "+" : ""}${move.toFixed(1)}%`}
+              onChange={setMove}
             />
             <div className="simulation-result">
               <div>
                 <span>Contract payout</span>
                 <strong className="mono">
-                  {money(quote?.payout)} <small>USDG</small>
+                  <AnimatedNumber value={money(quote?.payout)} /> <small>USDG</small>
                 </strong>
               </div>
               <div>
@@ -285,8 +295,7 @@ export default function Ticket({
                 <strong
                   className={`mono ${Number(quote?.profit) >= 0 ? "green" : "red"}`}
                 >
-                  {Number(quote?.profit) > 0 ? "+" : ""}
-                  {money(quote?.profit)}
+                  <AnimatedNumber value={`${Number(quote?.profit) > 0 ? "+" : ""}${money(quote?.profit)}`} />
                 </strong>
               </div>
             </div>
