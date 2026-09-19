@@ -1,10 +1,12 @@
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Brand, External } from "./components/ui";
+import Atmosphere from "./components/Atmosphere";
 
 export default function Docs() {
   return (
     <div className="docs">
+      <Atmosphere tone="light" />
       <header className="header">
         <Brand />
         <span className="eyebrow">DOCUMENTATION</span>
@@ -116,9 +118,9 @@ export default function Docs() {
             <p>
               The display index starts at 100 at Silicon’s first observation.
               Each funded series fixes its own starting reference, strike, cap,
-              expiry and methodology hash. A100 and B200 are comparison
+              expiry and methodology hash. The other 15 GPU models are comparison
               references using the median of each provider’s cheapest eligible
-              region. They are not initially tradable.
+              region, with at least three distinct providers. They are not initially tradable.
             </p>
           </section>
           <section id="positions">
