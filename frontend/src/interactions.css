@@ -14,32 +14,6 @@
 .smooth-range input[type="range"]:hover::-webkit-slider-thumb, .smooth-range input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 6px #ef955820; }
 .smooth-range input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--landing-bg, #192329), 0 0 0 5px #ed9860; }
 .smooth-range input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--landing-bg, #192329), 0 0 0 5px #ed9860; }
-.payoff-detail { color: var(--landing-positive, #8dcba6); margin: 25px 0; }
-.payoff-legend { display: flex; align-items: center; gap: 15px; font-size: 11px; color: var(--landing-secondary, var(--secondary)); }
-.payoff-legend > span { display: inline-flex; align-items: center; gap: 6px; }
-.payoff-legend i { display: inline-block; width: 13px; height: 2px; background: var(--landing-positive, #8dcba6); }
-.payoff-legend > span:nth-child(2) i { height: 0; background: none; border-top: 2px dashed #e89a65; }
-.payoff-legend > small { font-size: 10px; margin-left: auto; }
-.payoff-chart { display: block; width: 100%; height: auto; margin-top: 8px; overflow: visible; touch-action: pan-y; }
-.payoff-chart text { font-size: 11px; font-family: inherit; fill: var(--landing-secondary, var(--secondary)); }
-.payoff-grid path { fill: none; stroke: var(--landing-border, #c4ddd423); stroke-width: .65; }
-.payoff-strike { fill: none; stroke: var(--landing-border, #c4ddd43b); stroke-dasharray: 3 5; }
-.payoff-curve { fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
-.payoff-cost { stroke: #d99161; fill: none; stroke-dasharray: 4 4; stroke-width: 1.1; }
-.payoff-breakeven { color: #d99161; }
-.payoff-breakeven path { fill: none; stroke: currentColor; stroke-width: 1; stroke-dasharray: 2 3; opacity: .65; }
-.payoff-breakeven circle { fill: currentColor; }
-.payoff-marker path { fill: none; stroke: #ec9d6770; stroke-dasharray: 3 4; }
-.payoff-marker circle { fill: #ed9359; stroke: var(--landing-calc, #203039); stroke-width: 2; }
-.payoff-marker .payoff-halo { fill: #eea16d20; stroke: none; }
-.payoff-chart .payoff-cap-label { font-size: 10px; }
-.payoff-foot { display: flex; justify-content: space-between; gap: 12px; color: var(--landing-secondary, var(--secondary)); font-size: 10px; }
-.payoff-foot > span:last-child { color: var(--landing-accent, #efb389); }
-.ticket .payoff-detail { margin: 4px 0 22px; }
-.ticket .payoff-legend { gap: 12px; font-size: 10px; }
-.ticket .payoff-foot { font-size: 9px; }
-.ticket .payoff-chart text { font-size: 15px; }
-.ticket .payoff-chart .payoff-cap-label { font-size: 12px; }
 .chart-price-axis { position: absolute; inset: 11% 8px 19% auto; display: flex; flex-direction: column; justify-content: space-between; font-size: 10px; color: var(--muted); pointer-events: none; }
 .chart-price-axis span { background: var(--panel); border-radius: 3px; padding: 3px 5px; }
 .terminal-placeholder { max-width: 1500px; padding: 60px 4vw; margin: auto; }

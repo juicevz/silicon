@@ -206,16 +206,6 @@
 }
 .gpu-thumbnail img[data-loaded="true"] { animation: gpu-thumb-in .38s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes gpu-thumb-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-.payoff-current-guide { stroke: currentColor; stroke-dasharray: 3 4; stroke-width: .8; opacity: .35; }
-.payoff-value-label rect { fill: #273b3edb; stroke: #87a59e66; stroke-width: .6; }
-.payoff-chart .payoff-value-label text { fill: #e1eade; font-size: 13px; font-family: inherit; }
-.payoff-net-detail { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11px; padding: 13px 0 3px; margin-top: 10px; border-top: 1px solid #93afa631; color: #adc3c2; }
-.payoff-net-detail strong { font-weight: 500; font-size: 13px; color: #eda09a; }
-.payoff-net-detail strong[data-positive="true"] { color: #a3d1b1; }
-.payoff-net-detail small { font-size: 10px; opacity: .75; }
-.landing .payoff-net-detail { color: var(--landing-secondary); border-color: var(--landing-border); }
-.landing .payoff-net-detail strong { color: #b34039; }
-.landing .payoff-net-detail strong[data-positive="true"] { color: var(--landing-positive); }
 .rental-history-svg .chart-gridline text { display: none; }
 .history-y-labels { position: absolute; right: 0; top: 8%; bottom: 17%; display: flex; flex-direction: column; justify-content: space-between; color: #a5b9bc; font-size: 10px; font-variant-numeric: tabular-nums; pointer-events: none; }
 .history-x-labels { position: absolute; left: 1.875%; right: 11.875%; bottom: 3%; display: flex; justify-content: space-between; color: #a5b9bc; font-size: 10px; font-variant-numeric: tabular-nums; pointer-events: none; }
