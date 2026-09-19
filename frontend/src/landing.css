@@ -365,9 +365,6 @@ html[data-silicon-theme="dark"] .boot-light { background: #111917; color: #eeeee
 .landing .landing-calculator .range-value { font-size: 15px; }
 .landing .landing-results { margin-top: 24px; }
 .landing .landing-results strong { display: flex; align-items: baseline; gap: 7px; }
-.landing .payoff-legend, .landing .payoff-foot { font-size: 12px; }
-.landing .payoff-chart text { font-size: 12px; }
-.landing .payoff-chart .payoff-cap-label { font-size: 11px; }
 @media (prefers-reduced-motion: no-preference) {
   .landing.motion-ready [data-reveal] { transition-duration: .82s; }
   .landing.motion-ready [data-reveal]:not(.is-visible) { filter: blur(4px); transform: translateY(26px); }
@@ -414,9 +411,6 @@ html[data-silicon-theme="dark"] .boot-light { background: #111917; color: #eeeee
   .landing .compute-explainer { padding-block: 38px 25px; }
   .landing .position-section { grid-template-columns: 1fr; padding: 70px 22px; gap: 30px; }
   .landing .landing-calculator { padding: 21px 17px; }
-  .landing .payoff-legend, .landing .payoff-foot { font-size: 10px; }
-  .landing .payoff-chart text { font-size: 16px; }
-  .landing .payoff-chart .payoff-cap-label { font-size: 13px; }
   .landing .landing-results strong { font-size: 28px; gap: 5px; }
   .landing .landing-results small { font-size: 11px; }
 }
