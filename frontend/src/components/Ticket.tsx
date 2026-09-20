@@ -64,8 +64,18 @@ export default function Ticket({
   }, [wallet.address]);
   const quoteKey = `${market.id}:${side}:${size}:${wallet.address ?? ""}`;
   const confirmed = quoted?.key === quoteKey ? quoted.value : null;
+  const [now, setNow] = useState(() => Date.now() / 1000);
+  const deadline = review?.deadline ?? (confirmed?.indicative ? null : confirmed?.deadline);
+  useEffect(() => {
+    if (!deadline) return;
+    setNow(Date.now() / 1000);
+    const timer = setInterval(() => setNow(Date.now() / 1000), 1000);
+    return () => clearInterval(timer);
+  }, [deadline]);
+  useEffect(() => { setReview(null); }, [quoteKey]);
+  const fresh = confirmed && (confirmed.indicative || (confirmed.deadline != null && confirmed.deadline > now));
   const fee = access?.fee_bps ?? config.fee_bps;
-  const quote = confirmed
+  const quote = fresh
     ? withScenario(confirmed, side, move)
     : previewPosition(size, move, side, market.price, fee);
   useEffect(() => {
@@ -86,10 +96,13 @@ export default function Ticket({
         .then((v) => {
           if (!controller.signal.aborted)
             setQuoted({ key: quoteKey, value: v });
-          setError("");
+          if (!controller.signal.aborted) setError("");
         })
         .catch((e) => {
-          if (!controller.signal.aborted) setError((e as Error).message);
+          if (!controller.signal.aborted) {
+            setQuoted(null);
+            setError((e as Error).message);
+          }
         })
         .finally(() => {
           if (!controller.signal.aborted) setBusy(false);
@@ -404,15 +417,15 @@ export default function Ticket({
             </div>
             <p>
               Settlement uses Silicon’s publisher and a one-hour challenge
-              window. No return is guaranteed. This action may request an exact
-              USDG approval followed by the trade.
+              window. Your wallet may request an exact USDG approval before the
+              position transaction. ETH covers network fees.
             </p>
             <button
               className="button primary full-width"
-              disabled={sending}
+              disabled={sending || !review.deadline || review.deadline <= now}
               onClick={() => void execute()}
             >
-              {sending ? "Waiting for wallet…" : "Confirm position"}
+              {sending ? "Waiting for wallet…" : !review.deadline || review.deadline <= now ? "Quote expired. Review a new quote." : "Confirm position"}
             </button>
           </div>
         </Modal>
