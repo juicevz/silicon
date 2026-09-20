@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1200, initial-scale=1" />
+    <title>Silicon share preview</title>
+    <style>
+      @font-face {
+        font-family: "Space Grotesk";
+        font-style: normal;
+        font-weight: 300 700;
+        font-display: block;
+        src: url("../node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2") format("woff2");
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #0d1a1e;
+      }
+
+      .canvas {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      .gradient {
+        position: absolute;
+        inset: -100px;
+        z-index: -2;
+        background:
+          radial-gradient(circle at 85% 15%, rgb(201 117 70 / 45%), transparent 50%),
+          radial-gradient(circle at 95% 85%, rgb(39 84 103 / 90%), transparent 60%),
+          radial-gradient(circle at 10% 90%, rgb(56 107 98 / 70%), transparent 55%),
+          linear-gradient(135deg, #0d1a1e, #0a1417);
+        filter: blur(60px);
+      }
+
+      .grain {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        opacity: 0.008;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      }
+
+      .lockup {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 44px;
+        width: 58%;
+      }
+
+      .logo {
+        flex-shrink: 0;
+        width: 124px;
+        height: 124px;
+      }
+
+      .wordmark {
+        padding-top: 12px;
+        color: #f6f3ed;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 150px;
+        font-weight: 650;
+        letter-spacing: -0.055em;
+        line-height: 1;
+      }
+
+      .dot { color: #f16a35; }
+    </style>
+  </head>
+  <body>
+    <main class="canvas" aria-label="Silicon logo on a teal, blue and copper gradient">
+      <div class="gradient" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+      <div class="lockup">
+        <img class="logo" src="../public/silicon.svg" alt="" width="124" height="124" />
+        <div class="wordmark">silicon<span class="dot">.</span></div>
+      </div>
+    </main>
+  </body>
+</html>
