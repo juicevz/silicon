@@ -37,9 +37,19 @@ class Chain:
             )
             response.raise_for_status()
             data = response.json()
-            if "error" in data:
-                raise ValueError("RPC rejected the request")
+            if "error" in data or "result" not in data:
+                if "revert" in str(data.get("error", {}).get("message", "")).lower():
+                    raise ValueError(
+                        "The contract rejected this action. Refresh its state and review again."
+                    )
+                raise RuntimeError(
+                    "Robinhood RPC is temporarily unable to complete the request"
+                )
             return data["result"]
+
+    async def verify_chain(self) -> None:
+        if int(await self.rpc("eth_chainId", []), 16) != self.settings.chain_id:
+            raise ValueError("Robinhood Chain mismatch")
 
     async def call(
         self,
@@ -134,3 +144,6 @@ class Chain:
         }
         self._cache[key] = (time.monotonic(), result)
         return result
+
+    def invalidate_access(self, address: str) -> None:
+        self._cache.pop(address.lower(), None)

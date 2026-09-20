@@ -37,6 +37,7 @@ class ProtocolReader:
         )
         self.positions: dict[int, dict[str, Any]] = {}
         self.finalized_at: int | None = None
+        self._lock = asyncio.Lock()
 
     async def read(
         self,
@@ -64,9 +65,14 @@ class ProtocolReader:
         return results
 
     async def poll(self) -> None:
+        async with self._lock:
+            await self._poll()
+
+    async def _poll(self) -> None:
         if not self.address:
             return
         try:
+            await self.chain.poll()
             if not self.chain.network.connected:
                 raise ValueError("chain unavailable")
             identity = await self.batch(
@@ -135,7 +141,7 @@ class ProtocolReader:
             )
             series = Series(
                 address=self.address,
-                asset=identity["asset"],
+                asset="h100-sxm",
                 open_at=state["openAt"],
                 expiry=state["expiry"],
                 base_price=state["baseRentalPrice"] / 1e8,
@@ -163,14 +169,24 @@ class ProtocolReader:
                 available=series.available,
                 status=phase,
                 token_configured=True,
+                funding_enabled=config.trading_enabled
+                and phase == "funding"
+                and not state["paused"],
                 contracts=[series],
+                activity=self.snapshot.activity,
                 checked_at=now(),
             )
-            await self.index()
         except Exception:
             # Old contract data may remain visible but never executable.
             self.snapshot.verified = False
             self.snapshot.status = "verification_unavailable"
+            self.snapshot.index_synced = False
+            self.snapshot.checked_at = now()
+            return
+        try:
+            await self.index()
+        except Exception:
+            self.snapshot.index_synced = False
 
     async def index(self) -> None:
         start = self.chain.settings.market_start_block
@@ -316,16 +332,20 @@ class ProtocolReader:
                 series.phase in ("funding", "settled", "cancelled")
                 and Decimal(series.total_shares) > 0
             ):
-                result.withdrawable = str(
-                    Decimal(series.available)
-                    * Decimal(result.writer_shares)
-                    / Decimal(series.total_shares)
+                result.withdrawable = stable(
+                    int(
+                        Decimal(series.available)
+                        * 1_000_000
+                        * Decimal(result.writer_shares)
+                        / Decimal(series.total_shares)
+                    )
                 )
         return result
 
     async def quote(self, request: QuoteRequest) -> Quote | None:
         if (
-            not self.snapshot.verified
+            not self.chain.settings.trading_enabled
+            or not self.snapshot.verified
             or not self.snapshot.contracts
             or request.market != "h100-sxm"
             or not request.address
@@ -355,7 +375,7 @@ class ProtocolReader:
             ["address", "bool", "uint256"],
             [request.address, request.side == "call", units],
         )
-        if units < 1000 or Decimal(series.available) * 1_000_000 < max(
+        if not 1000 <= units <= 10**12 or Decimal(series.available) * 1_000_000 < max(
             cap, premium + fee
         ):
             return None

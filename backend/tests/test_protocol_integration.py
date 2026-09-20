@@ -7,6 +7,7 @@ import subprocess
 import time
 from pathlib import Path
 from types import SimpleNamespace
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -18,11 +19,12 @@ from app.config import Settings
 from app.models import QuoteRequest
 from app.protocol import ProtocolReader
 from app.store import Store
+from app.transactions import Transactions
 
 
 @pytest.mark.asyncio
 async def test_funded_series_reader_quote_portfolio_and_leaderboard(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, api_module
 ):
     root = Path(__file__).resolve().parents[2]
     artifact = root / "contracts/out/SiliconSeries.sol/SiliconSeries.json"
@@ -125,6 +127,60 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
             ],
         )
         address = receipt["contractAddress"]
+        config = Settings(
+            _env_file=None,
+            trading_enabled=True,
+            data_dir=tmp_path,
+            rpc_url=url,
+            usdg_address=usd,
+            token_address=token,
+            market_address=address,
+            market_start_block=int(receipt["blockNumber"], 16),
+        )
+        store = Store(tmp_path)
+        chain = Chain(config)
+        reader = ProtocolReader(chain, store)
+        clock = SimpleNamespace(
+            time=lambda: int(
+                rpc("eth_getBlockByNumber", ["latest", False])["timestamp"], 16
+            )
+        )
+        monkeypatch.setattr("app.protocol.time", clock)
+        monkeypatch.setattr("app.transactions.time", clock)
+        monkeypatch.setattr(api_module, "config", config)
+        monkeypatch.setattr(api_module, "chain", chain)
+        monkeypatch.setattr(api_module, "reader", reader)
+        monkeypatch.setattr(api_module, "transactions", Transactions(chain, reader))
+        market = api_module.data.markets["h100-sxm"]
+        market.stale = False
+        market.source_updated_at = datetime.now(UTC).isoformat()
+
+        async def review(body):
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=api_module.app),
+                base_url="http://test",
+            ) as api:
+                return await api.post("/api/v1/transactions/review", json=body)
+
+        async def execute(wallet, action, **kwargs):
+            response = await review({"wallet": wallet, "action": action, **kwargs})
+            assert response.status_code == 200, response.text
+            reviewed = response.json()
+            assert reviewed["simulated"] and reviewed["chain_id"] == 4663
+            assert reviewed["value"] == "0x0"
+            receipt = tx(wallet, reviewed["to"], reviewed["data"])
+            rpc("anvil_mine", [2])
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=api_module.app),
+                base_url="http://test",
+            ) as api:
+                status = await api.get(
+                    "/api/v1/transactions/" + receipt["transactionHash"]
+                )
+            assert status.status_code == 200 and status.json()["confirmed"]
+            assert not status.json()["failed"]
+            return reviewed
+
         for wallet, token_amount, stable_amount in [
             (writer, 1, 300_000_000),
             (buyer, 5000 * 10**18 + 1, 100_000_000),
@@ -143,14 +199,11 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
                 ["address", "uint256"],
                 [wallet, stable_amount],
             )
-            send(
-                wallet,
-                usd,
-                "approve(address,uint256)",
-                ["address", "uint256"],
-                [address, stable_amount],
-            )
-        send(writer, address, "fund(uint256)", ["uint256"], [300_000_000])
+        await execute(writer, "approve", amount_raw="300000000")
+        await execute(writer, "fund", amount_raw="300000000")
+        await reader.poll()
+        assert reader.snapshot.funding_enabled
+        assert reader.snapshot.contracts[0].asset == "h100-sxm"
         rpc("evm_setNextBlockTimestamp", [opening])
         rpc("evm_mine", [])
         send(
@@ -160,34 +213,16 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
             ["uint256", "uint64", "uint256", "uint256", "uint64"],
             [100_000_000, opening, 2_000_000, 2_000_000, opening + 600],
         )
-        send(
+        await execute(buyer, "approve", amount_raw="2000000")
+        await execute(
             buyer,
-            address,
-            "buy(bool,uint256,uint256,uint256)",
-            ["bool", "uint256", "uint256", "uint256"],
-            [True, 1_000_000, 2_000_000, opening + 60],
+            "buy",
+            amount_raw="1000000",
+            max_total_raw="2000000",
+            is_call=True,
+            deadline=clock.time() + 60,
         )
         rpc("anvil_mine", [32])
-        config = Settings(
-            _env_file=None,
-            data_dir=tmp_path,
-            rpc_url=url,
-            usdg_address=usd,
-            token_address=token,
-            market_address=address,
-            market_start_block=int(receipt["blockNumber"], 16),
-        )
-        store = Store(tmp_path)
-        chain = Chain(config)
-        reader = ProtocolReader(chain, store)
-        monkeypatch.setattr(
-            "app.protocol.time",
-            SimpleNamespace(
-                time=lambda: int(
-                    rpc("eth_getBlockByNumber", ["latest", False])["timestamp"], 16
-                )
-            ),
-        )
         await chain.poll()
         await reader.poll()
         assert reader.snapshot.verified
@@ -231,11 +266,22 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
             ["address", "uint256"],
             [writer, 5000 * 10**18 + 1],
         )
-        send(buyer, address, "claim(uint256)", ["uint256"], [0])
+        config.trading_enabled = False
+        market.stale = True
+        wrong_owner = await review(
+            {"wallet": writer, "action": "claim", "position_id": 0}
+        )
+        assert wrong_owner.status_code == 409
+        assert "does not belong" in wrong_owner.json()["detail"]
+        await execute(buyer, "claim", position_id=0)
+        await execute(writer, "withdraw", amount_raw="300000000")
         rpc("anvil_mine", [32])
         await chain.poll()
         await reader.poll()
         assert (await reader.portfolio(buyer)).positions[0].claimed
+        assert reader.snapshot.funded == "0"
+        assert (await chain.access(buyer)).usdg == "102"
+        assert (await chain.access(writer)).usdg == "298"
         store.close()
     finally:
         client.close()
