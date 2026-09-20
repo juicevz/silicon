@@ -21,17 +21,32 @@ from .models import (
     Quote,
     QuoteRequest,
     Snapshot,
+    TransactionRequest,
+    ReviewedTransaction,
 )
 from .protocol import ProtocolReader
 from .pricing import preview
 from .store import Store, now
+from .transactions import Transactions
 
 config = settings()
 store = Store(config.data_dir)
 data = MarketData(config, store)
 chain = Chain(config)
 reader = ProtocolReader(chain, store)
-rate_limits: dict[str, deque[float]] = defaultdict(deque)
+transactions = Transactions(chain, reader)
+rate_limits: dict[tuple[str, str], deque[float]] = defaultdict(deque)
+
+
+def require_fresh_benchmark() -> None:
+    market = data.markets["h100-sxm"]
+    if (
+        market.stale
+        or not -300 <= age(market.source_updated_at) <= config.source_stale_seconds
+    ):
+        raise HTTPException(
+            409, "The rental benchmark is stale. Trading is unavailable."
+        )
 
 
 def execution_ready() -> bool:
@@ -40,13 +55,14 @@ def execution_ready() -> bool:
     series = reader.snapshot.contracts[0]
     market = data.markets["h100-sxm"]
     return bool(
-        config.token_address
+        config.trading_enabled
+        and config.token_address
         and series.phase == "open"
         and not series.paused
         and series.quote_valid_until > time()
         and float(series.available) > 0
         and not market.stale
-        and age(market.source_updated_at) <= config.source_stale_seconds
+        and -300 <= age(market.source_updated_at) <= config.source_stale_seconds
     )
 
 
@@ -87,19 +103,31 @@ async def security(request: Request, call_next):
     if (
         request.url.path.startswith("/api/v1/access")
         or request.url.path == "/api/v1/quote"
+        or request.url.path.startswith("/api/v1/transactions")
     ):
-        key = request.client.host if request.client else "unknown"
+        host = request.client.host if request.client else "unknown"
+        transaction = request.url.path.startswith("/api/v1/transactions")
+        group, limit = (
+            ("confirmation", 180)
+            if transaction and request.method == "GET"
+            else ("transaction", 30)
+            if transaction
+            else ("quotes", 60)
+        )
+        key = (host, group)
         at = monotonic()
         if len(rate_limits) > 10000:
             rate_limits.clear()
         bucket = rate_limits[key]
         while bucket and bucket[0] < at - 60:
             bucket.popleft()
-        if len(bucket) >= 60:
+        if len(bucket) >= limit:
             from fastapi.responses import JSONResponse
 
             return JSONResponse(
-                {"detail": "Too many requests. Please wait a moment."}, status_code=429
+                {"detail": "Too many requests. Please wait a moment."},
+                status_code=429,
+                headers={"Retry-After": str(max(1, int(61 - (at - bucket[0]))))},
             )
         bucket.append(at)
     response = await call_next(request)
@@ -122,6 +150,7 @@ def public_config():
         token_address=config.token_address or None,
         market_address=config.market_address or None,
         usdg_address=config.usdg_address,
+        dev_wallet_address=config.dev_wallet_address or None,
         fee_bps=config.fee_bps,
         trading_enabled=execution_ready(),
     )
@@ -206,7 +235,7 @@ async def quote(request: QuoteRequest):
             if (
                 live
                 and not market.stale
-                and age(market.source_updated_at) <= config.source_stale_seconds
+                and -300 <= age(market.source_updated_at) <= config.source_stale_seconds
             ):
                 return live
         except Exception:
@@ -239,6 +268,32 @@ async def portfolio(address: str):
 @app.get("/api/v1/leaderboard", response_model=Leaderboard)
 def leaderboard(period: Literal["24h", "7d", "30d"] = "7d"):
     return reader.leaderboard(period)
+
+
+@app.post("/api/v1/transactions/review", response_model=ReviewedTransaction)
+async def review_transaction(request: TransactionRequest):
+    if request.action == "buy":
+        require_fresh_benchmark()
+    try:
+        return await transactions.review(request)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            503, "Robinhood transaction review is temporarily unavailable"
+        ) from exc
+
+
+@app.get("/api/v1/transactions/{signature}")
+async def transaction_status(signature: str):
+    try:
+        return await transactions.status(signature)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            503, "Robinhood confirmation is temporarily unavailable"
+        ) from exc
 
 
 @app.get("/api/v1/stream")
