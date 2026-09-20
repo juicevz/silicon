@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from "react";
 import { ArrowUpRight, ChevronRight, Copy, FileCode2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useData, useConfig } from "../data";
-import { money, short, type Series } from "../api";
+import { money, short, explorer, type Series } from "../api";
 import { External, Modal } from "./ui";
 import { LiveContract } from "./Live";
 const Gpu = lazy(() => import("./Gpu"));
@@ -29,10 +29,16 @@ const assets = [
 export default function Contracts({ notify }: { notify: (s: string) => void }) {
   const { protocol } = useData();
   const config = useConfig();
-  const [selected, setSelected] = useState<{
+  const [selection, setSelected] = useState<{
     asset: (typeof assets)[number];
     series?: Series;
   } | null>(null);
+  const selected = selection && {
+    ...selection,
+    series: protocol?.contracts.find((series) => selection.series
+      ? series.address === selection.series.address
+      : series.asset === selection.asset.id) ?? selection.series,
+  };
   const [view, setView] = useState("Overview");
   const entries = assets.flatMap<{
     asset: (typeof assets)[number];
@@ -55,7 +61,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
         : "Tracking only");
   const address = selected ? addressFor(selected) : null;
   const events =
-    address && address.toLowerCase() === config.market_address?.toLowerCase()
+    address && address === config.market_address
       ? (protocol?.activity ?? [])
       : [];
   const copy = async (value: string) => {
@@ -121,7 +127,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
               <span>
                 {addressFor(entry) ? (
                   <External
-                    href={`${config.explorer_url}/address/${addressFor(entry)}`}
+                    href={explorer(config, "address", addressFor(entry)!)}
                   >
                     {short(addressFor(entry)!)}
                   </External>
@@ -139,10 +145,14 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
       <section className="token-contracts">
         <h2>Platform contracts</h2>
         <div>
+          <span>Series contract</span>
+          {config.market_address ? <External href={explorer(config, "address", config.market_address)}>{short(config.market_address)}</External> : <span className="muted">Awaiting deployment</span>}
+        </div>
+        <div>
           <span>Silicon token</span>
           {config.token_address ? (
             <External
-              href={`${config.explorer_url}/address/${config.token_address}`}
+              href={explorer(config, "address", config.token_address)}
             >
               {short(config.token_address)}
             </External>
@@ -153,7 +163,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
         <div>
           <span>USDG · settlement asset</span>
           <External
-            href={`${config.explorer_url}/address/${config.usdg_address}`}
+            href={explorer(config, "address", config.usdg_address)}
           >
             {short(config.usdg_address)}
           </External>
@@ -206,7 +216,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
                         <Copy size={16} />
                       </button>
                       <External
-                        href={`${config.explorer_url}/address/${address}`}
+                        href={explorer(config, "address", address!)}
                       >
                         Explorer
                       </External>
@@ -277,7 +287,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
                       <div key={`${e.tx}:${e.log_index}`}>
                         <span>{e.kind}</span>
                         <span>{e.amount ? `${money(e.amount)} USDG` : ""}</span>
-                        <External href={`${config.explorer_url}/tx/${e.tx}`}>
+                        <External href={explorer(config, "tx", e.tx)}>
                           {short(e.tx)}
                         </External>
                       </div>

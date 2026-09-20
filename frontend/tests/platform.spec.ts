@@ -31,6 +31,7 @@ test("public landing, interactive hardware and wallet picker", async ({
     page.getByText("Select your wallet", { exact: true }),
   ).toBeVisible({ timeout: 30000 });
   await expect(page.getByText("MetaMask", { exact: true })).toBeVisible();
+  await expect(page.getByText("Phantom", { exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

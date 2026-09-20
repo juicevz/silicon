@@ -22,7 +22,7 @@ import { useData, useConfig } from "./data";
 import { useWallet } from "./wallet";
 import {
   api,
-  money,
+  explorer, money,
   short,
   type Access,
   type Leaderboard as LeaderData,
@@ -161,7 +161,7 @@ function ActivityView({ compact = false }: { compact?: boolean }) {
               <span className="mono">
                 {event.amount != null ? `${money(event.amount)} USDG` : "—"}
               </span>
-              <External href={`${config.explorer_url}/tx/${event.tx}`}>
+              <External href={explorer(config, "tx", event.tx)}>
                 Tx
               </External>
             </div>
@@ -301,7 +301,7 @@ function Leaderboard() {
                   <td>{i + 1}</td>
                   <td>
                     <External
-                      href={`${config.explorer_url}/address/${row.wallet}`}
+                      href={explorer(config, "address", row.wallet)}
                     >
                       {short(row.wallet)}
                     </External>
@@ -571,7 +571,7 @@ export default function Terminal({
         </span>
         <span className="status-right">
           <Clock3 size={11} />
-          Market data open · trading not live
+          Robinhood Chain · {snapshot?.trading_enabled ? "trading open" : "market data open"}
         </span>
       </div>
       {tab === "markets" ? (
@@ -689,7 +689,7 @@ export default function Terminal({
         <span className="mono">
           {snapshot?.network.block
             ? `Block ${snapshot.network.block.toLocaleString()}`
-            : "Awaiting block"}
+            : "Awaiting slot"}
         </span>
         <span className="mono">
           {snapshot?.network.latency_ms != null

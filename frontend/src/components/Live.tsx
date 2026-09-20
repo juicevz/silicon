@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, FileCode2, Loader2, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
-import { api, money, short, type Portfolio, type Series } from "../api";
+import { api, money, short, explorer, type Portfolio, type Series } from "../api";
 import { useData, useConfig } from "../data";
 import { useWallet } from "../wallet";
 import { External, Modal } from "./ui";
@@ -9,23 +9,24 @@ import { External, Modal } from "./ui";
 export function usePortfolio() {
   const wallet = useWallet();
   const { protocol } = useData();
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null),
+  const [result, setResult] = useState<{ wallet: string; value: Portfolio } | null>(null),
     [error, setError] = useState("");
   useEffect(() => {
-    setPortfolio(null);
     setError("");
     if (!wallet.address) return;
     const controller = new AbortController();
     void api<Portfolio>(`/portfolio/${wallet.address}`, {
       signal: controller.signal,
     })
-      .then(setPortfolio)
+      .then((value) => {
+        if (!controller.signal.aborted) setResult({ wallet: wallet.address!, value });
+      })
       .catch((e) => {
         if (!controller.signal.aborted) setError((e as Error).message);
       });
     return () => controller.abort();
   }, [wallet.address, protocol?.checked_at]);
-  return { portfolio, error };
+  return { portfolio: result?.wallet === wallet.address ? result.value : null, error };
 }
 
 export function PositionRows({
@@ -91,7 +92,7 @@ export function PositionRows({
           ) : (
             <span className="gold">Open</span>
           )}
-          <External href={`${config.explorer_url}/tx/${p.tx}`}>Tx</External>
+          <External href={explorer(config, p.tx ? "tx" : "address", p.tx || config.market_address || "")}>View</External>
         </div>
       ))}
       {!portfolio.index_synced && (
@@ -137,10 +138,7 @@ export function LiveContract({
     }
     setPending(true);
     try {
-      const [{ seriesAction }, { parseUnits }] = await Promise.all([
-        import("../transactions"),
-        import("viem"),
-      ]);
+      const { seriesAction, parseUnits } = await import("../transactions");
       await seriesAction(
         await wallet.provider(),
         wallet.address,
@@ -178,7 +176,7 @@ export function LiveContract({
         <div className="contract-facts">
           <div>
             <span>Contract</span>
-            <External href={`${config.explorer_url}/address/${series.address}`}>
+            <External href={explorer(config, "address", series.address)}>
               {short(series.address)}
             </External>
           </div>
@@ -219,11 +217,11 @@ export function LiveContract({
           {series.phase === "funding" ? (
             <button
               className="button primary"
-              disabled={!protocol?.verified}
+              disabled={!protocol?.verified || !protocol.funding_enabled}
               onClick={() => void open("fund")}
             >
               <Wallet size={13} />
-              Provide USDG
+              {protocol?.funding_enabled ? "Provide USDG" : "Funding unavailable"}
             </button>
           ) : (
             <Link className="button" to="/terminal?asset=h100-sxm">
