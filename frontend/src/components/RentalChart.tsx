@@ -14,7 +14,7 @@ export function RentalChart({ market, points, hover, setHover }: {
   const mode = view ?? (points.length > 1 ? "history" : "providers");
   const unique = new Map<string, NonNullable<Market["providers"]>[number]>();
   for (const row of [...(market.providers ?? [])].sort((a, b) => a.price - b.price)) {
-    if (!unique.has(row.id)) unique.set(row.id, row);
+    if (!unique.has(row.id) || (row.included && !unique.get(row.id)!.included)) unique.set(row.id, row);
   }
   const providers = [...unique.values()];
   const historyValues = points.map(p => p.price);
@@ -82,7 +82,7 @@ export function RentalChart({ market, points, hover, setHover }: {
           <span>{p.provider}</span><div><i style={{ width: `${Math.max(1, p.price / Math.max(...ranked.map(r => r.price)) * 100)}%` }} data-included={p.included} /></div><strong>${money(p.price, 3)}</strong>
         </div>)}
         {!ranked.length && <div className="history-collecting">Waiting for eligible provider quotes.</div>}
-        {ranked.length > 0 && <div className="provider-plot-legend"><i />Included listing <span>{providers.length > 6 ? `6 of ${providers.length} providers shown` : "Lowest eligible rate per provider"}</span></div>}
+        {ranked.length > 0 && <div className="provider-plot-legend"><i />Included listing <span>{providers.length > 6 ? `6 of ${providers.length} providers shown` : market.id === "h100-sxm" ? "Reference listing where available" : "Lowest eligible rate per provider"}</span></div>}
       </div>}
     </div>
     <div className="chart-statistics">
