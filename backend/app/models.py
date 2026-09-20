@@ -75,6 +75,7 @@ class PublicConfig(BaseModel):
     fee_bps: int
     fee_free_above: str = "5000"
     trading_enabled: bool
+    dev_wallet_address: str | None = None
 
 
 class Access(BaseModel):
@@ -193,6 +194,7 @@ class Leaderboard(BaseModel):
 class Protocol(BaseModel):
     address: str | None = None
     verified: bool = False
+    funding_enabled: bool = False
     funded: str = "0"
     reserved: str = "0"
     available: str = "0"
@@ -203,3 +205,24 @@ class Protocol(BaseModel):
     checked_at: str | None = None
     index_synced: bool = False
     indexed_block: int | None = None
+
+
+class TransactionRequest(BaseModel):
+    action: Literal["approve", "buy", "fund", "withdraw", "claim"]
+    wallet: str
+    amount_raw: str = Field(default="0", pattern=r"^[0-9]{1,78}$")
+    max_total_raw: str = Field(default="0", pattern=r"^[0-9]{1,78}$")
+    position_id: int | None = Field(default=None, ge=0, le=2**53 - 1)
+    is_call: bool = True
+    deadline: int | None = Field(default=None, ge=0, le=2**53 - 1)
+
+
+class ReviewedTransaction(BaseModel):
+    chain_id: int
+    wallet: str
+    action: str
+    to: str
+    data: str
+    value: str = "0x0"
+    simulated: bool = True
+    expires_at: int

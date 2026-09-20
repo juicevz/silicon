@@ -208,6 +208,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/transactions/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Transaction */
+        post: operations["review_transaction_api_v1_transactions_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transactions/{signature}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transaction Status */
+        get: operations["transaction_status_api_v1_transactions__signature__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stream": {
         parameters: {
             query?: never;
@@ -443,6 +477,11 @@ export interface components {
              */
             verified: boolean;
             /**
+             * Funding Enabled
+             * @default false
+             */
+            funding_enabled: boolean;
+            /**
              * Funded
              * @default 0
              */
@@ -528,6 +567,8 @@ export interface components {
             fee_free_above: string;
             /** Trading Enabled */
             trading_enabled: boolean;
+            /** Dev Wallet Address */
+            dev_wallet_address?: string | null;
         };
         /** Quote */
         Quote: {
@@ -599,6 +640,31 @@ export interface components {
             move_pct: number | string;
             /** Address */
             address?: string | null;
+        };
+        /** ReviewedTransaction */
+        ReviewedTransaction: {
+            /** Chain Id */
+            chain_id: number;
+            /** Wallet */
+            wallet: string;
+            /** Action */
+            action: string;
+            /** To */
+            to: string;
+            /** Data */
+            data: string;
+            /**
+             * Value
+             * @default 0x0
+             */
+            value: string;
+            /**
+             * Simulated
+             * @default true
+             */
+            simulated: boolean;
+            /** Expires At */
+            expires_at: number;
         };
         /** Series */
         Series: {
@@ -691,6 +757,35 @@ export interface components {
             position_id?: number | null;
             /** Amount */
             amount?: string | null;
+        };
+        /** TransactionRequest */
+        TransactionRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "approve" | "buy" | "fund" | "withdraw" | "claim";
+            /** Wallet */
+            wallet: string;
+            /**
+             * Amount Raw
+             * @default 0
+             */
+            amount_raw: string;
+            /**
+             * Max Total Raw
+             * @default 0
+             */
+            max_total_raw: string;
+            /** Position Id */
+            position_id?: number | null;
+            /**
+             * Is Call
+             * @default true
+             */
+            is_call: boolean;
+            /** Deadline */
+            deadline?: number | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1022,6 +1117,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Leaderboard"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_transaction_api_v1_transactions_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewedTransaction"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transaction_status_api_v1_transactions__signature__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signature: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
