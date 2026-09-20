@@ -65,6 +65,18 @@ def test_provider_duplicate_does_not_get_extra_weight():
     assert calculate("h100-sxm", source)[0] == Decimal("4")
 
 
+@pytest.mark.parametrize("model", ["h100-sxm", "a100-80"])
+def test_receipt_contains_one_selected_listing_per_provider(model):
+    source = payload()
+    source["prices"].extend([dict(source["prices"][0])] * 3)
+    source["prices"].extend([source["prices"][0] | {"usd_per_gpu_hour": "1.5"}] * 2)
+    value, quotes, count = calculate(model, source)
+    included = [quote for quote in quotes if quote.included]
+    assert value == Decimal("4") and count == 5
+    assert len(included) == len({quote.id for quote in included}) == 5
+    assert next(quote for quote in included if quote.id == "lambda").price == 1.5
+
+
 def test_catalogue_models_accept_preview_quotes_without_enabling_execution():
     from typing import get_args
 

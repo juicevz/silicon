@@ -58,6 +58,7 @@ def calculate(
 ) -> tuple[Decimal | None, list[ProviderQuote], int]:
     quotes: list[ProviderQuote] = []
     selected: dict[str, Decimal] = {}
+    selected_rows: dict[str, int] = {}
     for row in payload.get("prices", []):
         if not eligible(row):
             continue
@@ -67,8 +68,9 @@ def calculate(
             key in H100_BASKET
             and (row.get("instance"), row.get("region")) == H100_BASKET[key]
         )
-        if included:
-            selected[key] = min(value, selected.get(key, value))
+        if included and (key not in selected or value < selected[key]):
+            selected[key] = value
+            selected_rows[key] = len(quotes)
         quotes.append(
             ProviderQuote(
                 id=key,
@@ -79,12 +81,13 @@ def calculate(
                 scope=row["price_scope"],
                 source_url=row["source_url"],
                 updated_at=row["last_confirmed_at"],
-                included=included,
+                included=False,
             )
         )
-    if model != "h100-sxm":
-        for q in quotes:
-            q.included = q.price == float(selected[q.id])
+    # Receipts must contain exactly the listings used by the median, including
+    # when the source repeats a provider or lists several equally priced offers.
+    for index in selected_rows.values():
+        quotes[index].included = True
     required = 5 if model == "h100-sxm" else 3
     result = median(selected.values()) if len(selected) >= required else None
     return result, sorted(quotes, key=lambda q: q.price), len(selected)
@@ -96,7 +99,9 @@ class MarketData:
         self.markets = {key: Market(id=key, **spec) for key, spec in SPECS.items()}
         for key, payload in store.snapshots().items():
             if key in self.markets:
-                self.markets[key] = Market.model_validate(payload).model_copy(update=SPECS[key])
+                self.markets[key] = Market.model_validate(payload).model_copy(
+                    update=SPECS[key]
+                )
 
     async def collect_one(self, client: httpx.AsyncClient, model: str) -> None:
         try:
