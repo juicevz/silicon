@@ -49,7 +49,8 @@ export default function Docs() {
             <p>
               The underlying is a rental rate, measured in USD per GPU-hour. A
               position does not buy a GPU, rent compute, own a chip or represent
-              NVIDIA stock. USDG is the settlement asset.
+              NVIDIA stock. The app runs on Robinhood Chain. USDG is the settlement
+              asset, and ETH covers network fees.
             </p>
             <p>
               Anyone can browse current rates, provider comparisons and market
@@ -237,7 +238,8 @@ export default function Docs() {
             <p>
               The threshold is checked from the actual token balance when a
               trade executes. Exactly 5,000 tokens does not qualify for the fee
-              exemption. Platform trading fees stay in the contract’s collateral
+              exemption. The contract checks your wallet’s Silicon token balance
+              for this exemption. Platform trading fees stay in the contract’s collateral
               pool. Network transaction fees are separate.
             </p>
             <p>
@@ -277,7 +279,7 @@ export default function Docs() {
               only after their onchain state is verified.
             </p>
             <p>
-              Current contract source is implementation code awaiting deployment
+              The Solidity contract source is implementation code awaiting deployment
               and independent review. A working interface does not imply an
               active settlement pool. Silicon is an independent project, not
               affiliated with NVIDIA, GPU Economy or the cloud providers shown.

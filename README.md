@@ -1,74 +1,29 @@
 # Silicon
 
-GPU rental-price terminal with an isolated, fully collateralized H100 options series.
+Silicon compares GPU rental prices and implements capped calls and puts on the
+H100 rental reference. The app uses React, TypeScript and Vite, a Python/FastAPI
+API, and Solidity contracts on **Robinhood Chain, chain ID 4663**.
+USDG settles positions. ETH pays network fees.
 
-## Current scope
+Market data and calculators are available before launch. Trading remains disabled
+until a Silicon token and funded series are configured and verified onchain.
 
-- Working landing page, original hardware imagery and cursor-responsive Three.js
-  H100/A100/B200 illustrations. Square, compact desktop and mobile terminal.
-- Privy wallet picker with detected Ethereum wallets, including Rabby when installed.
-  The browser receives only the public app ID. No embedded wallet is created.
-- Live source collection, immutable observation receipts, SQLite history, streamed
-  updates, provider filtering, asset detail panels and browser-local price alerts.
-- Call/put payout calculator. H100 is the first defined tradable benchmark; A100
-  and B200 are monitoring references. History is never seeded with fabricated ticks.
-- Holder check: any positive balance for new trades and advanced tools. The standard
-  platform fee is 1% of premium; strictly more than 5,000 tokens makes it zero.
-  Existing claims and writer withdrawals never require retaining the token.
-- Solidity funding, quote, buy, settlement, challenge/cancellation, claim and writer
-  withdrawal paths; typed API reader, event indexing, positions and leaderboard.
-- The token and series addresses are intentionally unset. No contract deployment,
-  reserve deposit, publisher signature or treasury transaction has been made.
-  The planned 300 USDG reserve is not displayed as funded collateral.
+## Setup and development
 
-## Architecture and data flow
-
-`frontend/` uses React, strict TypeScript and Vite. `backend/app/` uses FastAPI and
-typed response models. REST response types are generated from `/api/openapi.json`.
-SQLite lives in a persistent directory outside the release. One service runs the
-collector, network monitor and contract reader; no extra queue or cache is needed.
-
-The collector checks GPU Economy every 180 seconds. Upstream observations are
-usually hourly. H100 uses five exact, fixed USD on-demand full-instance listings:
-Lambda, Hyperstack, Verda, Crusoe and Nebius. All five must be confirmed within
-three hours. The median has equal provider weights. Changed listing identities,
-stale quotes and missing constituents withhold a new benchmark. The UI retains
-the last observation with its actual source timestamp. GPU-only, spot, reserved,
-non-USD and marketplace-floor prices do not enter this reference.
-
-A100/B200 compare each eligible provider's cheapest region. These are different
-baskets and configurations; a price ratio does not imply interchangeable compute.
-
-Each observation stores a canonical JSON receipt and its keccak256 hash. Repeated
-collection cannot change the same timestamp's price. A source refresh is distinct
-from a price change. Charts contain stored source observations; requested 1h/6h/24h
-changes remain unavailable until sufficient history exists.
-
-The server polls the chain every 15 seconds. The browser receives snapshots over
-SSE. A configured contract is checked against the expected USDG, token, methodology,
-fee threshold and actual USDG balance. Its log indexer waits 16 blocks and resumes
-from a persistent cursor. Wallet transactions are simulated, network/account
-checked, signed by the user and confirmed before success appears. Trade approvals
-are exact amounts. The web service never holds a transaction signer.
-
-## Local setup
-
-Use Python 3.12+, Node 22+ and Foundry for contract tests.
+Requirements: Python 3.12+, Node 22+, Foundry (Forge and Anvil).
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r backend/requirements.txt
 cp .env.example .env
 chmod 600 .env
-cd frontend
-npm ci
+npm --prefix frontend ci
 ```
 
-Populate `PRIVY_APP_ID` through a private secret store. The saved Privy secret is not necessary
-for the public read API or externally signed wallet transactions. Do not put the
-deployer key into the web service. `.env` is ignored by Git.
+Set `PRIVY_APP_ID` through a private secret store. The read API does not need the Privy app
+secret or a signing key. All frontend values, including `VITE_` variables, are public.
 
-Start each process in a separate terminal:
+Run these in separate terminals:
 
 ```bash
 cd backend
@@ -76,106 +31,115 @@ cd backend
 ```
 
 ```bash
-cd frontend
-npm run dev
+npm --prefix frontend run dev
 ```
 
-Frontend: http://127.0.0.1:5286. Backend: http://127.0.0.1:4286.
-The Vite proxy forwards `/api` and `/health`. The public app can be explored without
-a wallet. `Access terminal` opens Privy; `Explore markets` opens the public view.
+Frontend: http://127.0.0.1:5286. API: http://127.0.0.1:4286.
+`SILICON_API_PROXY` overrides the frontend's API proxy for isolated review.
+API docs: `/api/docs`. OpenAPI: `/api/openapi.json`.
 
-## Checks and builds
+## Tests and build
 
 ```bash
 cd contracts
-git clone --depth 1 --branch v5.4.0 https://github.com/OpenZeppelin/openzeppelin-contracts.git lib/openzeppelin-contracts
-git clone --depth 1 --branch v1.10.0 https://github.com/foundry-rs/forge-std.git lib/forge-std
-forge test
+forge build
+forge test -vv
+cd ..
+PYTHONPATH=backend .venv/bin/pytest -q backend/tests
+.venv/bin/ruff check backend scripts/prepare_series_tx.py
+npm --prefix frontend run sync:api
+npm --prefix frontend run lint
+npm --prefix frontend run build
+npm --prefix frontend run test:e2e
 ```
 
-Dependency commits: OpenZeppelin `c64a1edb67b6e3f4a15cca8909c9482ad33a02b0`;
-forge-std `8bbcf6e3f8f62f419e5429a0bd89331c85c37824`.
+Foundry tests execute the real contract, including calls/puts, reserve limits,
+fees, stale quotes, settlement challenges, cancellations, claims and withdrawals.
+The Python integration test starts an isolated Anvil on loopback with chain ID
+4663, deploys compiled bytecode with disposable accounts, and exercises the API
+reader and transaction review. Tests never spend the dev wallet's funds.
+Set `SILICON_TEST_URL` to test a particular frontend preview.
 
-```bash
-cd backend
-PYTHONPATH=. ../.venv/bin/pytest -q tests
-../.venv/bin/ruff check .
-```
+## Chain and dev wallet
 
-The integration test starts its own loopback-only Anvil process, deploys the actual
-compiled bytecode and exercises funding, fee exemption, quote reading, portfolio,
-settlement, rankings and claims after token disposal. It does not transact on the
-public network. It skips if Foundry or compiled artifacts are unavailable.
+Network: Robinhood Chain mainnet, chain ID `4663`.
+Public RPC: `https://rpc.mainnet.chain.robinhood.com/`.
+Explorer: `https://robinhoodchain.blockscout.com`.
+USDG: `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` (six decimals).
 
-```bash
-cd frontend
-npm run sync:api
-npm run lint
-npm run build
-npm run test:e2e
-SILICON_TEST_URL=https://siliconmarkets.io npm run test:e2e
-```
+The original project dev/deployer wallet is
+`0xf7654bf2e3139d059Db1f015897766EA3A2aEfBE`, configured through
+`DEV_WALLET_ADDRESS`. The signing key is managed outside the repository. This public address is not a deployed token or market.
+Never install the signing key in the web service or frontend.
 
-Browser tests cover the landing, GPU switching, wallet picker, provider filters,
-source dialogs, sizing, calls/puts, alert persistence, all routes and mobile overflow.
-Playwright screenshots/traces are local ignored artifacts. The Privy SDK loads only
-when a wallet is requested; market browsing does not load that bundle.
+`.env.example` documents the variables. `RPC_URL` is server-side and can use an
+authenticated provider. The wallet receives the public Robinhood RPC address.
+The backend checks the RPC chain ID and USDG identity; arbitrary public-chain
+collateral substitutions are rejected. Loopback RPC supports isolated tests.
+`TOKEN_ADDRESS`, `MARKET_ADDRESS`, and `MARKET_START_BLOCK` identify the actual
+Silicon token, series, and deployment block. Set `TRADING_ENABLED=true` only for
+a reviewed, funded launch. Claims and withdrawals remain available when new
+funding/trading is disabled.
 
-## API
+## Reference, collateral and settlement
 
-Interactive contract: `/api/docs`. Schema: `/api/openapi.json`.
+The H100 reference is the median of five fixed on-demand USD full-instance
+listings from GPU Economy, normalized per GPU-hour. All five must be confirmed
+within three hours. Other GPU models are comparison references and are not
+executable. Source data is CC BY 4.0 with visible source links. SQLite stores
+observations and canonical keccak256 source receipts. Charts use recorded data;
+missing history is not fabricated.
+
+Each `SiliconSeries` contract holds its own USDG collateral. Writers deposit
+before opening; their capital is locked during trading. Buyers purchase capped
+calls or puts, with index 100 as the strike and a 10 USDG payout cap per unit.
+A positive Silicon token balance is required for new positions and funding.
+The standard fee is 1% of premium. Strictly more than 5,000 Silicon tokens waives
+the platform fee. ETH network fees remain separate.
+
+Every purchase reserves the larger of maximum payout and cancellation refund
+before its premium enters the contract. Fees stay in the pool. Writers receive
+remaining equity after buyer obligations; writer principal is at risk.
+
+A designated publisher reports source observations and proposes the expiry
+result. A one-hour challenge period allows the guardian to cancel a disputed
+result and refund premiums plus fees. Missing or unresolved settlement cancels
+permissionlessly after 24 hours. The publisher is trusted for offchain data.
+Claims pay the recorded buyer and require no continuing Silicon token holding.
+
+## API and wallet flow
 
 | Route | Purpose |
 | --- | --- |
-| `GET /health` | Process readiness |
-| `GET /api/v1/config` | Public wallet/chain/contract configuration |
-| `GET /api/v1/markets` | Quotes, history, source freshness and RPC state |
-| `GET /api/v1/stream` | Live snapshots, every 15 seconds |
-| `GET /api/v1/history/{market}?range=1h` | Stored 1h/6h/24h observations |
-| `GET /api/v1/methodology` | Basket, exclusions and settlement policy |
-| `GET /api/v1/receipts?market=h100-sxm` | Archived observation receipt hashes |
-| `GET /api/v1/receipts/{hash}` | Exact canonical receipt content |
-| `GET /api/v1/access/{wallet}` | Onchain token, USDG and ETH balances |
-| `POST /api/v1/quote` | Explicitly indicative calculator or verified executable quote |
-| `GET /api/v1/protocol` | Verified series state and indexed activity |
+| `GET /health` | Process health |
+| `GET /api/v1/config` | Public chain, USDG, token, market and dev-wallet addresses |
+| `GET /api/v1/markets`, `/stream` | Rental observations and network status |
+| `GET /api/v1/history/{market}?range=1h` | Recorded history |
+| `GET /api/v1/methodology`, `/receipts` | Source methodology and receipts |
+| `GET /api/v1/receipts/{hash}` | An archived receipt |
+| `GET /api/v1/access/{wallet}` | Verified USDG, ETH and Silicon balances |
+| `POST /api/v1/quote` | Calculator or funded-series quote |
+| `GET /api/v1/protocol` | Contract reserves, state and activity |
 | `GET /api/v1/portfolio/{wallet}` | Positions, claims and writer equity |
-| `GET /api/v1/leaderboard?period=7d` | Realized settled results over 24h/7d/30d |
+| `GET /api/v1/leaderboard?period=7d` | Settled performance |
+| `POST /api/v1/transactions/review` | Validate and simulate exact EVM calldata |
+| `GET /api/v1/transactions/{hash}` | Receipt status after two confirmations |
 
-Read APIs do not need private authentication. Financial authorization is enforced
-by the contract. Access and quote requests are rate-limited. Secret values are never
-returned. Malformed addresses and nonfinite/unbounded inputs are rejected. Failed
-verification yields an indicative calculator, never an executable quote.
+Privy connects EVM wallets, including MetaMask and WalletConnect. The app adds or
+switches to Robinhood Chain, rechecks the account, and compares reviewed calldata
+with the exact action the user chose. Any required USDG approval is for the
+exact amount. Signing and broadcasting happen in the user's wallet. The API
+never signs transactions or receives a user's private key. Confirmation polling
+keeps tracking the original hash through temporary RPC failures.
 
-## Contracts and launch configuration
+The service verifies token/methodology identity and reserve coverage. Source
+freshness is rechecked before reviewing a buy. Position and activity indexing
+use contract logs with a confirmation delay. A history outage is displayed as
+syncing and does not invalidate an independently verified series.
 
-`contracts/src/SiliconSeries.sol` is one isolated expiry, not a perpetual or an NFT.
-Premiums are paid in USDG. The strike is index 100 and the payout is 1 USDG per
-index point per unit, capped at 10. Units have six decimals. The starting rental
-price is recorded with eight decimals. Quotes can change; the contract checks the
-buyer's maximum cost and a deadline. Quotes last at most 15 minutes and trading
-closes five minutes before expiry.
+## Publisher operations
 
-Writers fund before `openAt`. Deposits/withdrawals close while trading is open.
-Every fill needs its entire maximum liability already available before collecting
-the new premium. Premiums and platform fees remain in the series. Final writer
-equity excludes unclaimed buyer payouts. Direct token donations are not counted
-as writer deposits. There is no admin function to withdraw the escrow.
-
-The designated publisher is trusted to report the real benchmark and set premiums.
-The contract cannot verify web data. Settlement uses the first archived eligible
-observation at or after expiry, within three hours. A one-hour challenge window
-allows the designated guardian to cancel a disputed result; cancellation refunds
-premiums and fees. Missing/unfinalized settlement cancels permissionlessly after
-24 hours. These trust and loss risks are explained in the product documentation.
-
-Before enabling a real series, record the actual token address, publisher and
-guardian roles, base-price receipt, opening time, expiry and the funding transaction.
-Review the contract independently. Set `TOKEN_ADDRESS`, `MARKET_ADDRESS` and
-`MARKET_START_BLOCK` in `/etc/silicon/app.env`, then restart `silicon-api`. A usable
-quote also needs fresh market data, a positive holder balance and sufficient reserve.
-No address is guessed from another project. Only H100 is connected to execution.
-
-Prepare an unsigned, simulated publisher transaction from archived data:
+Prepare unsigned transactions from archived source receipts:
 
 ```bash
 .venv/bin/python scripts/prepare_series_tx.py --mode quote --contract "$SILICON_SERIES" --call-premium 2 --put-premium 2
@@ -183,39 +147,36 @@ Prepare an unsigned, simulated publisher transaction from archived data:
 .venv/bin/python scripts/prepare_series_tx.py --mode finalize --contract "$SILICON_SERIES"
 ```
 
-The premiums above are examples, not an automated pricing model. The script emits
-reviewable calldata and gas estimates. It never loads a private key, signs or
-broadcasts. The publisher/settlement sender must be activated separately for launch.
+Premiums above are examples. The script verifies Robinhood Chain, selects an
+eligible receipt, simulates from the contract's publisher, and prints unsigned
+calldata with an estimated gas limit. It does not sign or broadcast. Deployment,
+funding, quote publication and settlement are separate operator transactions.
 
-## Deployment and operation
+## Deployment
 
-`scripts/deploy.sh` uploads a built frontend and backend to an immutable release on
-`deploy-server`, installs dependencies in a shared venv, switches `current`, restarts
-the API and verifies health. A failed health check restores the prior release.
-Persistent data is `<deploy-root>/shared/data/silicon.sqlite`.
-Credentials are installed by a private secret store at `/etc/silicon/app.env`, mode 0600.
+Production is a self-hosted server. Immutable releases use
+`current` and `previous`. The `silicon-api` service runs as ubuntu on port 4286;
+nginx serves the frontend and proxies API/SSE. Persistent SQLite is
+`shared/data/silicon.sqlite`. Secrets are in `/etc/silicon/app.env`, mode 0600.
+
+Build an isolated snapshot when other sessions are editing the workspace. Stage
+both frontend and backend, verify hashes and health, back up SQLite with its
+online backup API, then switch `current` atomically. Preserve the previous release
+and environment for rollback. A web deployment does not fund or deploy a market.
 
 ```bash
-bash scripts/deploy.sh
 ssh deploy-server 'systemctl status silicon-api --no-pager'
-ssh deploy-server 'journalctl -u silicon-api -n 40 --no-pager'
 curl -fsS https://siliconmarkets.io/health
-curl -fsS https://siliconmarkets.io/api/v1/markets
+curl -fsS https://siliconmarkets.io/api/v1/config
 ```
-
-Nginx serves static files and proxies the API/SSE to loopback port 4286. The service
-runs as `ubuntu`, restarts on failure and writes only to its shared data directory.
-Certbot handles certificate renewal. The final hostname must be added to nginx and
-Privy's allowed origins, followed by a certificate and public wallet-flow check.
-
-Source staleness and RPC failures are visible in the terminal. A healthy `/health`
-response confirms the process, not source freshness or funded trading readiness.
-Back up the SQLite database with SQLite's online backup API before migrations.
-Do not copy a live WAL database using plain file copying.
 
 ## Design and asset provenance
 
-Typography is self-hosted Manrope and IBM Plex Mono. Design rules are documented locally. References informed spacing and visual language;
+Landing typography is self-hosted variable Space Grotesk, the body family used by
+the Any Finance reference, at 448/560 for a 12% increase over 400/500. Its OFL
+license ships at `/licenses/space-grotesk.txt`. Any Finance's commercial Neue
+Machina heading face is not bundled. The terminal retains IBM Plex Mono and its
+license at `/licenses/ibm-plex-mono.txt`. Design rules are documented locally. References informed spacing and visual language;
 their source code and financial data were not cloned.
 
 Original editorial GPU imagery was generated through the explicitly requested
@@ -226,8 +187,36 @@ Google Gemini API, model `gemini-3-pro-image`. Full prompt and generation code:
 photorealistic graphite SXM module with detailed solder, muted purple/gold lighting,
 and no text or branding. These are illustrations, not verified hardware CAD.
 
-`frontend/src/components/Gpu.tsx` contains original cursor-responsive procedural
-models. They stop rendering when still/offscreen and respect reduced-motion settings.
-The editorial image is the WebGL fallback. NVIDIA's actual mark comes from the
+`frontend/src/components/HeroHardware.tsx` and `hardwareModels.ts` contain the
+landing's hand-built H100/A100 passive PCIe cards and dual-die Blackwell package.
+Their forms reference NVIDIA's [H100 PCIe brief](https://www.nvidia.com/content/dam/en-zz/Solutions/gtcs22/data-center/h100/PB-11133-001_v01.pdf),
+[A100 imagery](https://www.nvidia.com/en-us/data-center/a100/) and
+[Blackwell imagery](https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/).
+They are product-form illustrations, not manufacturer CAD or changes to the SXM
+rental benchmark. A single renderer loads GPU models on selection and keeps the previous model visible while preparing the next; selectors blend
+the canvas rather than rebuild WebGL contexts or make metal surfaces transparent.
+Thumbnails and fallback images are renders of those same meshes. Software-only
+WebGL and unavailable contexts use those images as compositor layers with the
+same pointer/scroll damping, avoiding per-frame PBR work on the CPU. Ambient
+background drift pauses on that path while its colors remain visible.
+`landingMotion.ts` advances Lenis and the hardware in one frame loop, using stable
+viewport pointer coordinates and frame-independent critical damping. Rendering
+stops at rest/offscreen; reduced motion removes scroll and pointer movement.
+The light/dark choice persists as `silicon:theme` and is read before first paint.
+`Gpu.tsx` uses lightweight transparent renders of the same hardware in searchable market rows.
+The 16-model catalogue spans Hopper, Blackwell, Ada, Ampere and Turing.
+`RentalChart.tsx` provides timestamp-scaled history, keyboard and pointer scrubbing,
+price axes, observed bounds and current eligible provider comparisons.
+A comparison with insufficient provider coverage shows its listings without
+publishing an unsupported median. All additions remain monitoring references. Terminal inputs and
+scenario values update directly from input events.
+
+`frontend/src/preview.ts` calculates illustrative payouts locally. Remote quotes
+remain independent and input-keyed, and are still required before execution.
+The contracts directory lists all three assets, actual series and platform
+addresses; undeployed assets retain explicit status. Browser checks include a
+1500ms delayed-API test proving slider values update on the next animation frame,
+chart pointer/keyboard scrubbing, menu focus, tutorial persistence and mobile routes.
+The editorial image remains the terminal WebGL fallback. NVIDIA's mark comes from the
 Simple Icons project and is used only to identify the manufacturer. No affiliation
-with NVIDIA, Robinhood, cloud providers or GPU Economy is claimed.
+with NVIDIA, cloud providers or GPU Economy is claimed.
