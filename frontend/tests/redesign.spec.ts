@@ -109,7 +109,9 @@ test("chart scrubbing follows the pointer and keyboard without a data request", 
 
 test("contract directory, details and real settlement explorer link", async ({
   page,
+  request,
 }) => {
+  const config = await (await request.get("/api/v1/config")).json();
   await page.goto("/terminal/contracts");
   await expect(page.locator(".contract-entry")).toHaveCount(3);
   for (const asset of ["H100", "A100", "B200"]) {
@@ -130,10 +132,11 @@ test("contract directory, details and real settlement explorer link", async ({
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
   }
-  await expect(page.locator(".token-contracts a")).toHaveAttribute(
-    "href",
-    /\/address\/0x[0-9a-fA-F]{40}$/,
-  );
+  const link = page.locator(`.token-contracts a[href*="${config.usdg_address}"]`);
+  const url = new URL((await link.getAttribute("href"))!);
+  expect(url.origin).toBe(config.explorer_url);
+  expect(url.pathname).toBe(`/address/${config.usdg_address}`);
+  expect(url.search).toBe("");
 });
 
 test("about menu blurs, traps focus, closes and restores focus", async ({
