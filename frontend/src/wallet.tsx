@@ -69,6 +69,7 @@ export function WalletRoot({
       pending.current?.resolve();
       pending.current = null;
       void get().then((p) => {
+        if (getter.current !== get) return;
         const changed = (...args: unknown[]) => {
           const accounts = args[0];
           if (
