@@ -282,6 +282,34 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
         assert reader.snapshot.funded == "0"
         assert (await chain.access(buyer)).usdg == "102"
         assert (await chain.access(writer)).usdg == "298"
+        # A configured vault round gets its own approval, collateral and
+        # redemption path. Arbitrary destinations never reach the wallet.
+        next_open = clock.time() + 86400
+        next_round = deploy(
+            writer, "SiliconPremiumVault.sol/SiliconPremiumVaultRound.json",
+            ["address", "address", "address", "address", "uint64", "uint64", "uint256", "uint256"],
+            [usd, token, writer, writer, next_open, next_open + 7 * 86400, 385000000, 100_000_000],
+        )["contractAddress"]
+        round_reader = ProtocolReader(chain, store, next_round)
+        rounds = {next_round.lower(): round_reader}
+        config.vault_round_addresses = [next_round]
+        config.trading_enabled = True
+        monkeypatch.setattr(api_module, "round_readers", rounds)
+        monkeypatch.setattr(api_module, "transactions", Transactions(chain, reader, rounds))
+        rejected = await review({"wallet": writer, "action": "fund", "amount_raw": "1", "series_address": buyer})
+        assert rejected.status_code == 409 and "not configured" in rejected.json()["detail"]
+        approval = await execute(writer, "approve", amount_raw="50000000", series_address=next_round)
+        assert next_round[2:].lower() in approval["data"].lower()
+        await execute(writer, "fund", amount_raw="50000000", series_address=next_round)
+        await round_reader.poll()
+        assert round_reader.snapshot.funded == "50"
+        send(writer, next_round, "setPaused(bool)", ["bool"], [True])
+        rejected = await review({"wallet": writer, "action": "fund", "amount_raw": "1", "series_address": next_round})
+        assert rejected.status_code == 409 and "not open" in rejected.json()["detail"]
+        config.trading_enabled = False
+        await execute(writer, "withdraw", amount_raw="50000000", series_address=next_round)
+        await round_reader.poll()
+        assert round_reader.snapshot.funded == "0"
         store.close()
     finally:
         client.close()

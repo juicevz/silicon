@@ -28,9 +28,9 @@ def stable(value: int) -> str:
 
 
 class ProtocolReader:
-    def __init__(self, chain: Chain, store: Store):
+    def __init__(self, chain: Chain, store: Store, address: str | None = None):
         self.chain, self.store = chain, store
-        self.address = chain.settings.market_address
+        self.address = address or chain.settings.market_address
         self.snapshot = Protocol(
             address=self.address or None,
             token_configured=bool(chain.settings.token_address),
@@ -179,6 +179,7 @@ class ProtocolReader:
         except Exception:
             # Old contract data may remain visible but never executable.
             self.snapshot.verified = False
+            self.snapshot.funding_enabled = False
             self.snapshot.status = "verification_unavailable"
             self.snapshot.index_synced = False
             self.snapshot.checked_at = now()
