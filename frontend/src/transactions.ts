@@ -38,12 +38,13 @@ async function checked(provider: Provider, wallet: string, config: Config) {
 }
 
 async function send(provider: Provider, wallet: string, config: Config, request: Request, notify: (message: string) => void) {
-  if (!config.market_address) throw new Error("No active Robinhood contract.");
+  const series = request.series_address ?? config.market_address;
+  if (!series || ![config.market_address, ...(config.vault_round_addresses ?? [])].some(address => address?.toLowerCase() === series.toLowerCase())) throw new Error("This Robinhood round is not configured.");
   await checked(provider, wallet, config);
   const amount = BigInt(request.amount_raw ?? "0");
-  const to = request.action === "approve" ? config.usdg_address : config.market_address;
+  const to = request.action === "approve" ? config.usdg_address : series;
   const data = request.action === "approve"
-    ? encodeFunctionData({ abi: erc20, functionName: "approve", args: [config.market_address as Address, amount] })
+    ? encodeFunctionData({ abi: erc20, functionName: "approve", args: [series as Address, amount] })
     : request.action === "buy"
       ? encodeFunctionData({ abi: seriesAbi, functionName: "buy", args: [request.is_call ?? true, amount, BigInt(request.max_total_raw ?? "0"), BigInt(request.deadline ?? 0)] })
       : encodeFunctionData({ abi: seriesAbi, functionName: request.action, args: [request.action === "claim" ? BigInt(request.position_id!) : amount] });
@@ -75,13 +76,13 @@ async function send(provider: Provider, wallet: string, config: Config, request:
   throw new Error(`Confirmation is still pending. Check transaction ${hash} before retrying.`);
 }
 
-async function approve(provider: Provider, wallet: string, config: Config, amount: bigint, notify: (message: string) => void) {
-  if (!config.market_address) throw new Error("No active contract.");
+async function approve(provider: Provider, wallet: string, config: Config, amount: bigint, notify: (message: string) => void, series = config.market_address) {
+  if (!series || ![config.market_address, ...(config.vault_round_addresses ?? [])].some(address => address?.toLowerCase() === series.toLowerCase())) throw new Error("This round is not configured.");
   await checked(provider, wallet, config);
-  const data = encodeFunctionData({ abi: erc20, functionName: "allowance", args: [wallet as Address, config.market_address as Address] });
+  const data = encodeFunctionData({ abi: erc20, functionName: "allowance", args: [wallet as Address, series as Address] });
   const raw = await provider.request({ method: "eth_call", params: [{ to: config.usdg_address, data }, "latest"] });
   const allowance = decodeFunctionResult({ abi: erc20, functionName: "allowance", data: raw as `0x${string}` });
-  if (allowance < amount) await send(provider, wallet, config, { action: "approve", wallet, amount_raw: amount.toString(), max_total_raw: "0", is_call: true }, notify);
+  if (allowance < amount) await send(provider, wallet, config, { action: "approve", wallet, amount_raw: amount.toString(), max_total_raw: "0", is_call: true, series_address: series }, notify);
 }
 
 export async function buyPosition(provider: Provider, wallet: string, config: Config, quote: Quote, side: "call" | "put", notify: (message: string) => void) {
@@ -94,9 +95,9 @@ export async function buyPosition(provider: Provider, wallet: string, config: Co
     max_total_raw: quote.cost_raw, deadline: quote.deadline, is_call: side === "call" }, notify);
 }
 
-export async function seriesAction(provider: Provider, wallet: string, config: Config, action: "fund" | "withdraw" | "claim", amount: bigint, notify: (message: string) => void) {
+export async function seriesAction(provider: Provider, wallet: string, config: Config, action: "fund" | "withdraw" | "claim", amount: bigint, notify: (message: string) => void, series = config.market_address) {
   if (action === "claim" && (amount < 0n || amount > BigInt(Number.MAX_SAFE_INTEGER))) throw new Error("Invalid position number.");
-  if (action === "fund") await approve(provider, wallet, config, amount, notify);
+  if (action === "fund") await approve(provider, wallet, config, amount, notify, series);
   return send(provider, wallet, config, { action, wallet, amount_raw: action === "claim" ? "0" : amount.toString(), max_total_raw: "0", is_call: true,
-    position_id: action === "claim" ? Number(amount) : null }, notify);
+    position_id: action === "claim" ? Number(amount) : null, series_address: series }, notify);
 }
