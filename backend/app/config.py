@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     token_address: str = ""
     market_address: str = ""
     market_start_block: int = 0
+    vault_round_addresses: list[str] = []
     privy_app_id: str = ""
     collection_interval: int = 180
     source_stale_seconds: int = 10800
@@ -47,6 +48,9 @@ class Settings(BaseSettings):
                 if not is_address(value) or int(value, 16) == 0:
                     raise ValueError(f"Invalid {name}")
                 setattr(self, name, to_checksum_address(value))
+        if len(self.vault_round_addresses) > 24 or any(not is_address(v) or int(v, 16) == 0 for v in self.vault_round_addresses):
+            raise ValueError("Configure at most 24 valid vault round addresses")
+        self.vault_round_addresses = list(dict.fromkeys(to_checksum_address(v) for v in self.vault_round_addresses))
         if (
             not local
             and self.usdg_address.lower()
