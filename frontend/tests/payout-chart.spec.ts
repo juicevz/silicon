@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 async function openTicket(page: Page) {
-  await page.addInitScript(() => localStorage.setItem("silicon:intro:v2", "1"));
+  await page.addInitScript(() => localStorage.setItem("silicon:intro:v3", "1"));
   await page.route("**/api/v1/quote", (route) => route.abort());
   await page.goto("/terminal");
   await expect(page.locator(".payoff-facts")).toBeVisible();

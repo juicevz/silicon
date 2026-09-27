@@ -4,15 +4,17 @@ import "./PayoffChart.css";
 
 const moves = [-15, -10, -5, 0, 5, 10, 15];
 const minorMoves = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5];
-const signed = (value: number, digits = 1) => `${value > 0 ? "+" : ""}${value.toFixed(digits)}%`;
+const signed = (value: number, digits = 1, unit = "%") => `${value > 0 ? "+" : ""}${value.toFixed(digits)}${unit}`;
 
-export function PayoffChart({ move, cost, maxPayout, side = "call", onMove }: {
+export function PayoffChart({ move, cost, maxPayout, side = "call", onMove, spread = false }: {
+  spread?: boolean;
   move: number;
   cost: number;
   maxPayout: number;
   side?: "call" | "put";
   onMove?: (value: number) => void;
 }) {
+  const signedMove = (value: number, digits = 1) => signed(value, digits, spread ? " pp" : "%");
   const id = useId();
   const chart = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(320);
@@ -43,7 +45,7 @@ export function PayoffChart({ move, cost, maxPayout, side = "call", onMove }: {
   const currentPayout = payout(move);
   const net = currentPayout - cost;
   const maximumNet = maxPayout - cost;
-  const markerX = x(move), markerY = y(currentPayout);
+  const markerX = x(Math.max(-15, Math.min(15, move))), markerY = y(currentPayout);
   const labelWidth = Math.max(88, money(currentPayout).length * 6.4 + 40);
   // The readout stays in the empty side of the plot while its crosshair moves.
   const labelX = side === "call" ? left + 8 : right - labelWidth - 8;
@@ -52,7 +54,7 @@ export function PayoffChart({ move, cost, maxPayout, side = "call", onMove }: {
   return <div className="payoff-detail">
     <div className="payoff-legend"><span><i />Contract payout</span><span><i />Cost incl. fee</span><small>USDG</small></div>
     <svg ref={chart} className="payoff-chart" viewBox={`0 0 ${width} 222`} role="img"
-      aria-label={`Capped ${side} payout. ${move}% reference move pays ${money(currentPayout)} USDG. Cost ${money(cost)} USDG. Maximum payout ${money(maxPayout)} USDG.`}
+      aria-label={`Capped ${side} payout. ${signedMove(move)} reference move pays ${money(currentPayout)} USDG. Cost ${money(cost)} USDG. Maximum payout ${money(maxPayout)} USDG.`}
       onPointerMove={onMove ? (event) => {
         if (event.pointerType === "touch" && !event.buttons) return;
         const bounds = event.currentTarget.getBoundingClientRect();
@@ -79,7 +81,7 @@ export function PayoffChart({ move, cost, maxPayout, side = "call", onMove }: {
         </g>)}
         {moves.map((m) => <g key={m}>
           <path d={`M${x(m)} ${top}V${bottom + 5}`} />
-          <text x={x(m)} y={bottom + 21} textAnchor="middle">{signed(m, 0)}</text>
+          <text x={x(m)} y={bottom + 21} textAnchor="middle">{signedMove(m, 0)}</text>
         </g>)}
       </g>
       <path className="payoff-zero" d={`M${left} ${bottom}H${right}M${x(0)} ${top}V${bottom}`} />
@@ -90,8 +92,8 @@ export function PayoffChart({ move, cost, maxPayout, side = "call", onMove }: {
       <polyline className="payoff-curve" points={points} />
       <circle className="payoff-knot" cx={x(0)} cy={y(0)} r="2.5" />
       <circle className="payoff-knot" cx={x(10 * direction)} cy={y(maxPayout)} r="2.5" />
-      <text className="payoff-cap-label" x={side === "call" ? right : left} y="17" textAnchor={side === "call" ? "end" : "start"}>Cap {money(maxPayout)} · {signed(10 * direction, 0)}</text>
-      {canBreakEven && <g className="payoff-breakeven" aria-label={`Breakeven ${signed(breakeven, 2)}`}>
+      <text className="payoff-cap-label" x={side === "call" ? right : left} y="17" textAnchor={side === "call" ? "end" : "start"}>Cap {money(maxPayout)} · {signedMove(10 * direction, 0)}</text>
+      {canBreakEven && <g className="payoff-breakeven" aria-label={`Breakeven ${signedMove(breakeven, 2)}`}>
         <path d={`M${x(breakeven)} ${y(cost)}V${bottom}`} />
         <circle cx={x(breakeven)} cy={y(cost)} r="3" />
       </g>}
@@ -102,17 +104,17 @@ export function PayoffChart({ move, cost, maxPayout, side = "call", onMove }: {
       </g>
       <g className="payoff-value-label" transform={`translate(${labelX},${labelY})`}>
         <rect width={labelWidth} height="35" rx="4" />
-        <text className="payoff-selected-move" x="8" y="13">{signed(move)} move</text>
+        <text className="payoff-selected-move" x="8" y="13">{signedMove(move)} move</text>
         <text x="8" y="27">{money(currentPayout)} <tspan className="payoff-selected-unit">USDG</tspan></text>
       </g>
     </svg>
-    <div className="payoff-foot"><span>Reference price change</span><span>{side === "call" ? "Capped call" : "Capped put"}</span></div>
+    <div className="payoff-foot"><span>{spread ? "B200 return minus H100 return (pp)" : "Reference price change"}</span><span>{side === "call" ? "Capped call" : "Capped put"}</span></div>
     <dl className="payoff-facts">
-      <div><dt><i className="payoff-fact-dot" />Breakeven</dt><dd className="payoff-fact-breakeven">{canBreakEven ? signed(breakeven, 2) : "Not reached"}</dd></div>
+      <div><dt><i className="payoff-fact-dot" />Breakeven</dt><dd className="payoff-fact-breakeven">{canBreakEven ? signedMove(breakeven, 2) : "Not reached"}</dd></div>
       <div><dt>Payout cap</dt><dd>{money(maxPayout)} <small>USDG</small></dd></div>
       <div><dt>Maximum loss</dt><dd>{cost > 0 ? "−" : ""}{money(cost)} <small>USDG</small></dd></div>
       <div><dt>Maximum net {maximumNet >= 0 ? "gain" : "result"}</dt><dd className="payoff-fact-gain" data-positive={maximumNet >= 0}>{maximumNet > 0 ? "+" : ""}{money(maximumNet)} <small>USDG</small></dd></div>
     </dl>
-    <div className="payoff-net-detail"><span>Net at {signed(move)}</span><strong data-positive={net >= 0}>{net > 0 ? "+" : ""}{money(net)} <small>USDG</small></strong></div>
+    <div className="payoff-net-detail"><span>Net at {signedMove(move)}</span><strong data-positive={net >= 0}>{net > 0 ? "+" : ""}{money(net)} <small>USDG</small></strong></div>
   </div>;
 }
