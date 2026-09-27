@@ -107,6 +107,61 @@ result and refund premiums plus fees. Missing or unresolved settlement cancels
 permissionlessly after 24 hours. The publisher is trusted for offchain data.
 Claims pay the recorded buyer and require no continuing Silicon token holding.
 
+## Premium vaults and paper strategies
+
+`/terminal/strategies` contains the premium vault, H100 trend builder and
+B200/H100 generation spread. The first-visit terminal guide highlights one
+area at a time, dims the rest, supports keyboard dismissal and replay, and
+respects reduced motion. It stores its completion under `silicon:intro:v3`.
+
+Premium vaults use isolated writer shares in `SiliconSeries`. Deposits close at
+opening. After settlement, redemption uses remaining equity after buyer reserves;
+the entire principal can be lost. `SiliconPremiumVaultFactory` creates 7, 14 or
+30-day `SiliconPremiumVaultRound` contracts with an immutable per-round deposit
+ceiling. Scheduling requires at least one day's notice and a two-day gap after
+the previous expiry. A pause blocks new round deposits. Depositors explicitly
+choose each round; no operator can roll their shares or withdraw for them.
+
+Add reviewed round addresses to `VAULT_ROUND_ADDRESSES` as a JSON array. The API
+checks collateral, token, methodology, balances and fee threshold separately for
+each round. `/api/v1/vaults` exposes those results. The portfolio endpoint accepts
+`?series=ADDRESS`; transaction review accepts `series_address`. Only configured
+rounds can receive approvals or deposits. The active `MARKET_ADDRESS` remains
+the only trading market. Keep historical rounds configured for redemptions.
+
+The builders are forward paper trading, with no automatic execution. They use
+7/14/30-day horizons and user-assumed premiums plus the standard 1% fee, excluding
+gas and slippage. Creating a record fixes its server timestamp, expiry, size,
+direction and archived entry receipts. Scenario sliders never set entry prices
+or recorded outcomes. `/api/v1/strategies` reports actual observation counts,
+distinct prices and time span; it does not turn a sparse history into a backtest.
+
+`GET/POST /api/v1/strategies/paper` reads/creates records in the SQLite
+`paper_strategies` table. A random HttpOnly, SameSite=Strict cookie identifies the
+browser; only its SHA-256 digest is stored alongside records. There is no wallet
+identity claim. Clearing browser cookies loses access to that browser's records.
+POSTs reject foreign origins. Reverse proxies must preserve the original Host
+and HTTPS scheme. Record limits and the API rate limiter bound storage growth.
+
+Reading a paper book reconciles expired entries using the first source receipt
+in the three hours after expiry. Spread legs must be within 15 minutes; the
+earlier feed advances to the first matching pair. Missing data remains pending
+until 24 hours after expiry, then cancels with its assumed cost returned and is
+excluded from performance. Settled terms and receipts remain fixed. Results are
+paper returns with assumed premiums, not proof of available real-market yield.
+
+`SiliconSpreadSeries` implements a separate capped spread. It normalizes B200 and
+H100 to their immutable opening prices; one percentage point of B200 return minus
+H100 return pays one USDG per call unit, capped at ten. Puts pay the reverse. Both
+source prices, times and receipt hashes are required; the inherited single-index
+publication methods are disabled. The existing reserve, challenge, refund and
+claim rules remain in force. Receipts do not remove trust in the publisher.
+
+The B200 feed is currently a comparison median. Live spread trading stays closed
+until a fixed B200 basket and methodology are verified, contracts are reviewed
+and deployed, and their funding and execution adapter are activated. New contract
+source and local tests are not evidence of a public deployment or an audit.
+
 ## API and wallet flow
 
 | Route | Purpose |

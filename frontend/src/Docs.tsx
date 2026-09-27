@@ -26,6 +26,7 @@ export default function Docs() {
             ["reference", "Rental reference"],
             ["positions", "Calls and puts"],
             ["collateral", "Writer collateral"],
+            ["strategies", "Vaults and strategies"],
             ["settlement", "Settlement"],
             ["token", "Token and fees"],
             ["data", "Data and alerts"],
@@ -57,6 +58,15 @@ export default function Docs() {
               information. Opening a trade requires a positive balance of the
               Silicon token and an active, funded contract.
             </p>
+          </section>
+          <section id="strategies">
+            <h2>Vaults, trends and GPU generations</h2>
+            <p>A premium vault backs one fixed H100 round with USDG. Deposits close before trading starts. Premiums and fees add to the pool; buyer payouts reduce it. After settlement, depositors redeem their share of the remaining equity. The entire deposit is at risk, and another round requires a new deposit decision.</p>
+            <p>The trend builder records an H100 rise or fall thesis over 7, 14 or 30 days. You choose an assumed premium and position size. Silicon fixes the starting price from a source receipt and records the later outcome. The scenario slider does not change those starting terms.</p>
+            <p>The generation spread compares B200 and H100 percentage returns from their own starting prices. If B200 rises 10% and H100 rises 5%, B200 outperforms by 5 percentage points. One call unit would pay 5 USDG before subtracting the assumed premium and fee, with a 10 USDG payout cap.</p>
+            <p>Trend and spread records are paper strategies. They move no funds and use assumed premiums, excluding network fees and slippage. Results use the first eligible observations within three hours after expiry; missing data cancels the record after 24 hours. Sparse or flat source history cannot establish a profitable strategy. Records are private to the browser cookie; clearing it loses access.</p>
+            <p>The B200 comparison reference needs a fixed benchmark before a live spread can launch. Vault deposits and live trades remain unavailable until their contracts, token and funding are configured and verified. The strategy screens show those states explicitly.</p>
+            <Link className="text-button" to="/terminal/strategies">Explore strategies <ArrowUpRight size={14} /></Link>
           </section>
           <section id="reference">
             <h2>The H100 reference</h2>
