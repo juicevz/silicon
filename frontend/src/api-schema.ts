@@ -72,6 +72,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/strategies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Strategy Overview */
+        get: operations["strategy_overview_api_v1_strategies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/strategies/paper": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paper Book */
+        get: operations["paper_book_api_v1_strategies_paper_get"];
+        put?: never;
+        /** Create Paper Strategy */
+        post: operations["create_paper_strategy_api_v1_strategies_paper_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/methodology": {
         parameters: {
             query?: never;
@@ -166,6 +201,23 @@ export interface paths {
         };
         /** Protocol */
         get: operations["protocol_api_v1_protocol_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Vaults */
+        get: operations["vaults_api_v1_vaults_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -308,6 +360,23 @@ export interface components {
             /** Error */
             error?: string | null;
         };
+        /** Evidence */
+        Evidence: {
+            /** Market */
+            market: string;
+            /** Observations */
+            observations: number;
+            /** Distinct Prices */
+            distinct_prices: number;
+            /** History Hours */
+            history_hours: number;
+            /** Latest At */
+            latest_at: string | null;
+            /** Latest Price */
+            latest_price: string | null;
+            /** Fresh */
+            fresh: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -412,6 +481,108 @@ export interface components {
             chain_id: number;
             /** Error */
             error?: string | null;
+        };
+        /** PaperBook */
+        PaperBook: {
+            /** Records */
+            records: components["schemas"]["PaperRecord"][];
+            /** Settled Count */
+            settled_count: number;
+            /** Realized Profit */
+            realized_profit: string;
+        };
+        /** PaperRecord */
+        PaperRecord: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "trend" | "generation_spread";
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "call" | "put";
+            /** Days */
+            days: number;
+            /** Units */
+            units: string;
+            /** Premium Per Unit */
+            premium_per_unit: string;
+            /**
+             * Fee Bps
+             * @default 100
+             */
+            fee_bps: number;
+            /** Cost */
+            cost: string;
+            /** Created At */
+            created_at: string;
+            /** Expiry */
+            expiry: string;
+            /** Entry Prices */
+            entry_prices: {
+                [key: string]: string;
+            };
+            /** Entry Receipts */
+            entry_receipts: {
+                [key: string]: string;
+            };
+            /**
+             * Status
+             * @default open
+             * @enum {string}
+             */
+            status: "open" | "settled" | "cancelled";
+            /** Exit Prices */
+            exit_prices?: {
+                [key: string]: string;
+            };
+            /** Exit Receipts */
+            exit_receipts?: {
+                [key: string]: string;
+            };
+            /** Move Pct */
+            move_pct?: string | null;
+            /** Payout */
+            payout?: string | null;
+            /** Profit */
+            profit?: string | null;
+            /** Closed At */
+            closed_at?: string | null;
+        };
+        /** PaperRequest */
+        PaperRequest: {
+            /**
+             * Kind
+             * @default trend
+             * @enum {string}
+             */
+            kind: "trend" | "generation_spread";
+            /**
+             * Side
+             * @default put
+             * @enum {string}
+             */
+            side: "call" | "put";
+            /**
+             * Days
+             * @default 14
+             * @enum {integer}
+             */
+            days: 7 | 14 | 30;
+            /**
+             * Units
+             * @default 1
+             */
+            units: number | string;
+            /**
+             * Premium Per Unit
+             * @default 2
+             */
+            premium_per_unit: number | string;
         };
         /** Point */
         Point: {
@@ -546,6 +717,8 @@ export interface components {
         };
         /** PublicConfig */
         PublicConfig: {
+            /** Vault Round Addresses */
+            vault_round_addresses?: string[];
             /** Privy App Id */
             privy_app_id: string;
             /** Chain Id */
@@ -739,6 +912,21 @@ export interface components {
              */
             trading_enabled: boolean;
         };
+        /** StrategyOverview */
+        StrategyOverview: {
+            /** Evidence */
+            evidence: components["schemas"]["Evidence"][];
+            /**
+             * Spread Live
+             * @default false
+             */
+            spread_live: boolean;
+            /**
+             * Spread Reason
+             * @default B200 is a comparison reference. A fixed benchmark, deployed spread series and funding are required for live trades.
+             */
+            spread_reason: string;
+        };
         /** TradeEvent */
         TradeEvent: {
             /** Tx */
@@ -760,6 +948,8 @@ export interface components {
         };
         /** TransactionRequest */
         TransactionRequest: {
+            /** Series Address */
+            series_address?: string | null;
             /**
              * Action
              * @enum {string}
@@ -872,7 +1062,7 @@ export interface operations {
     history_api_v1_history__market__get: {
         parameters: {
             query?: {
-                range?: "1h" | "6h" | "24h";
+                range?: "1h" | "6h" | "24h" | "7d" | "14d" | "30d";
             };
             header?: never;
             path: {
@@ -889,6 +1079,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    strategy_overview_api_v1_strategies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StrategyOverview"];
+                };
+            };
+        };
+    };
+    paper_book_api_v1_strategies_paper_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperBook"];
+                };
+            };
+        };
+    };
+    create_paper_strategy_api_v1_strategies_paper_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperRecord"];
                 };
             };
             /** @description Validation Error */
@@ -1068,9 +1331,31 @@ export interface operations {
             };
         };
     };
-    portfolio_api_v1_portfolio__address__get: {
+    vaults_api_v1_vaults_get: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Protocol"][];
+                };
+            };
+        };
+    };
+    portfolio_api_v1_portfolio__address__get: {
+        parameters: {
+            query?: {
+                series?: string | null;
+            };
             header?: never;
             path: {
                 address: string;

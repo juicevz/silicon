@@ -66,6 +66,7 @@ class Snapshot(BaseModel):
 
 
 class PublicConfig(BaseModel):
+    vault_round_addresses: list[str] = Field(default_factory=list)
     privy_app_id: str
     chain_id: int
     explorer_url: str
@@ -208,6 +209,7 @@ class Protocol(BaseModel):
 
 
 class TransactionRequest(BaseModel):
+    series_address: str | None = None
     action: Literal["approve", "buy", "fund", "withdraw", "claim"]
     wallet: str
     amount_raw: str = Field(default="0", pattern=r"^[0-9]{1,78}$")
