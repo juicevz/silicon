@@ -1,11 +1,13 @@
 import asyncio
 import json
+import re
+import secrets
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from time import monotonic, time
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 
 from .chain import Chain
@@ -28,13 +30,16 @@ from .protocol import ProtocolReader
 from .pricing import preview
 from .store import Store, now
 from .transactions import Transactions
+from .strategies import PaperBook, PaperRecord, PaperRequest, Strategies, StrategyOverview
 
 config = settings()
 store = Store(config.data_dir)
 data = MarketData(config, store)
 chain = Chain(config)
 reader = ProtocolReader(chain, store)
-transactions = Transactions(chain, reader)
+round_readers = {address.lower(): ProtocolReader(chain, store, address) for address in config.vault_round_addresses if address.lower() != config.market_address.lower()}
+transactions = Transactions(chain, reader, round_readers)
+strategies = Strategies(store)
 rate_limits: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
 
@@ -81,6 +86,7 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(repeat(data.collect, config.collection_interval)),
         asyncio.create_task(repeat(chain.poll, 15)),
         asyncio.create_task(repeat(reader.poll, 20)),
+        *(asyncio.create_task(repeat(r.poll, 60)) for r in round_readers.values()),
     ]
     yield
     for task in tasks:
@@ -104,6 +110,7 @@ async def security(request: Request, call_next):
         request.url.path.startswith("/api/v1/access")
         or request.url.path == "/api/v1/quote"
         or request.url.path.startswith("/api/v1/transactions")
+        or request.url.path.startswith("/api/v1/strategies/paper")
     ):
         host = request.client.host if request.client else "unknown"
         transaction = request.url.path.startswith("/api/v1/transactions")
@@ -149,6 +156,7 @@ def public_config():
         explorer_url=config.explorer_url,
         token_address=config.token_address or None,
         market_address=config.market_address or None,
+        vault_round_addresses=config.vault_round_addresses,
         usdg_address=config.usdg_address,
         dev_wallet_address=config.dev_wallet_address or None,
         fee_bps=config.fee_bps,
@@ -170,10 +178,40 @@ async def snapshot():
 
 
 @app.get("/api/v1/history/{market}")
-async def history(market: str, range: Literal["1h", "6h", "24h"] = "24h"):
+async def history(market: str, range: Literal["1h", "6h", "24h", "7d", "14d", "30d"] = "24h"):
     if market not in data.markets:
         raise HTTPException(404, "Unknown market")
-    return {"points": store.history(market, int(range[:-1])), "range": range}
+    return {"points": store.history(market, int(range[:-1]) * (24 if range.endswith("d") else 1)), "range": range}
+
+
+def paper_session(request: Request, response: Response) -> str:
+    token = request.cookies.get("silicon_paper", "")
+    if not re.fullmatch(r"[0-9a-f]{64}", token):
+        token = secrets.token_hex(32)
+    response.set_cookie("silicon_paper", token, max_age=31536000, httponly=True,
+                        secure=request.url.scheme == "https", samesite="strict", path="/api/v1/strategies")
+    return token
+
+
+@app.get("/api/v1/strategies", response_model=StrategyOverview)
+async def strategy_overview():
+    return strategies.overview()
+
+
+@app.get("/api/v1/strategies/paper", response_model=PaperBook)
+async def paper_book(request: Request, response: Response):
+    return strategies.book(paper_session(request, response))
+
+
+@app.post("/api/v1/strategies/paper", response_model=PaperRecord, status_code=201)
+async def create_paper_strategy(body: PaperRequest, request: Request, response: Response):
+    origin = request.headers.get("origin")
+    if request.headers.get("sec-fetch-site") == "cross-site" or (origin and origin != str(request.base_url).rstrip("/")):
+        raise HTTPException(403, "Start paper strategies from this site.")
+    try:
+        return strategies.create(paper_session(request, response), body)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 
 @app.get("/api/v1/methodology")
@@ -255,10 +293,18 @@ def protocol():
     return reader.snapshot
 
 
+@app.get("/api/v1/vaults", response_model=list[Protocol])
+async def vaults():
+    return [r.snapshot for r in [reader, *round_readers.values()] if r.address]
+
+
 @app.get("/api/v1/portfolio/{address}", response_model=Portfolio)
-async def portfolio(address: str):
+async def portfolio(address: str, series: str | None = None):
+    selected = reader if not series or series.lower() == reader.address.lower() else round_readers.get(series.lower())
+    if selected is None:
+        raise HTTPException(404, "Unknown vault round")
     try:
-        return await reader.portfolio(address)
+        return await selected.portfolio(address)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     except Exception as exc:
