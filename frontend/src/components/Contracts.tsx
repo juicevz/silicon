@@ -1,8 +1,8 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { ArrowUpRight, ChevronRight, Copy, FileCode2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useData, useConfig } from "../data";
-import { money, short, explorer, type Series } from "../api";
+import { api, money, short, explorer, type Series, type Protocol } from "../api";
 import { External, Modal } from "./ui";
 import { LiveContract } from "./Live";
 const Gpu = lazy(() => import("./Gpu"));
@@ -29,13 +29,22 @@ const assets = [
 export default function Contracts({ notify }: { notify: (s: string) => void }) {
   const { protocol } = useData();
   const config = useConfig();
+  const [rounds, setRounds] = useState<Protocol[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    void api<Protocol[]>("/vaults", { signal: controller.signal }).then(setRounds).catch(() => {
+      if (!controller.signal.aborted) setRounds(current => current.map(round => ({ ...round, verified: false, funding_enabled: false })));
+    });
+    return () => controller.abort();
+  }, [protocol?.checked_at]);
+  const contracts = [...new Map([...rounds.flatMap(round => round.contracts), ...(protocol?.contracts ?? [])].map(series => [series.address.toLowerCase(), series])).values()];
   const [selection, setSelected] = useState<{
     asset: (typeof assets)[number];
     series?: Series;
   } | null>(null);
   const selected = selection && {
     ...selection,
-    series: protocol?.contracts.find((series) => selection.series
+    series: contracts.find((series) => selection.series
       ? series.address === selection.series.address
       : series.asset === selection.asset.id) ?? selection.series,
   };
@@ -44,7 +53,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
     asset: (typeof assets)[number];
     series?: Series;
   }>((asset) => {
-    const all = protocol?.contracts.filter((s) => s.asset === asset.id) ?? [];
+    const all = contracts.filter((s) => s.asset === asset.id);
     return all.length
       ? all.map((series) => ({ asset, series }))
       : [{ asset, series: undefined }];
@@ -60,10 +69,8 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
         ? "Awaiting deployment"
         : "Tracking only");
   const address = selected ? addressFor(selected) : null;
-  const events =
-    address && address === config.market_address
-      ? (protocol?.activity ?? [])
-      : [];
+  const selectedState = address === config.market_address ? protocol : rounds.find(round => round.address === address);
+  const events = selectedState?.activity ?? [];
   const copy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value);
@@ -81,7 +88,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
       </div>
       <div className="directory-heading">
         <span>{assets.length} assets</span>
-        <span>{protocol?.contracts.length ?? 0} deployed series</span>
+        <span>{contracts.length} deployed series</span>
         <Link to="/docs#positions">
           How contracts work <ArrowUpRight size={16} />
         </Link>
@@ -264,7 +271,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
             {view === "Backing" && (
               <div role="tabpanel">
                 {selected.series ? (
-                  <LiveContract series={selected.series} notify={notify} />
+                  <LiveContract series={selected.series} state={selectedState ?? undefined} notify={notify} />
                 ) : (
                   <div className="contract-empty">
                     <strong>No USDG deposited.</strong>

@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
-  ArrowRight,
   ArrowUpRight,
   Bell,
   Check,
-  ChevronRight,
   CircleHelp,
   Clock3,
   Layers3,
-  LockKeyhole,
   Radio,
   Search,
-  SlidersHorizontal,
   Trophy,
-  Wallet,
   X,
 } from "lucide-react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
@@ -24,7 +19,6 @@ import {
   api,
   explorer, money,
   short,
-  type Access,
   type Leaderboard as LeaderData,
   type Market,
 } from "./api";
@@ -36,7 +30,8 @@ import {
   ProviderTable,
 } from "./components/MarketViews";
 import Ticket from "./components/Ticket";
-import StrategyTool from "./components/StrategyTool";
+import StrategyLab from "./components/StrategyLab";
+import TerminalTour from "./components/TerminalTour";
 import { PositionRows, usePortfolio } from "./components/Live";
 import Contracts from "./components/Contracts";
 
@@ -73,66 +68,6 @@ function remember(key: string, value: string) {
   } catch {
     /* Storage can be disabled by the browser. */
   }
-}
-
-function Tutorial({ close }: { close: () => void }) {
-  const [step, setStep] = useState(0);
-  const steps = [
-    {
-      title: "Start with a GPU.",
-      body: "Find a GPU by model or architecture. Move across its chart to inspect recorded prices, and compare the providers below.",
-    },
-    {
-      title: "Try a position.",
-      body: "Pick Rise or Fall in the position panel. Move either slider to see the cost and payout update immediately.",
-    },
-    {
-      title: "Ready when you are.",
-      body: "Market data is open to everyone. A Silicon balance unlocks funded trades. Reopen this guide with the ? button anytime.",
-    },
-  ];
-  return (
-    <aside
-      className="tutorial"
-      aria-label="Terminal introduction"
-      data-step={step}
-    >
-      <div className="tutorial-top">
-        <span>
-          Welcome to Silicon{" "}
-          <span className="tutorial-count">{step + 1} / 3</span>
-        </span>
-        <button
-          className="icon-button"
-          onClick={close}
-          aria-label="Dismiss introduction"
-        >
-          <X size={13} />
-        </button>
-      </div>
-      <h3>{steps[step].title}</h3>
-      <p>{steps[step].body}</p>
-      <div className="tutorial-bottom">
-        <div className="tutorial-dots">
-          {steps.map((_, i) => (
-            <button
-              key={i}
-              className={step === i ? "active" : ""}
-              onClick={() => setStep(i)}
-              aria-label={`Introduction step ${i + 1}`}
-            />
-          ))}
-        </div>
-        <button
-          className="text-button"
-          onClick={() => (step === 2 ? close() : setStep(step + 1))}
-        >
-          {step === 2 ? "Got it" : "Next"}
-          <ArrowRight size={12} />
-        </button>
-      </div>
-    </aside>
-  );
 }
 
 function ActivityView({ compact = false }: { compact?: boolean }) {
@@ -364,106 +299,6 @@ function Leaderboard() {
   );
 }
 
-function Strategies({ notify }: { notify: (message: string) => void }) {
-  const wallet = useWallet();
-  const [access, setAccess] = useState<Access | null>(null);
-  const [calculator, setCalculator] = useState<string | null>(null);
-  useEffect(() => {
-    setAccess(null);
-    if (wallet.address)
-      void api<Access>(`/access/${wallet.address}`)
-        .then(setAccess)
-        .catch(() => {});
-  }, [wallet.address]);
-  const unlock = async (title: string) => {
-    if (!wallet.address) {
-      try {
-        await wallet.connect();
-      } catch (e) {
-        notify((e as Error).message);
-      }
-      return;
-    }
-    if (!access?.advanced) {
-      notify(
-        "Advanced tools unlock with any positive Silicon token balance after launch.",
-      );
-      return;
-    }
-    setCalculator(title);
-  };
-  return (
-    <div className="full-page">
-      <div className="page-intro">
-        <span className="eyebrow">FOR SILICON HOLDERS</span>
-        <h1>A little more context.</h1>
-        <p>Tools for looking beyond a single provider price.</p>
-      </div>
-      <div className="strategy-grid">
-        {[
-          {
-            icon: <ArrowUpRight size={23} />,
-            title: "Compute spread",
-            tag: "RELATIVE VALUE",
-            body: "Compare H100 and A100 rental costs side by side. Follow how the premium for newer hardware changes.",
-            color: "purple",
-          },
-          {
-            icon: <SlidersHorizontal size={23} />,
-            title: "Two-way scenario",
-            tag: "PAYOFF BUILDER",
-            body: "Model a capped call and put together. See the move needed to cover both premiums before choosing a side.",
-            color: "green",
-          },
-          {
-            icon: <Bell size={23} />,
-            title: "Price ladder",
-            tag: "WATCH LEVELS",
-            body: "Save a sequence of rental-price levels. Build a watchlist around your own thresholds.",
-            color: "gold",
-          },
-        ].map((s) => (
-          <article className={`panel strategy-card ${s.color}`} key={s.title}>
-            <span className="strategy-icon">{s.icon}</span>
-            <span className="eyebrow">{s.tag}</span>
-            <h2>{s.title}</h2>
-            <p>{s.body}</p>
-            <button className="button" onClick={() => void unlock(s.title)}>
-              {access?.advanced ? (
-                <ChevronRight size={13} />
-              ) : (
-                <LockKeyhole size={13} />
-              )}
-              Open tool
-            </button>
-          </article>
-        ))}
-      </div>
-      <div className="holder-rule">
-        <Wallet size={17} />
-        <p>
-          Any positive token balance gives access to advanced tools.
-          <br />
-          <strong>
-            Holding more than 5,000 also removes platform trading fees.
-          </strong>
-        </p>
-        <Link to="/docs#token" className="text-button">
-          Token mechanics
-          <ArrowUpRight size={12} />
-        </Link>
-      </div>
-      {calculator && (
-        <StrategyTool
-          mode={calculator}
-          close={() => setCalculator(null)}
-          notify={notify}
-        />
-      )}
-    </div>
-  );
-}
-
 export default function Terminal({
   notify,
 }: {
@@ -482,7 +317,7 @@ export default function Terminal({
     [showSearch, setShowSearch] = useState(false);
   const [tutorial, setTutorial] = useState(() => {
     try {
-      return !localStorage.getItem("silicon:intro:v2");
+      return !localStorage.getItem("silicon:intro:v3");
     } catch {
       return true;
     }
@@ -518,7 +353,7 @@ export default function Terminal({
   }, []);
   const closeTutorial = () => {
     setTutorial(false);
-    remember("silicon:intro:v2", "seen");
+    remember("silicon:intro:v3", "seen");
   };
   const openAlert = () => {
     setAlertPrice(String(market?.price ?? ""));
@@ -583,6 +418,7 @@ export default function Terminal({
                 <span className="muted">Rental rates, across providers.</span>
               </div>
               <div className="workspace-tools">
+                <Link className="strategies-shortcut" to="/terminal/strategies" aria-label="Explore strategies"><Layers3 size={17} /><span>Strategies</span></Link>
                 {showSearch && (
                   <input
                     className="market-search"
@@ -665,7 +501,7 @@ export default function Terminal({
       ) : tab === "contracts" ? (
         <Contracts notify={notify} />
       ) : tab === "strategies" ? (
-        <Strategies notify={notify} />
+        <StrategyLab notify={notify} />
       ) : tab === "leaderboard" ? (
         <Leaderboard />
       ) : (
@@ -704,7 +540,7 @@ export default function Terminal({
         </span>
       </footer>
       {tutorial && market && tab === "markets" && (
-        <Tutorial close={closeTutorial} />
+        <TerminalTour close={closeTutorial} />
       )}{" "}
       {detail && (
         <AssetDetail

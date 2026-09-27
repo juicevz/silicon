@@ -1,32 +1,32 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, FileCode2, Loader2, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
-import { api, money, short, explorer, type Portfolio, type Series } from "../api";
+import { api, money, short, explorer, type Portfolio, type Series, type Protocol } from "../api";
 import { useData, useConfig } from "../data";
 import { useWallet } from "../wallet";
 import { External, Modal } from "./ui";
 
-export function usePortfolio() {
+export function usePortfolio(series?: string) {
   const wallet = useWallet();
   const { protocol } = useData();
-  const [result, setResult] = useState<{ wallet: string; value: Portfolio } | null>(null),
+  const [result, setResult] = useState<{ wallet: string; series?: string; value: Portfolio } | null>(null),
     [error, setError] = useState("");
   useEffect(() => {
     setError("");
     if (!wallet.address) return;
     const controller = new AbortController();
-    void api<Portfolio>(`/portfolio/${wallet.address}`, {
+    void api<Portfolio>(`/portfolio/${wallet.address}${series ? `?series=${encodeURIComponent(series)}` : ""}`, {
       signal: controller.signal,
     })
       .then((value) => {
-        if (!controller.signal.aborted) setResult({ wallet: wallet.address!, value });
+        if (!controller.signal.aborted) setResult({ wallet: wallet.address!, series, value });
       })
       .catch((e) => {
         if (!controller.signal.aborted) setError((e as Error).message);
       });
     return () => controller.abort();
-  }, [wallet.address, protocol?.checked_at]);
-  return { portfolio: result?.wallet === wallet.address ? result.value : null, error };
+  }, [wallet.address, protocol?.checked_at, series]);
+  return { portfolio: result?.wallet === wallet.address && result?.series === series ? result.value : null, error };
 }
 
 export function PositionRows({
@@ -107,14 +107,17 @@ export function PositionRows({
 export function LiveContract({
   series,
   notify,
+  state,
 }: {
   series: Series;
   notify: (s: string) => void;
+  state?: Protocol;
 }) {
-  const { protocol } = useData();
+  const { protocol: active } = useData();
+  const protocol = state ?? active;
   const config = useConfig();
   const wallet = useWallet();
-  const { portfolio, error } = usePortfolio();
+  const { portfolio, error } = usePortfolio(series.address);
   const [action, setAction] = useState<"fund" | "withdraw" | null>(null),
     [amount, setAmount] = useState("10"),
     [pending, setPending] = useState(false);
@@ -146,6 +149,7 @@ export function LiveContract({
         action,
         parseUnits(amount, 6),
         notify,
+        series.address,
       );
       notify(
         action === "fund"

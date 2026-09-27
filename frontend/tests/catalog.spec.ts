@@ -20,7 +20,7 @@ test("expanded GPU models are searchable, selectable and keep quotes illustrativ
     expect(response.ok()).toBe(true);
     expect((await response.json()).indicative).toBe(true);
   }
-  await page.addInitScript(() => localStorage.setItem("silicon:intro:v2", "seen"));
+  await page.addInitScript(() => localStorage.setItem("silicon:intro:v3", "seen"));
   await page.goto("/terminal");
   await expect(page.locator(".catalog-row")).toHaveCount(16);
   await page.getByRole("button", { name: "Blackwell", exact: true }).click();
@@ -50,7 +50,7 @@ test("landing catalogue uses complete assets and stays compact on phones", async
   await expect(preview.getByRole("link", { name: "Open terminal" })).toHaveAttribute("href", "/terminal?asset=l4");
   await expect.poll(() => preview.locator(".preview-gpu-image").evaluateAll(images => images.every(image => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-  await page.addInitScript(() => localStorage.setItem("silicon:intro:v2", "seen"));
+  await page.addInitScript(() => localStorage.setItem("silicon:intro:v3", "seen"));
   await page.goto("/terminal");
   await expect(page.locator(".catalog-row")).toHaveCount(16);
   const height = await page.locator(".catalog-row").first().evaluate(element => element.getBoundingClientRect().height);
