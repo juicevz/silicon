@@ -278,6 +278,8 @@ class ProtocolReader:
                     is_call=decoded[0],
                     units_raw=decoded[1],
                     cost_raw=decoded[2] + decoded[3],
+                    premium_raw=decoded[2],
+                    fee_raw=decoded[3],
                     cap_raw=decoded[4],
                     amount=stable(decoded[2] + decoded[3]),
                 )
@@ -310,6 +312,12 @@ class ProtocolReader:
             profit=stable(due - row["cost_raw"]) if due is not None else None,
             tx=row["tx"],
             opened_at=row["timestamp"],
+            series_address=self.address,
+            expiry=series.expiry if series else None,
+            reference_price=series.base_price if series else None,
+            final_index=series.final_index if series and series.settled else None,
+            premium=stable(row["premium_raw"]) if "premium_raw" in row else None,
+            fee=stable(row["fee_raw"]) if "fee_raw" in row else None,
         )
 
     async def portfolio(self, address: str) -> Portfolio:
