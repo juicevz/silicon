@@ -96,7 +96,11 @@ contract SiliconSeries is ReentrancyGuard {
         return token.balanceOf(wallet) > feeFreeThreshold ? 0 : FEE_BPS;
     }
 
-    function fund(uint256 amount) external nonReentrant {
+    function fund(uint256 amount) external virtual nonReentrant {
+        _fund(amount);
+    }
+
+    function _fund(uint256 amount) internal {
         if (block.timestamp >= openAt || cancelled || settled) revert WrongPhase();
         if (token.balanceOf(msg.sender) == 0) revert NotHolder();
         if (amount == 0) revert InvalidAmount();
@@ -119,7 +123,11 @@ contract SiliconSeries is ReentrancyGuard {
         emit Withdrawn(msg.sender, amount, shareAmount);
     }
 
-    function setQuote(uint256 index_, uint64 observedAt, uint256 callPremium_, uint256 putPremium_, uint64 validUntil) external {
+    function setQuote(uint256 index_, uint64 observedAt, uint256 callPremium_, uint256 putPremium_, uint64 validUntil) external virtual {
+        _setQuote(index_, observedAt, callPremium_, putPremium_, validUntil);
+    }
+
+    function _setQuote(uint256 index_, uint64 observedAt, uint256 callPremium_, uint256 putPremium_, uint64 validUntil) internal {
         if (msg.sender != publisher) revert NotAuthorized();
         if (settled || cancelled || block.timestamp >= expiry - 5 minutes) revert WrongPhase();
         if (observedAt > block.timestamp || block.timestamp - observedAt > SOURCE_FRESHNESS || observedAt < observationTime
@@ -156,7 +164,11 @@ contract SiliconSeries is ReentrancyGuard {
         emit Bought(id, msg.sender, isCall, units, premium, fee, cap);
     }
 
-    function proposeResult(uint256 index_, uint64 observedAt, bytes32 receipt) external {
+    function proposeResult(uint256 index_, uint64 observedAt, bytes32 receipt) external virtual {
+        _proposeResult(index_, observedAt, receipt);
+    }
+
+    function _proposeResult(uint256 index_, uint64 observedAt, bytes32 receipt) internal {
         if (msg.sender != publisher) revert NotAuthorized();
         if (block.timestamp < expiry || block.timestamp >= expiry + SETTLEMENT_TIMEOUT - CHALLENGE_WINDOW || settled || cancelled || proposedAt != 0) revert WrongPhase();
         if (observedAt < expiry || observedAt > expiry + SOURCE_FRESHNESS || observedAt > block.timestamp || index_ == 0 || index_ > 1000e6 || receipt == bytes32(0)) revert InvalidTerms();
