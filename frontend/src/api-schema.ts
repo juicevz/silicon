@@ -243,6 +243,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/benefits/{address}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Benefits */
+        get: operations["benefits_api_v1_benefits__address__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/vaults": {
         parameters: {
             query?: never;
@@ -402,6 +419,28 @@ export interface components {
              */
             token_configured: boolean;
             /**
+             * Benefits Verified
+             * @default false
+             */
+            benefits_verified: boolean;
+            /** Benefits Error */
+            benefits_error?: string | null;
+            /**
+             * Workflow Benefits
+             * @default false
+             */
+            workflow_benefits: boolean;
+            /**
+             * Alert Limit
+             * @default 20
+             */
+            alert_limit: number;
+            /**
+             * Template Limit
+             * @default 10
+             */
+            template_limit: number;
+            /**
              * Verified
              * @default false
              */
@@ -410,6 +449,27 @@ export interface components {
             checked_at: string;
             /** Error */
             error?: string | null;
+        };
+        /** Benefits */
+        Benefits: {
+            access: components["schemas"]["Access"];
+            /** Recorded Savings */
+            recorded_savings?: string | null;
+            /**
+             * Recorded Trades
+             * @default 0
+             */
+            recorded_trades: number;
+            /**
+             * History Complete
+             * @default false
+             */
+            history_complete: boolean;
+            /**
+             * Scope
+             * @default Configured Silicon rounds; fees waived on confirmed purchases.
+             */
+            scope: string;
         };
         /** Evidence */
         Evidence: {
@@ -1531,6 +1591,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Protocol"];
+                };
+            };
+        };
+    };
+    benefits_api_v1_benefits__address__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                address: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Benefits"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

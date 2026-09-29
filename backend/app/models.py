@@ -89,9 +89,22 @@ class Access(BaseModel):
     fee_bps: int = 100
     advanced: bool = False
     token_configured: bool = False
+    benefits_verified: bool = False
+    benefits_error: str | None = None
+    workflow_benefits: bool = False
+    alert_limit: int = 20
+    template_limit: int = 10
     verified: bool = False
     checked_at: str
     error: str | None = None
+
+
+class Benefits(BaseModel):
+    access: Access
+    recorded_savings: str | None = None
+    recorded_trades: int = 0
+    history_complete: bool = False
+    scope: str = "Configured Silicon rounds; fees waived on confirmed purchases."
 
 
 class QuoteRequest(BaseModel):
