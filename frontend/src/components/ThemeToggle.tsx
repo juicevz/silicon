@@ -12,7 +12,6 @@ export function ThemeToggle() {
     const value = document.documentElement.dataset.siliconTheme === "dark" ? "light" : "dark";
     document.documentElement.dataset.siliconTheme = value;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", value === "dark" ? "#131c20" : "#f0eef5");
-    try { localStorage.setItem("silicon:theme", value); } catch { /* Private browsing can deny storage. */ }
     setDark(value === "dark");
   };
   return (

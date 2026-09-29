@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowDown, ArrowUpRight, Plus } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Pause, Play, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Header } from "./components/Header";
 import { Brand, External } from "./components/ui";
@@ -67,7 +67,6 @@ export default function Landing({ notify }: { notify: (value: string) => void })
       <div className="dream-environment dream-environment-dark" aria-hidden="true" />
       <Header landing notify={notify} />
       <div className="dream-wrap dream-intro">
-        <span className="dream-eyebrow">The GPU rental market</span>
         <h1 id="dream-title">Trade the cost <span>of compute.</span></h1>
         <p>Compare GPU rental rates. Explore positions on H100 prices rising or falling.</p>
         <div className="dream-actions"><TerminalButton /><a className="dream-text-link" href="#how-it-works">How it works <ArrowDown size={17} /></a></div>
@@ -75,19 +74,15 @@ export default function Landing({ notify }: { notify: (value: string) => void })
       <div className="dream-objects">
         <Suspense fallback={<SiliconPoster kind="objects" />}><SiliconScene kind="objects" motion={motion} paused={paused} /></Suspense>
       </div>
-      <div className="dream-hero-bottom">
-        <span className="dream-caption"><i />GPU rental references</span>
-        <button className="dream-motion" type="button" onClick={() => setPaused(value => !value)} disabled={reduced} aria-pressed={paused} title={reduced ? "Motion follows your system preference" : undefined}>
-          <span aria-hidden="true" />{reduced ? "Reduced motion" : paused ? "Resume motion" : "Pause motion"}
-        </button>
-      </div>
+      <button className="dream-motion" type="button" onClick={() => setPaused(value => !value)} disabled={reduced} aria-pressed={paused} aria-label={reduced ? "Reduced motion" : paused ? "Resume motion" : "Pause motion"} title={reduced ? "Motion follows your system preference" : paused ? "Resume motion" : "Pause motion"}>
+        {paused ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
+      </button>
     </section>
     <main>
       <FeaturedHardware motion={motion} paused={paused} />
       <section className="dream-section dream-mechanics" id="how-it-works" aria-labelledby="mechanics-title">
         <div className="dream-wrap dream-mechanics-grid">
           <div data-reveal>
-            <span className="dream-index">02 / How it works</span>
             <h2 id="mechanics-title">A position on<br />the price<br />of compute.</h2>
             <p className="dream-body">H100 contracts follow a reference built from five fixed provider listings.</p>
             <Link className="dream-text-link" to="/docs">Read the mechanics <ArrowUpRight size={17} /></Link>
@@ -101,13 +96,13 @@ export default function Landing({ notify }: { notify: (value: string) => void })
       </section>
       <section className="dream-section dream-position" id="calculator" aria-labelledby="position-title">
         <div className="dream-wrap dream-position-grid">
-          <div data-reveal><span className="dream-index">03 / Explore a position</span><h2 id="position-title">See what a<br />price move means.</h2><p className="dream-body">Move the reference price to explore a call. Its payout grows as the price rises, up to the contract’s cap.</p><div className="dream-small-detail"><ObjectDetail kind="orb" /><span>Move the slider to explore</span></div></div>
+          <div data-reveal><h2 id="position-title">See what a<br />price move means.</h2><p className="dream-body">Move the reference price to explore a call. Its payout grows as the price rises, up to the contract’s cap.</p></div>
           <LandingCalculator />
         </div>
       </section>
       <section className="dream-section" aria-labelledby="questions-title">
         <div className="dream-wrap dream-questions">
-          <div data-reveal><span className="dream-index">04 / Before you start</span><h2 id="questions-title">A few things<br />to know.</h2></div>
+          <div data-reveal><h2 id="questions-title">A few things<br />to know.</h2></div>
           <div className="dream-answers" data-reveal>{[
             ["What does a position track?","The price of renting GPU capacity from cloud providers. A position settles against a rental-price reference; it does not give you ownership of a GPU or access to compute."],
             ["How is the H100 reference calculated?","Silicon takes the median of five fixed, on-demand provider listings, with equal weight for each provider. A new reference is published only when all five quotes meet the freshness and configuration rules."],
@@ -133,14 +128,13 @@ function FeaturedHardware({ motion, paused }: { motion: LandingMotion; paused: b
   const index = FEATURED.findIndex(item => item.id === selected);
   return <section className="dream-section dream-hardware" id="markets" aria-labelledby="hardware-title">
     <div className="dream-wrap">
-      <div className="dream-section-heading" data-reveal><div><span className="dream-index">01 / The hardware</span><h2 id="hardware-title">The machines<br />behind the market.</h2></div><p>Explore five featured GPUs, then compare their published rental rates in the terminal.</p></div>
+      <div className="dream-section-heading" data-reveal><h2 id="hardware-title">The machines<br />behind the market.</h2><p>Compare rental rates across cloud providers.</p></div>
       <div className="dream-hardware-grid">
         <div className="dream-gpu-exhibit" data-reveal>
           <div className="dream-gpu-model"><Suspense fallback={<SiliconPoster kind="gpu" selected={selected} />}><SiliconScene ref={scene} kind="gpu" motion={motion} paused={paused} selected={selected} /></Suspense></div>
-          <div className="dream-gpu-label"><HardwareCallout hardware={hardware} /><span>{FEATURED[index].family} / NVIDIA<br />{hardware.form === "package" ? "Dual-die package" : "Passive accelerator"}</span></div>
+          <div className="dream-gpu-label"><HardwareCallout hardware={hardware} minimal /></div>
         </div>
         <div data-reveal>
-          <div className="dream-model-count"><span>Featured GPUs</span><span>05 models</span></div>
           <div className="dream-gpu-list" role="group" aria-label="Choose a GPU model" style={{ "--gpu-selection":index } as CSSProperties}>
             <div className="dream-gpu-marker" aria-hidden="true" />
             {FEATURED.map(({id,family}) => {
@@ -161,7 +155,7 @@ function FeaturedHardware({ motion, paused }: { motion: LandingMotion; paused: b
 function LandingCalculator() {
   const [scenario,setScenario] = useState(4);
   const payout = Math.min(10,Math.max(0,scenario))*10;
-  return <AppWindow className="calculator-window dream-calculator" title="H100 call example" action={<span className="dream-illustration">Illustration</span>}>
+  return <AppWindow className="calculator-window dream-calculator" title="H100 call example">
     <div className="landing-calculator">
       <PayoffChart move={scenario} cost={20.2} maxPayout={100} onMove={setScenario} />
       <label htmlFor="landing-scenario">Reference price change</label>

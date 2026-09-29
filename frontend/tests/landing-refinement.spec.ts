@@ -26,8 +26,13 @@ test("GPU transitions reuse the canvas through rapid selection", async ({ page }
   expect(errors).toEqual([]);
 });
 
-test("Dreamlike layout persists while light and Industrial dark palettes switch", async ({ page }) => {
+test("every visit starts light and the manual dark toggle preserves the layout", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("silicon:theme", "dark"));
+  await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-silicon-theme","light");
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#f0eef5");
+  await page.evaluate(() => document.fonts.ready);
   const hero = await page.locator(".dream-intro").boundingBox();
   await page.getByRole("button",{name:"Switch to dark mode"}).click();
   await expect(page.locator("html")).toHaveAttribute("data-silicon-theme","dark");
@@ -37,10 +42,12 @@ test("Dreamlike layout persists while light and Industrial dark palettes switch"
   const typography = await page.locator("h1").evaluate(el => ({family:getComputedStyle(el).fontFamily,weight:getComputedStyle(el).fontWeight}));
   expect(typography.family).toContain("Space Grotesk"); expect(typography.weight).toBe("450");
   await page.reload();
-  await expect(page.getByRole("button",{name:"Switch to light mode"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Switch to dark mode"})).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-silicon-theme","light");
   await page.getByRole("button",{name:"About",exact:true}).click();
   await expect(page.getByRole("dialog")).toBeVisible(); await page.keyboard.press("Escape");
   await page.setViewportSize({width:320,height:780});
+  await page.getByRole("button",{name:"Switch to dark mode"}).click();
   await page.getByRole("button",{name:"Switch to light mode"}).click();
   await expect(page.locator(".dreamlike")).toHaveCSS("background-color","rgb(240, 238, 245)");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
