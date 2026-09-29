@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" rx="8" fill="#f16a35"/><g fill="none" stroke="#192321" stroke-width="2.1"><path d="M9 15V9h16v16h-6"/><path d="M14 20v-6h16v16h-6"/><path d="M9 19h12v12H9z"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="200 185 600 630" fill="#303043">
+  <title>Silicon sliced wafer mark</title>
+  <path d="M503 225C320 225 180 383 229 550Q234 611 287 597L643 255L625 238L641 221L621 201L605 217L587 198L310 471C334 368 423 291 503 225Z"/>
+  <path d="M280 662L624 321C663 282 699 298 721 336L377 680C340 717 310 699 280 662Z"/>
+  <path transform="rotate(180 500 500)" d="M503 225C320 225 180 383 229 550Q234 611 287 597L643 255L625 238L641 221L621 201L605 217L587 198L310 471C334 368 423 291 503 225Z"/>
+</svg>
