@@ -1,0 +1,68 @@
+.market-context-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 22px; padding: 14px 20px; border: 1px solid var(--border); border-radius: 7px; background: var(--panel); }
+.market-context-bar > span { color: var(--secondary); font-size: 13px; flex: 1; }
+.market-context-bar .text-button { font-size: 14px; gap: 8px; }
+.insight-content { padding: 26px; color: var(--secondary); font-size: 14px; line-height: 1.8; min-width: 0; }
+.insight-content h2, .insight-content h3 { color: var(--ink); font-weight: 500; line-height: 1.5; }
+.insight-content h2 { font-size: 21px; margin: 0; }
+.insight-content h3 { font-size: 17px; margin: 22px 0 10px; }
+.insight-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 22px; }
+.insight-heading h2, .insight-heading h3 { display: flex; align-items: center; gap: 10px; margin: 0; }
+.insight-heading > span { font-size: 13px; }
+.insight-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px 26px; padding: 22px 0; }
+.insight-grid > div { min-width: 0; }
+.insight-grid span { display: block; color: var(--secondary); font-size: 13px; margin-bottom: 6px; }
+.insight-grid strong { font-weight: 500; color: var(--ink); font-size: 15px; overflow-wrap: anywhere; }
+.insight-reasons { margin: 20px 0; padding: 16px 18px 16px 36px; background: color-mix(in srgb, var(--gold) 5%, transparent); border: 1px solid var(--border); border-radius: 7px; }
+.insight-reasons li + li { margin-top: 8px; }
+.insight-details summary { cursor: pointer; color: var(--ink); font-size: 14px; padding: 16px 0; }
+.insight-details[open] > div { animation: insight-enter .6s var(--ease) both; }
+.insight-contract { border-top: 1px solid var(--border); margin-top: 22px; padding-top: 22px; }
+.insight-links { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 20px; }
+.observation-archive { padding: 20px 0 0; margin-top: 20px; border-top: 1px solid var(--border); }
+.observation-archive select { width: 100%; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--ink); padding: 12px; font: inherit; margin-top: 8px; }
+.observation-providers > div { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 5px 18px; border-top: 1px solid var(--border); padding: 14px 0; font-size: 13px; }
+.observation-providers strong { color: var(--ink); font-weight: 500; }
+.observation-providers time { font-size: 12px; }
+.observation-receipt { display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px; }
+.observation-receipt > span { color: var(--secondary); }
+.round-accounting { border-top: 1px solid var(--border); padding: 0 20px; }
+.round-accounting .insight-content { padding: 12px 0 24px; }
+.insight-result { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 18px 0; border-block: 1px solid var(--border); }
+.insight-result strong { font-size: 18px; font-weight: 500; }
+.saved-transactions { padding: 22px; margin: 0 0 20px; }
+.saved-transactions h2 { font-size: 17px; font-weight: 500; }
+.saved-transactions > p { color: var(--secondary); font-size: 13px; line-height: 1.8; }
+.saved-transaction { display: grid; grid-template-columns: 20px minmax(0,1fr) auto 15px; gap: 14px; align-items: center; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--border); padding: 18px 0; background: none; color: var(--secondary); font: inherit; cursor: pointer; }
+.saved-transaction strong { display: block; color: var(--ink); font-size: 14px; font-weight: 500; }
+.saved-transaction time { display: block; font-size: 12px; margin-top: 6px; }
+.saved-transaction > span:last-of-type { font-size: 13px; }
+.saved-transaction:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.receipt-timeline { list-style: none; margin: 0 0 22px; padding: 0; }
+.receipt-timeline li { display: grid; grid-template-columns: 18px 1fr; gap: 14px; padding: 14px 0; }
+.receipt-timeline svg { margin-top: 5px; color: var(--secondary); }
+.receipt-timeline .complete svg { color: var(--green); }
+.receipt-timeline strong { color: var(--ink); font-weight: 500; }
+.receipt-timeline time { display: block; font-size: 13px; margin-top: 5px; }
+.receipt-timeline p { margin: 5px 0 0; }
+.strategy-thesis-input { display: block; width: 100%; min-height: 102px; resize: vertical; padding: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 14px; line-height: 1.7; }
+.paper-saved-thesis { grid-column: 1 / -1; margin: 0; border-left: 2px solid var(--orange, #f18b54); padding: 8px 14px; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
+.paper-record .receipt-timeline { margin: 16px 0; }
+.paper-timeline { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px 24px; }
+.position-receipt-button { font-size: 13px; }
+.position-row:has(.position-receipt-button) { flex-wrap: wrap; }
+.replacement-input { width: 100%; padding: 12px; margin: 10px 0 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; }
+@keyframes insight-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 640px) {
+  .insight-content { padding: 20px; }
+  .insight-grid { gap: 20px 16px; }
+  .insight-grid strong { font-size: 14px; }
+  .market-context-bar { padding: 14px; gap: 12px; }
+  .market-context-bar > span { flex-basis: 40%; text-align: right; }
+  .saved-transactions { padding: 18px; }
+  .saved-transaction { grid-template-columns: 18px minmax(0,1fr) 15px; gap: 10px; }
+  .saved-transaction > span:last-of-type { grid-column: 2; grid-row: 2; }
+  .saved-transaction > svg:last-child { grid-column: 3; grid-row: 1; }
+  .observation-providers time, .observation-providers span:nth-last-child(2) { grid-column: 1 / -1; }
+  .observation-archive { padding-inline: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .insight-details[open] > div { animation: none; } }
