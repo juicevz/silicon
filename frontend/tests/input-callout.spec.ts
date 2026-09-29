@@ -43,12 +43,12 @@ test("dragged values stay current and stationary on every sampled frame", async 
   await page.keyboard.press("Home");
   await expect(page.locator(".range-value")).toHaveText("-15.0%");
   await expect(page.locator(".landing-results .animated-number")).toHaveText("0.00");
-  await expect(slider).toHaveCSS("outline-style", "none");
+  await expect(slider).toHaveCSS("outline-style", "solid");
 });
 
 test("the selected model follows streamed provider rates without mixing models", async ({ page, request }) => {
   const snapshot = await (await request.get("/api/v1/markets")).json() as Snapshot;
-  const market = snapshot.markets.find(({ id }) => id === "rtx-pro-6000")!;
+  const market = snapshot.markets.find(({ id }) => id === "h200")!;
   const quote = market.providers[0];
   market.stale = false;
   market.price = .5; // The callout's average must not silently use the median.
@@ -72,9 +72,9 @@ test("the selected model follows streamed provider rates without mixing models",
     window.EventSource = Stream as unknown as typeof EventSource;
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "RTX PRO 6000", exact: true }).click();
-  await expect(page.locator(".hardware-callout")).toHaveAttribute("data-model", "rtx-pro-6000");
-  await expect(page.locator(".hardware-callout-release")).toHaveText("Released 2025");
+  await page.getByRole("button", { name: "H200", exact: true }).click();
+  await expect(page.locator(".hardware-callout")).toHaveAttribute("data-model", "h200");
+  await expect(page.locator(".hardware-callout-release")).toHaveText("Released 2024");
   await expect(page.locator(".hardware-callout-price")).toHaveText("$2.00 / GPU·hr");
   market.providers[2].price = 5;
   await page.evaluate((detail) => window.dispatchEvent(new CustomEvent("test:snapshot", { detail })), snapshot);
@@ -84,7 +84,7 @@ test("the selected model follows streamed provider rates without mixing models",
   await expect(page.locator(".hardware-callout-release")).toHaveText("Released 2022");
   market.providers = [];
   await page.evaluate((detail) => window.dispatchEvent(new CustomEvent("test:snapshot", { detail })), snapshot);
-  await page.getByRole("button", { name: "RTX PRO 6000", exact: true }).click();
+  await page.getByRole("button", { name: "H200", exact: true }).click();
   await expect(page.locator(".hardware-callout-price")).toHaveText("Unavailable");
 });
 
@@ -92,11 +92,11 @@ test("callouts remain readable on mobile in both themes and reduced motion", asy
   await page.setViewportSize({ width: 320, height: 780 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  for (const name of ["RTX PRO 6000", "B200", "L4"]) {
+  for (const name of ["H200", "B200", "L40S"]) {
     await page.getByRole("button", { name, exact: true }).click();
     await expect(page.locator(".hardware-callout-name")).toHaveText(name);
     const rect = (await page.locator(".hardware-callout-copy").boundingBox())!;
-    const previews = (await page.locator(".hardware-previews").boundingBox())!;
+    const previews = (await page.locator(".dream-gpu-list").boundingBox())!;
     expect(rect.x).toBeGreaterThanOrEqual(0);
     expect(rect.x + rect.width).toBeLessThanOrEqual(320);
     expect(rect.y + rect.height).toBeLessThan(previews.y);
