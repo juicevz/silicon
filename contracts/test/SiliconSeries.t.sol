@@ -39,9 +39,36 @@ contract SiliconSeriesTest is Test {
         token.mint(buyer,1); assertEq(series.feeBps(buyer),0);
         uint256 second=buy(true,1e6); (,,,,cost,)=series.positions(second); assertEq(cost,2000000);
     }
-    function testCannotTradeWithoutToken() public {
+    function testNonholderCanTradeAtStandardFee() public {
         vm.prank(buyer);token.transfer(writer,1);
-        vm.prank(buyer);vm.expectRevert(SiliconSeries.NotHolder.selector);series.buy(true,1e6,3e6,block.timestamp+60);
+        uint256 id = buy(true,1e6);
+        (,,,,uint256 cost,)=series.positions(id);
+        assertEq(cost,2020000);
+        assertEq(series.reserved(),10e6);
+    }
+    function testNonholderCanFundWithdrawAndTradeWithoutConfiguredToken() public {
+        SiliconSeries open = new SiliconSeries(address(usd),address(0),address(this),address(this),uint64(block.timestamp+1 hours),uint64(block.timestamp+8 days),385000000,keccak256("silicon-h100-v1"));
+        usd.mint(writer,150e6);
+        vm.startPrank(writer); usd.approve(address(open),150e6);open.fund(150e6);open.withdraw(10e6);vm.stopPrank();
+        assertEq(open.accountedAssets(),140e6);assertEq(open.feeFreeThreshold(),0);assertEq(open.ACCESS_POLICY(),2);
+        vm.warp(open.openAt());open.setQuote(100e6,uint64(block.timestamp),2e6,2e6,uint64(block.timestamp+600));
+        vm.startPrank(buyer);usd.approve(address(open),2020000);open.buy(true,1e6,2020000,block.timestamp+60);vm.stopPrank();
+        assertEq(open.feeBps(buyer),100);
+        vm.warp(open.expiry()+24 hours);open.cancelTimedOut();assertEq(open.claim(0),2020000);
+        vm.prank(writer);assertEq(open.withdraw(140e6),140e6);
+    }
+    function testLostWaiverCannotExceedSignedCost() public {
+        token.mint(buyer,5001e18);
+        assertEq(series.feeBps(buyer),0);
+        uint256 held=token.balanceOf(buyer);
+        vm.prank(buyer);token.transfer(writer,held);
+        vm.prank(buyer);vm.expectRevert(SiliconSeries.PriceMoved.selector);series.buy(true,1e6,2e6,block.timestamp+60);
+        assertEq(series.positionCount(),0);
+    }
+    function testBrokenBenefitsTokenDoesNotBlockFundingOrTrading() public {
+        vm.mockCallRevert(address(token),abi.encodeWithSelector(token.balanceOf.selector),abi.encode("temporarily unavailable"));
+        assertEq(series.feeBps(buyer),100);
+        uint256 id=buy(true,1e6);(,,,,uint256 cost,)=series.positions(id);assertEq(cost,2020000);
     }
     function testReserveCannotBeOverissued() public {
         buy(true,30e6);assertEq(series.reserved(),300e6);

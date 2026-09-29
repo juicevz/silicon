@@ -36,7 +36,7 @@ contract SiliconPremiumVaultFactory {
     error InvalidRound();
 
     constructor(address asset_, address token_, address publisher_, address guardian_, uint256 maxRoundDeposits_) {
-        if (asset_.code.length == 0 || token_.code.length == 0 || publisher_ == address(0) || guardian_ == address(0) || maxRoundDeposits_ == 0) revert InvalidRound();
+        if (asset_.code.length == 0 || (token_ != address(0) && token_.code.length == 0) || publisher_ == address(0) || guardian_ == address(0) || maxRoundDeposits_ == 0) revert InvalidRound();
         asset = asset_; token = token_; publisher = publisher_; guardian = guardian_; maxRoundDeposits = maxRoundDeposits_;
     }
 

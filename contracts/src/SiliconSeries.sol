@@ -20,6 +20,7 @@ contract SiliconSeries is ReentrancyGuard {
     uint256 public constant CHALLENGE_WINDOW = 1 hours;
     uint256 public constant SETTLEMENT_TIMEOUT = 24 hours;
     uint256 public constant SOURCE_FRESHNESS = 3 hours;
+    uint256 public constant ACCESS_POLICY = 2; // Open trading; optional holder fee waiver.
 
     IERC20 public immutable asset;
     IERC20 public immutable token;
@@ -81,19 +82,26 @@ contract SiliconSeries is ReentrancyGuard {
     error InvalidAmount();
 
     constructor(address asset_, address token_, address publisher_, address guardian_, uint64 openAt_, uint64 expiry_, uint256 basePrice_, bytes32 methodology_) {
-        if (asset_.code.length == 0 || token_.code.length == 0 || publisher_ == address(0) || guardian_ == address(0)
+        if (asset_.code.length == 0 || (token_ != address(0) && token_.code.length == 0) || publisher_ == address(0) || guardian_ == address(0)
             || openAt_ <= block.timestamp || expiry_ < openAt_ + 1 hours || expiry_ > openAt_ + 30 days
             || basePrice_ == 0 || methodology_ == bytes32(0) || IERC20Metadata(asset_).decimals() != 6) revert InvalidTerms();
-        uint256 decimals = IERC20Metadata(token_).decimals();
+        uint256 decimals = token_ == address(0) ? 0 : IERC20Metadata(token_).decimals();
         if (decimals > 24) revert InvalidTerms();
         asset = IERC20(asset_); token = IERC20(token_);
         publisher = publisher_; guardian = guardian_;
-        feeFreeThreshold = 5000 * 10 ** decimals;
+        feeFreeThreshold = token_ == address(0) ? 0 : 5000 * 10 ** decimals;
         openAt = openAt_; expiry = expiry_; baseRentalPrice = basePrice_; methodology = methodology_;
     }
 
     function feeBps(address wallet) public view returns (uint256) {
-        return token.balanceOf(wallet) > feeFreeThreshold ? 0 : FEE_BPS;
+        if (address(token) == address(0)) return FEE_BPS;
+        // An optional benefits token cannot block the market. A changed fee is
+        // still bounded by the buyer's signed maxTotal in buy().
+        try token.balanceOf(wallet) returns (uint256 balance) {
+            return balance > feeFreeThreshold ? 0 : FEE_BPS;
+        } catch {
+            return FEE_BPS;
+        }
     }
 
     function fund(uint256 amount) external virtual nonReentrant {
@@ -102,7 +110,6 @@ contract SiliconSeries is ReentrancyGuard {
 
     function _fund(uint256 amount) internal {
         if (block.timestamp >= openAt || cancelled || settled) revert WrongPhase();
-        if (token.balanceOf(msg.sender) == 0) revert NotHolder();
         if (amount == 0) revert InvalidAmount();
         uint256 beforeBalance = asset.balanceOf(address(this));
         asset.safeTransferFrom(msg.sender, address(this), amount);
@@ -146,7 +153,6 @@ contract SiliconSeries is ReentrancyGuard {
 
     function buy(bool isCall, uint256 units, uint256 maxTotal, uint256 deadline) external nonReentrant returns (uint256 id) {
         if (paused || cancelled || settled || block.timestamp < openAt || block.timestamp >= expiry - 5 minutes) revert WrongPhase();
-        if (token.balanceOf(msg.sender) == 0) revert NotHolder();
         if (block.timestamp > deadline || block.timestamp > quoteValidUntil || observationTime == 0 || block.timestamp - observationTime > SOURCE_FRESHNESS) revert StaleQuote();
         if (units < 1000 || units > 1e12) revert InvalidAmount();
         (uint256 premium, uint256 fee, uint256 cap) = quote(msg.sender, isCall, units);
