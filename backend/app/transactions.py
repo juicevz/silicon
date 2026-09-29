@@ -112,10 +112,13 @@ class Transactions:
                 "failed": False,
                 "confirmations": 0,
             }
+        if str(receipt.get("transactionHash", "")).lower() != tx_hash.lower():
+            raise RuntimeError("The node returned a receipt for another transaction")
         head = int(await self.chain.rpc("eth_blockNumber", []), 16)
         confirmations = max(0, head - int(receipt["blockNumber"], 16) + 1)
-        failed = int(receipt["status"], 16) == 0
-        confirmed = not failed and confirmations >= 2
+        reverted = int(receipt["status"], 16) == 0
+        failed = reverted and confirmations >= 2
+        confirmed = not reverted and confirmations >= 2
         if confirmed and str(receipt.get("to", "")).lower() in {
             self.chain.settings.usdg_address.lower(),
             self.chain.settings.market_address.lower(),
@@ -128,3 +131,29 @@ class Transactions:
             "failed": failed,
             "confirmations": confirmations,
         }
+
+    async def replacement(self, original_hash: str, replacement_hash: str) -> dict:
+        if any(not re.fullmatch(r"0x[0-9a-fA-F]{64}", value) for value in (original_hash, replacement_hash)):
+            raise ValueError("Invalid transaction hash")
+        if original_hash.lower() == replacement_hash.lower():
+            raise ValueError("Choose the replacement transaction, not the original hash.")
+        await self.chain.verify_chain()
+        original = await self.chain.rpc("eth_getTransactionByHash", [original_hash])
+        replacement = await self.chain.rpc("eth_getTransactionByHash", [replacement_hash])
+        if not original or not replacement:
+            raise ValueError("The node cannot retrieve both transactions yet. Check their status in your wallet.")
+        if (str(original.get("hash", "")).lower() != original_hash.lower()
+                or str(replacement.get("hash", "")).lower() != replacement_hash.lower()
+                or not ADDRESS.fullmatch(str(original.get("from", "")))
+                or str(original.get("from", "")).lower() != str(replacement.get("from", "")).lower()
+                or original.get("nonce") is None or replacement.get("nonce") is None
+                or int(original["nonce"], 16) != int(replacement["nonce"], 16)):
+            raise ValueError("The replacement must use the same wallet and nonce as the original transaction.")
+        receipt = await self.chain.rpc("eth_getTransactionReceipt", [replacement_hash])
+        if not receipt or str(receipt.get("transactionHash", "")).lower() != replacement_hash.lower():
+            raise ValueError("The replacement has not been mined yet.")
+        head = int(await self.chain.rpc("eth_blockNumber", []), 16)
+        if head - int(receipt["blockNumber"], 16) + 1 < 2:
+            raise ValueError("Wait for two confirmations of the replacement.")
+        return {"hash": original_hash, "replacement_hash": replacement_hash,
+                "wallet": original["from"], "confirmed": True, "reverted": int(receipt["status"], 16) == 0}

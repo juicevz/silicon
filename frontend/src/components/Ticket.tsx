@@ -414,12 +414,29 @@ export default function Ticket({
                 <span>Platform fee</span>
                 <strong>{money(review.fee, 4)} USDG</strong>
               </div>
+              <div>
+                <span>Premium before fee</span>
+                <strong>{money(review.premium, 4)} USDG</strong>
+              </div>
+              <div>
+                <span>Maximum net gain before gas</span>
+                <strong className="green">{money(Number(review.max_payout) - Number(review.cost))} USDG</strong>
+              </div>
+              <div>
+                <span>Series opening reference</span>
+                <strong>${money(review.reference_price, 4)} / hr</strong>
+              </div>
+              <div>
+                <span>Quote valid until</span>
+                <strong>{review.deadline ? new Date(review.deadline * 1000).toLocaleTimeString() : "Expired"}</strong>
+              </div>
             </div>
             <p>
               Settlement uses Silicon’s publisher and a one-hour challenge
               window. Your wallet may request an exact USDG approval before the
               position transaction. ETH covers network fees.
             </p>
+            <p>The maximum authorized cost is fixed for this request. Your transaction hash and reviewed terms are saved in Activity after submission.</p>
             <button
               className="button primary full-width"
               disabled={sending || !review.deadline || review.deadline <= now}

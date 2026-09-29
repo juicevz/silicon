@@ -3,6 +3,7 @@ import { encodeAbiParameters, encodeFunctionData, parseAbi } from "viem";
 import type { Config, Quote } from "../src/api";
 import { buyPosition, seriesAction } from "../src/transactions";
 import type { Provider } from "../src/wallet";
+import { browserStorage } from "./browser-storage";
 
 const wallet = "0x1111111111111111111111111111111111111111";
 const market = "0x2222222222222222222222222222222222222222";
@@ -12,7 +13,9 @@ const config = { chain_id: 4663, market_address: market, usdg_address: usd,
   explorer_url: "https://robinhoodchain.blockscout.com" } as Config;
 const abi = parseAbi(["function approve(address,uint256) returns (bool)", "function buy(bool,uint256,uint256,uint256) returns (uint256)", "function fund(uint256)", "function withdraw(uint256) returns (uint256)", "function claim(uint256) returns (uint256)"]);
 const originalFetch = globalThis.fetch;
-test.afterEach(() => { globalThis.fetch = originalFetch; });
+let restore: () => void;
+test.beforeEach(() => { restore = browserStorage(); });
+test.afterEach(() => { globalThis.fetch = originalFetch; restore(); });
 
 function setup(options: { chain?: number; tamper?: boolean; accountChange?: boolean; retry?: boolean; expireQuote?: Quote; addChain?: boolean; failed?: boolean } = {}) {
   const sent: Record<string, unknown>[] = [];

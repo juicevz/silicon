@@ -2,6 +2,7 @@ import { decodeFunctionResult, encodeFunctionData, parseAbi, toHex, type Address
 import { api, ApiError, type Config, type Quote } from "./api";
 import type { components } from "./api-schema";
 import type { Provider } from "./wallet";
+import { checkTransaction, saveTransaction, walletFlow, type TransactionEntry } from "./transactionJournal";
 
 type Request = components["schemas"]["TransactionRequest"];
 type Reviewed = components["schemas"]["ReviewedTransaction"];
@@ -37,7 +38,7 @@ async function checked(provider: Provider, wallet: string, config: Config) {
     throw new Error("Wallet account or network changed. Reconnect before signing.");
 }
 
-async function send(provider: Provider, wallet: string, config: Config, request: Request, notify: (message: string) => void) {
+async function send(provider: Provider, wallet: string, config: Config, request: Request, notify: (message: string) => void, terms?: { quote: Quote; side: "call" | "put" }) {
   const series = request.series_address ?? config.market_address;
   if (!series || ![config.market_address, ...(config.vault_round_addresses ?? [])].some(address => address?.toLowerCase() === series.toLowerCase())) throw new Error("This Robinhood round is not configured.");
   await checked(provider, wallet, config);
@@ -60,20 +61,23 @@ async function send(provider: Provider, wallet: string, config: Config, request:
   const hash = await provider.request({ method: "eth_sendTransaction", params: [{ from: wallet, to, data, value: "0x0" }] });
   if (typeof hash !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(hash))
     throw new Error("Your wallet did not return a transaction hash. Check its activity before retrying.");
-  notify("Transaction sent. Waiting for Robinhood confirmation…");
+  const entry: TransactionEntry = { version: 1, hash, wallet, chainId: config.chain_id, series, action: request.action,
+    amountRaw: request.amount_raw ?? "0", positionId: request.position_id, status: "pending",
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...terms };
+  const persisted = saveTransaction(entry);
+  notify(persisted ? "Transaction sent. Its receipt is saved in Activity." : `Transaction sent: ${hash}. Browser storage failed; save this hash before closing the page.`);
   const until = Date.now() + 120000;
   while (Date.now() < until) {
     try {
-      const status = await api<{ hash: string; confirmed: boolean; failed: boolean }>(`/transactions/${hash}`);
-      if (status.hash.toLowerCase() !== hash.toLowerCase()) throw new Error("Unexpected transaction receipt.");
-      if (status.failed) throw new Error("The transaction reverted. No successful action was recorded.");
-      if (status.confirmed) return hash;
+      const status = await checkTransaction(entry);
+      if (status.status === "failed") throw new Error("The transaction reverted. Its receipt is saved in Activity.");
+      if (status.status === "confirmed") return hash;
     } catch (error) {
       if (!temporary(error)) throw error;
     }
     await new Promise(resolve => setTimeout(resolve, 1400));
   }
-  throw new Error(`Confirmation is still pending. Check transaction ${hash} before retrying.`);
+  throw new Error("Confirmation is still pending. Activity will keep checking the saved transaction; do not submit it again.");
 }
 
 async function approve(provider: Provider, wallet: string, config: Config, amount: bigint, notify: (message: string) => void, series = config.market_address) {
@@ -86,18 +90,22 @@ async function approve(provider: Provider, wallet: string, config: Config, amoun
 }
 
 export async function buyPosition(provider: Provider, wallet: string, config: Config, quote: Quote, side: "call" | "put", notify: (message: string) => void) {
+  return walletFlow(wallet, config.chain_id, async () => {
   if (quote.indicative || !quote.units_raw || !quote.cost_raw || !quote.deadline || quote.deadline <= Date.now() / 1000
     || !config.market_address || quote.contract_address?.toLowerCase() !== config.market_address.toLowerCase())
     throw new Error("Refresh the live quote before trading.");
   await approve(provider, wallet, config, BigInt(quote.cost_raw), notify);
   if (quote.deadline <= Date.now() / 1000 + 5) throw new Error("The quote expired during approval. Refresh it before opening the position.");
   return send(provider, wallet, config, { action: "buy", wallet, amount_raw: quote.units_raw,
-    max_total_raw: quote.cost_raw, deadline: quote.deadline, is_call: side === "call" }, notify);
+    max_total_raw: quote.cost_raw, deadline: quote.deadline, is_call: side === "call" }, notify, { quote: { ...quote }, side });
+  });
 }
 
 export async function seriesAction(provider: Provider, wallet: string, config: Config, action: "fund" | "withdraw" | "claim", amount: bigint, notify: (message: string) => void, series = config.market_address) {
+  return walletFlow(wallet, config.chain_id, async () => {
   if (action === "claim" && (amount < 0n || amount > BigInt(Number.MAX_SAFE_INTEGER))) throw new Error("Invalid position number.");
   if (action === "fund") await approve(provider, wallet, config, amount, notify, series);
   return send(provider, wallet, config, { action, wallet, amount_raw: action === "claim" ? "0" : amount.toString(), max_total_raw: "0", is_call: true,
     position_id: action === "claim" ? Number(amount) : null, series_address: series }, notify);
+  });
 }
