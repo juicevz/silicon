@@ -23,8 +23,9 @@ from app.transactions import Transactions
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("use_token", [True, False])
 async def test_funded_series_reader_quote_portfolio_and_leaderboard(
-    tmp_path, monkeypatch, api_module
+    tmp_path, monkeypatch, api_module, use_token
 ):
     root = Path(__file__).resolve().parents[2]
     artifact = root / "contracts/out/SiliconSeries.sol/SiliconSeries.json"
@@ -100,6 +101,8 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
         token = deploy(writer, "SiliconSeries.t.sol/MockToken.json", ["uint8"], [18])[
             "contractAddress"
         ]
+        if not use_token:
+            token = "0x" + "0" * 40
         timestamp = int(rpc("eth_getBlockByNumber", ["latest", False])["timestamp"], 16)
         opening, expiry = timestamp + 3600, timestamp + 3600 + 86400
         receipt = deploy(
@@ -133,7 +136,7 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
             data_dir=tmp_path,
             rpc_url=url,
             usdg_address=usd,
-            token_address=token,
+            token_address=token if use_token else "",
             market_address=address,
             market_start_block=int(receipt["blockNumber"], 16),
         )
@@ -182,16 +185,11 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
             return reviewed
 
         for wallet, token_amount, stable_amount in [
-            (writer, 1, 300_000_000),
+            (writer, 0, 300_000_000),
             (buyer, 5000 * 10**18 + 1, 100_000_000),
         ]:
-            send(
-                writer,
-                token,
-                "mint(address,uint256)",
-                ["address", "uint256"],
-                [wallet, token_amount],
-            )
+            if use_token:
+                send(writer, token, "mint(address,uint256)", ["address", "uint256"], [wallet, token_amount])
             send(
                 writer,
                 usd,
@@ -213,12 +211,13 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
             ["uint256", "uint64", "uint256", "uint256", "uint64"],
             [100_000_000, opening, 2_000_000, 2_000_000, opening + 600],
         )
-        await execute(buyer, "approve", amount_raw="2000000")
+        cost = "2000000" if use_token else "2020000"
+        await execute(buyer, "approve", amount_raw=cost)
         await execute(
             buyer,
             "buy",
             amount_raw="1000000",
-            max_total_raw="2000000",
+            max_total_raw=cost,
             is_call=True,
             deadline=clock.time() + 60,
         )
@@ -226,20 +225,28 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
         await chain.poll()
         await reader.poll()
         assert reader.snapshot.verified
-        assert reader.snapshot.funded == "302"
+        assert reader.snapshot.funded == ("302" if use_token else "302.02")
         assert reader.snapshot.reserved == "10"
         access = await chain.access(buyer)
-        assert access.verified and access.holder and access.fee_free
+        assert access.verified and access.holder == use_token and access.fee_free == use_token
         quote = await reader.quote(QuoteRequest(address=buyer))
         assert (
             quote
             and not quote.indicative
-            and quote.fee == "0"
+            and quote.fee == ("0" if use_token else "0.02")
             and quote.units_raw == "1000000"
         )
         portfolio = await reader.portfolio(buyer)
-        assert len(portfolio.positions) == 1 and portfolio.positions[0].cost == "2"
+        assert len(portfolio.positions) == 1 and portfolio.positions[0].cost == ("2" if use_token else "2.02")
         assert portfolio.index_synced
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api_module.app), base_url="http://test") as api:
+            benefits_response = await api.get(f"/api/v1/benefits/{buyer}")
+            assert benefits_response.status_code == 200
+            benefits = benefits_response.json()
+            assert benefits["history_complete"] and benefits["recorded_trades"] == 1
+            assert benefits["recorded_savings"] == ("0.02" if use_token else "0")
+            assert benefits["access"]["workflow_benefits"] == use_token
+            assert (await api.get("/api/v1/benefits/not-a-wallet")).status_code == 400
         rpc("evm_setNextBlockTimestamp", [expiry])
         rpc("evm_mine", [])
         send(
@@ -258,14 +265,9 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
         portfolio = await reader.portfolio(buyer)
         assert portfolio.positions[0].claimable == "4"
         leaders = reader.leaderboard("7d")
-        assert leaders.rows[0].pnl == "2" and leaders.rows[0].wins == 1
-        send(
-            buyer,
-            token,
-            "transfer(address,uint256)",
-            ["address", "uint256"],
-            [writer, 5000 * 10**18 + 1],
-        )
+        assert leaders.rows[0].pnl == ("2" if use_token else "1.98") and leaders.rows[0].wins == 1
+        if use_token:
+            send(buyer, token, "transfer(address,uint256)", ["address", "uint256"], [writer, 5000 * 10**18 + 1])
         config.trading_enabled = False
         market.stale = True
         wrong_owner = await review(
@@ -280,8 +282,8 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
         await reader.poll()
         assert (await reader.portfolio(buyer)).positions[0].claimed
         assert reader.snapshot.funded == "0"
-        assert (await chain.access(buyer)).usdg == "102"
-        assert (await chain.access(writer)).usdg == "298"
+        assert (await chain.access(buyer)).usdg == ("102" if use_token else "101.98")
+        assert (await chain.access(writer)).usdg == ("298" if use_token else "298.02")
         # A configured vault round gets its own approval, collateral and
         # redemption path. Arbitrary destinations never reach the wallet.
         next_open = clock.time() + 86400

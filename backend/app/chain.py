@@ -119,24 +119,25 @@ class Chain:
                 str(Decimal(usdg) / 10**6),
                 str(Decimal(int(eth, 16)) / 10**18),
             )
+            result.verified = result.advanced = True
             if self.settings.token_address:
-                token, decimals = await asyncio.gather(
-                    self.call(
-                        self.settings.token_address,
-                        "balanceOf(address)",
-                        ["address"],
-                        [address],
-                        ["uint256"],
-                    ),
-                    self.call(
-                        self.settings.token_address, "decimals()", [], [], ["uint8"]
-                    ),
-                )
-                result.token_balance = str(Decimal(token) / 10**decimals)
-                result.holder = result.advanced = token > 0
-                result.fee_bps = fee_for(token, decimals, self.settings.fee_bps)
-                result.fee_free = result.fee_bps == 0
-            result.verified = True
+                try:
+                    token, decimals = await asyncio.gather(
+                        self.call(self.settings.token_address, "balanceOf(address)",
+                                  ["address"], [address], ["uint256"]),
+                        self.call(self.settings.token_address, "decimals()", [], [], ["uint8"]),
+                    )
+                    if decimals > 24:
+                        raise ValueError("Unexpected benefits token decimals")
+                    result.token_balance = str(Decimal(token) / 10**decimals)
+                    result.holder = token > 0
+                    result.fee_bps = fee_for(token, decimals, self.settings.fee_bps)
+                    result.fee_free = result.workflow_benefits = result.fee_bps == 0
+                    result.benefits_verified = True
+                    if result.workflow_benefits:
+                        result.alert_limit, result.template_limit = 100, 50
+                except Exception:
+                    result.benefits_error = "Holder benefits could not be verified. Your trade review checks the actual fee."
         except Exception:
             result.error = "Balances could not be verified. Try again shortly."
         self._cache = {

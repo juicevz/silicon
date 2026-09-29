@@ -81,17 +81,27 @@ class ProtocolReader:
                     "token": "address",
                     "methodology": "bytes32",
                     "feeFreeThreshold": "uint256",
+                    "ACCESS_POLICY": "uint256",
                 }
             )
             config = self.chain.settings
-            decimals = await self.chain.call(
-                config.token_address, "decimals()", [], [], ["uint8"]
-            )
+            # A round fixes its optional fee token at deployment. Older rounds
+            # without one remain readable after a token is configured later.
+            round_token = identity["token"].lower()
+            has_token = int(round_token, 16) != 0
+            threshold = 0
+            if has_token:
+                if round_token != config.token_address.lower():
+                    raise ValueError("Unknown fee token")
+                decimals = await self.chain.call(round_token, "decimals()", [], [], ["uint8"])
+                if decimals > 24:
+                    raise ValueError("Unexpected benefits token decimals")
+                threshold = 5000 * 10**decimals
             if (
                 identity["asset"].lower() != config.usdg_address.lower()
-                or identity["token"].lower() != config.token_address.lower()
                 or identity["methodology"] != keccak(text=METHOD)
-                or identity["feeFreeThreshold"] != 5000 * 10**decimals
+                or identity["feeFreeThreshold"] != threshold
+                or identity["ACCESS_POLICY"] != 2
             ):
                 raise ValueError("contract configuration mismatch")
             fields = {
@@ -168,7 +178,7 @@ class ProtocolReader:
                 reserved=series.reserved,
                 available=series.available,
                 status=phase,
-                token_configured=True,
+                token_configured=has_token,
                 funding_enabled=config.trading_enabled
                 and phase == "funding"
                 and not state["paused"],
@@ -370,7 +380,7 @@ class ProtocolReader:
         ):
             return None
         access = await self.chain.access(request.address)
-        if not access.verified or not access.holder:
+        if not access.verified:
             return None
         unit_premium = Decimal(
             series.call_premium if request.side == "call" else series.put_premium
