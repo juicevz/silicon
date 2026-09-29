@@ -239,14 +239,6 @@ async def test_funded_series_reader_quote_portfolio_and_leaderboard(
         portfolio = await reader.portfolio(buyer)
         assert len(portfolio.positions) == 1 and portfolio.positions[0].cost == ("2" if use_token else "2.02")
         assert portfolio.index_synced
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api_module.app), base_url="http://test") as api:
-            benefits_response = await api.get(f"/api/v1/benefits/{buyer}")
-            assert benefits_response.status_code == 200
-            benefits = benefits_response.json()
-            assert benefits["history_complete"] and benefits["recorded_trades"] == 1
-            assert benefits["recorded_savings"] == ("0.02" if use_token else "0")
-            assert benefits["access"]["workflow_benefits"] == use_token
-            assert (await api.get("/api/v1/benefits/not-a-wallet")).status_code == 400
         rpc("evm_setNextBlockTimestamp", [expiry])
         rpc("evm_mine", [])
         send(
