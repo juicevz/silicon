@@ -34,6 +34,7 @@ import StrategyLab from "./components/StrategyLab";
 import TerminalTour from "./components/TerminalTour";
 import { PositionRows, usePortfolio } from "./components/Live";
 import Contracts from "./components/Contracts";
+import { MarketContextBar, SavedTransactions, useTransactionRecovery } from "./components/TerminalInsights";
 
 type PriceAlert = {
   id: string;
@@ -305,6 +306,7 @@ export default function Terminal({
   notify: (message: string) => void;
 }) {
   const { snapshot, protocol, connected } = useData();
+  const journal = useTransactionRecovery();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const [range, setRange] = useState("24h"),
@@ -481,12 +483,14 @@ export default function Terminal({
                       alert={openAlert}
                     />
                     <ProviderTable market={market} />
+                    <MarketContextBar market={market} evidence={() => setDetail(market)} />
                   </>
                 )}
                 <div className="positions-activity">
                   <Positions notify={notify} />
                   <ActivityView compact />
                 </div>
+                <SavedTransactions {...journal} compact />
               </>
             ) : (
               <div className="data-loading">
@@ -511,6 +515,7 @@ export default function Terminal({
             <h1>Activity</h1>
             <p>Positions, deposits and settlements as they happen onchain.</p>
           </div>
+          <SavedTransactions {...journal} />
           <ActivityView />
           <Positions notify={notify} />
         </main>

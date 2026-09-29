@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { money, timeAgo, type Market } from "../api";
 import { Change, Dot, External, Modal, Sparkline } from "./ui";
+import { SourceEvidence } from "./TerminalInsights";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { RentalChart } from "./RentalChart";
 const Gpu = lazy(() => import("./Gpu"));
@@ -263,6 +264,7 @@ export function AssetDetail({
           </External>
         </div>
         <ProviderTable market={market} full />
+        <SourceEvidence key={market.id} market={market} />
       </div>
     </Modal>
   );

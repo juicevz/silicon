@@ -28,6 +28,7 @@ test("expanded GPU models are searchable, selectable and keep quotes illustrativ
   await page.getByRole("button", { name: "Select RTX 5090", exact: true }).click();
   await expect(page).toHaveURL(/asset=rtx-5090/);
   await expect(page.locator(".benchmark h2")).toContainText("RTX 5090");
+  await page.getByRole("button", { name: "Providers", exact: true }).click();
   await expect(page.locator(".provider-price-bar")).not.toHaveCount(0);
   await page.getByRole("button", { name: "All GPUs", exact: true }).click();
   await page.getByRole("button", { name: "Search markets", exact: true }).click();
@@ -41,15 +42,16 @@ test("expanded GPU models are searchable, selectable and keep quotes illustrativ
 test("landing catalogue uses complete assets and stays compact on phones", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  const preview = page.locator(".terminal-preview");
-  await preview.scrollIntoViewIfNeeded();
-  await expect(preview.locator(".preview-market")).toHaveCount(16);
-  await preview.getByRole("textbox", { name: "Find a GPU in the preview" }).fill("L4");
-  await preview.getByRole("button", { name: "Preview L4", exact: true }).click();
-  await expect(preview.locator(".benchmark h2")).toContainText("L4");
-  await expect(preview.getByRole("link", { name: "Open terminal" })).toHaveAttribute("href", "/terminal?asset=l4");
-  await expect.poll(() => preview.locator(".preview-gpu-image").evaluateAll(images => images.every(image => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  const rows=page.locator(".dream-gpu-row");
+  await rows.first().scrollIntoViewIfNeeded();
+  await expect(rows).toHaveCount(5);
+  await expect.poll(()=>rows.locator("img").evaluateAll(images=>images.every(image=>(image as HTMLImageElement).naturalWidth>0))).toBe(true);
+  await page.getByRole("button",{name:"L40S",exact:true}).click();
+  await expect(page.getByRole("link",{name:"Compare rates",exact:true})).toHaveAttribute("href","/terminal?asset=l40s");
+  const positions=await rows.evaluateAll(elements=>elements.map(element=>({x:element.getBoundingClientRect().x,y:element.getBoundingClientRect().y})));
+  expect(new Set(positions.map(p=>p.x)).size).toBe(1);
+  for(let i=1;i<positions.length;i++)expect(positions[i].y).toBeGreaterThan(positions[i-1].y);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
   await page.addInitScript(() => localStorage.setItem("silicon:intro:v3", "seen"));
   await page.goto("/terminal");
   await expect(page.locator(".catalog-row")).toHaveCount(16);

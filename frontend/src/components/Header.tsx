@@ -84,8 +84,9 @@ export function Header({
           </Link>
         )}
         {landing ? (
-          <Link className="button primary" to="/terminal">
-            Open terminal <ArrowUpRight size={17} />
+          <Link className="button primary material-button" to="/terminal">
+            <span className="mini-wafer" aria-hidden="true" />
+            <span>Open terminal</span><ArrowUpRight size={17} />
           </Link>
         ) : wallet.address ? (
           <div className="wallet-menu">

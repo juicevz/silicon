@@ -5,6 +5,7 @@ import { api, money, short, explorer, type Portfolio, type Series, type Protocol
 import { useData, useConfig } from "../data";
 import { useWallet } from "../wallet";
 import { External, Modal } from "./ui";
+import { PositionReceipt, RoundAccounting } from "./TerminalInsights";
 
 export function usePortfolio(series?: string) {
   const wallet = useWallet();
@@ -40,6 +41,8 @@ export function PositionRows({
   const config = useConfig();
   const wallet = useWallet();
   const [pending, setPending] = useState<number | null>(null);
+  const [receiptId, setReceiptId] = useState<number | null>(null);
+  const receipt = portfolio.positions.find(position => position.id === receiptId);
   const claim = async (id: number) => {
     if (!wallet.address) return;
     setPending(id);
@@ -93,8 +96,10 @@ export function PositionRows({
             <span className="gold">Open</span>
           )}
           <External href={explorer(config, p.tx ? "tx" : "address", p.tx || config.market_address || "")}>View</External>
+          <button className="text-button position-receipt-button" onClick={() => setReceiptId(p.id)}>Receipt</button>
         </div>
       ))}
+      {receipt && <PositionReceipt position={receipt} close={() => setReceiptId(null)} />}
       {!portfolio.index_synced && (
         <p className="inline-index-note">
           Transaction history is still syncing.
@@ -250,6 +255,7 @@ export function LiveContract({
           </span>
         </div>
         {error && <p className="inline-error">{error}</p>}
+        <RoundAccounting address={series.address} checkedAt={protocol?.checked_at} />
       </section>
       {action && (
         <Modal

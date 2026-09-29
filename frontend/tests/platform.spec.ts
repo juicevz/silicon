@@ -10,14 +10,15 @@ test("public landing, interactive hardware and wallet picker", async ({
   await expect(
     page.getByRole("heading", { name: "Trade the cost of compute." }),
   ).toBeVisible();
-  await expect(page.locator(".hardware-ready")).toBeVisible({
+  await page.locator(".dream-hardware-grid").scrollIntoViewIfNeeded();
+  await expect(page.locator('.silicon-scene[data-kind="gpu"]')).toBeVisible({
     timeout: 20000,
   });
   await page
-    .locator(".hardware-previews")
+    .locator(".dream-gpu-list")
     .getByRole("button", { name: "A100", exact: true })
     .click();
-  await expect(page.locator(".hero-hardware-canvas")).toHaveAttribute(
+  await expect(page.locator('.silicon-scene[data-kind="gpu"]')).toHaveAttribute(
     "aria-label",
     /A100/,
   );
@@ -74,7 +75,9 @@ test("payout sizing, capped returns, put direction and persistent alert", async 
 }) => {
   await page.goto("/terminal");
   await page.getByRole("button", { name: "Dismiss introduction" }).click();
+  await expect(page.getByRole("dialog", { name: "Terminal introduction" })).toHaveCount(0);
   await page.getByLabel("Premium", { exact: true }).fill("20");
+  await expect(page.getByLabel("Premium", { exact: true })).toHaveValue("20");
   await expect(page.locator(".ticket-values")).toContainText("100.00");
   await page.getByRole("button", { name: "Fall Put" }).click();
   await expect(page.locator(".ticket-note")).toHaveText(
@@ -95,6 +98,7 @@ test("payout sizing, capped returns, put direction and persistent alert", async 
 });
 
 test("all product routes and mobile layout", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("silicon:intro:v3", "true"));
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of [
     "/",
@@ -120,10 +124,7 @@ test("all product routes and mobile layout", async ({ page }) => {
     ).toBe(false);
   }
   await page.goto("/terminal");
-  const introduction = page.getByRole("button", {
-    name: "Dismiss introduction",
-  });
-  if (await introduction.isVisible()) await introduction.click();
+  await expect(page.locator(".benchmark")).toBeVisible();
   await page.getByRole("button", { name: "Toggle navigation" }).click();
   await page
     .locator(".terminal-nav")
