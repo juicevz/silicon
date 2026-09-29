@@ -9,6 +9,7 @@ const steps = [
   { target: ".ticket-body", title: "Build your position.", body: "Choose Rise or Fall, then adjust the premium and rental-price move. Cost, payout and profit update together. A calculator scenario becomes a trade only after you review a funded quote." },
   { target: ".providers", title: "Check what sets the price.", body: "Compare the underlying provider rates. Included listings form the reference. Source times show how recent the data is; an old reference cannot support a new live trade." },
   { target: ".strategies-shortcut", title: "Explore a strategy.", body: "Fund a premium vault round, record an H100 trend thesis, or model B200 against H100. Paper strategies use no funds. Reopen this guide with the question mark anytime." },
+  { target: ".benefits-trigger", title: "Optional holder benefits.", body: "Trading and vault deposits use USDG, with no Silicon holding required. Benefits shows optional fee waivers and larger workspace allowances. Your trade review always shows the actual fee." },
 ];
 type Rect = { left: number; top: number; width: number; height: number };
 

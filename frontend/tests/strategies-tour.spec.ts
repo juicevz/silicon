@@ -9,7 +9,7 @@ test("first visit spotlights each target, contains focus and can replay", async 
   await expect(page.locator(".tour-spotlight")).toHaveAttribute("data-tour-target", ".gpu-market-catalog");
   expect(await page.locator("#root").evaluate(e => e.inert)).toBe(true);
   expect(await tour.evaluate(e => getComputedStyle(e).backgroundImage)).toContain("gradient");
-  const targets = [".benchmark", ".ticket-body", ".providers", ".strategies-shortcut"];
+  const targets = [".benchmark", ".ticket-body", ".providers", ".strategies-shortcut", ".benefits-trigger"];
   for (const target of targets) {
     await tour.getByRole("button", { name: "Next", exact: true }).click();
     await expect(page.locator(".tour-spotlight")).toHaveAttribute("data-tour-target", target);
@@ -43,14 +43,14 @@ test("mobile spotlight survives resize, reduced motion and every step", async ({
   await page.goto("/terminal");
   const tour = page.getByRole("dialog", { name: "Terminal introduction" });
   await expect(tour).toBeVisible();
-  for (let step = 0; step < 5; step++) {
+  for (let step = 0; step < 6; step++) {
     const box = await tour.boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.y).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(390);
     expect(box!.y + box!.height).toBeLessThanOrEqual(844);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    if (step < 4) await tour.getByRole("button", { name: "Next", exact: true }).click();
+    if (step < 5) await tour.getByRole("button", { name: "Next", exact: true }).click();
   }
   await page.setViewportSize({ width: 720, height: 450 });
   await expect(tour).toBeInViewport();
