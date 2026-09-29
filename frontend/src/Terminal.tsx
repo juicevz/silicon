@@ -15,6 +15,7 @@ import {
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useData, useConfig } from "./data";
 import { useWallet } from "./wallet";
+import { useBenefits } from "./benefits";
 import {
   api,
   explorer, money,
@@ -57,7 +58,7 @@ function readAlerts(): PriceAlert[] {
               typeof a.price === "number" &&
               ["above", "below"].includes(a.direction),
           )
-          .slice(0, 20)
+          .slice(0, 100)
       : [];
   } catch {
     return [];
@@ -306,6 +307,8 @@ export default function Terminal({
   notify: (message: string) => void;
 }) {
   const { snapshot, protocol, connected } = useData();
+  const { eligible } = useBenefits();
+  const alertLimit = eligible ? 100 : 20;
   const journal = useTransactionRecovery();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
@@ -367,7 +370,7 @@ export default function Terminal({
       notify("Enter a rental price above zero.");
       return;
     }
-    if (alerts.length >= 20) {
+    if (alerts.length >= alertLimit) {
       notify("Remove an alert before adding another.");
       return;
     }
@@ -592,6 +595,7 @@ export default function Terminal({
               Save price alert
             </button>
             <div className="saved-alerts">
+              <p className="benefits-note">{alerts.length} / {alertLimit} alerts on this browser. Existing alerts stay available if your benefits change.</p>
               {alerts.map((a) => (
                 <div key={a.id}>
                   <span>

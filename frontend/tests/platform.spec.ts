@@ -94,7 +94,9 @@ test("payout sizing, capped returns, put direction and persistent alert", async 
   await page.getByRole("button", { name: "Price alerts", exact: true }).click();
   await expect(page.locator(".saved-alerts")).toContainText("$100.000");
   await page.getByRole("button", { name: "Remove alert" }).click();
-  await expect(page.locator(".saved-alerts")).toBeEmpty();
+  await expect(page.getByRole("button", { name: "Remove alert" })).toHaveCount(0);
+  await expect(page.locator(".saved-alerts")).toContainText("0 / 20 alerts");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("silicon:alerts") ?? "[]"))).toEqual([]);
 });
 
 test("all product routes and mobile layout", async ({ page }) => {

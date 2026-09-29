@@ -7,6 +7,7 @@ import {
   Plus,
   Wallet,
   X,
+  BadgePercent,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -14,6 +15,8 @@ import { Brand, Modal } from "./ui";
 import { useWallet } from "../wallet";
 import { short } from "../api";
 import { ThemeToggle } from "./ThemeToggle";
+import { useBenefits } from "../benefits";
+import BenefitsPanel from "./BenefitsPanel";
 
 export const TABS = [
   "Markets",
@@ -30,6 +33,7 @@ export function Header({
   notify: (message: string) => void;
 }) {
   const wallet = useWallet();
+  const benefits = useBenefits();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false),
     [account, setAccount] = useState(false);
@@ -76,6 +80,7 @@ export function Header({
         </nav>
       )}
       <div className="header-right">
+        {!landing && <button className="button benefits-trigger" onClick={benefits.open} aria-label="Benefits" title="Benefits" aria-haspopup="dialog" aria-expanded={benefits.opened}><BadgePercent size={15} /><span>Benefits</span></button>}
         {landing && <ThemeToggle />}
         {!landing && (
           <Link className="header-docs" to="/docs">
@@ -92,10 +97,11 @@ export function Header({
           <div className="wallet-menu">
             <button
               className="button wallet-button"
+              aria-label={`Account ${short(wallet.address)}`}
               onClick={() => setAccount(!account)}
             >
               <span className="wallet-avatar" />
-              {short(wallet.address)}
+              <span className="wallet-address">{short(wallet.address)}</span>
               <ChevronDown size={12} />
             </button>
             {account && (
@@ -117,6 +123,7 @@ export function Header({
         ) : (
           <button
             className={`button ${landing ? "primary" : "wallet-button"}`}
+            aria-label="Connect wallet"
             onClick={() => void connect()}
             disabled={wallet.busy}
           >
@@ -146,6 +153,7 @@ export function Header({
           </button>
         )}
       </div>
+      {!landing && benefits.opened && <BenefitsPanel />}
       {landing && menu && (
         <div className="site-menu">
           <Modal
