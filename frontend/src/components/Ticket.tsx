@@ -8,7 +8,6 @@ import {
   Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { api, money, type Access, type Market, type Quote } from "../api";
 import { useWallet } from "../wallet";
 import { useConfig } from "../data";
@@ -17,6 +16,8 @@ import { previewPosition, withScenario } from "../preview";
 import { SmoothRange } from "./SmoothRange";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { PayoffChart } from "./PayoffChart";
+import { useBenefits } from "../benefits";
+import { useData } from "../data";
 
 export default function Ticket({
   market,
@@ -27,6 +28,8 @@ export default function Ticket({
 }) {
   const wallet = useWallet();
   const config = useConfig();
+  const benefits = useBenefits();
+  const { protocol } = useData();
   const [side, setSide] = useState<"call" | "put">("call"),
     [size, setSize] = useState(2),
     [move, setMove] = useState(4);
@@ -265,7 +268,7 @@ export default function Ticket({
           </div>
           <div>
             <span>
-              Platform fee <span className="fee-chip">{fee / 100}%</span>
+              Platform fee <span className="fee-chip">{(quote?.fee_bps ?? fee) / 100}%</span>
             </span>
             <strong className="mono">
               <AnimatedNumber value={money(quote?.fee, 3)} /> <small>USDG</small>
@@ -341,11 +344,7 @@ export default function Ticket({
         ) : (
           <button className="button full-width locked" disabled>
             <LockKeyhole size={13} />
-            {!config.token_address
-              ? "Trading opens with token launch"
-              : !access?.holder
-                ? "Hold Silicon to trade"
-                : "Awaiting a funded quote"}
+            {market.id !== "h100-sxm" ? "Comparison only" : protocol?.status === "funding" ? "Round opens soon" : protocol?.contracts[0]?.paused ? "Round paused" : "Awaiting a funded quote"}
           </button>
         )}
         <p className="ticket-disclosure">
@@ -364,14 +363,14 @@ export default function Ticket({
           HOLDER BENEFITS
         </span>
         <p>
-          Any holding unlocks trading.
+          Trade with USDG. Silicon ownership is optional.
           <br />
-          <strong>Above 5,000 tokens: zero trading fees.</strong>
+          <strong>{!quote?.indicative && quote?.fee_bps === 0 ? "Holder fee waiver applied." : "Qualifying holders receive a platform fee waiver."}</strong>
         </p>
-        <Link className="text-button" to="/docs#token">
-          How it works
+        <button className="text-button" onClick={benefits.open}>
+          View benefits
           <ArrowUpRight size={12} />
-        </Link>
+        </button>
       </div>
       {access?.eth != null && (
         <div className="wallet-gas mono">
