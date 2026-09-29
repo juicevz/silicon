@@ -4,6 +4,7 @@ import { useData } from "../data";
 import { Modal } from "./ui";
 import { SmoothRange } from "./SmoothRange";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { useBenefits } from "../benefits";
 
 export default function StrategyTool({
   mode,
@@ -15,6 +16,7 @@ export default function StrategyTool({
   notify: (s: string) => void;
 }) {
   const { snapshot } = useData();
+  const { eligible } = useBenefits();
   const markets = snapshot?.markets ?? [];
   const [move, setMove] = useState(4),
     [units, setUnits] = useState(1),
@@ -28,7 +30,7 @@ export default function StrategyTool({
     if (!market?.price) return;
     try {
       const saved = JSON.parse(localStorage.getItem("silicon:alerts") ?? "[]");
-      if (!Array.isArray(saved) || saved.length > 16)
+      if (!Array.isArray(saved) || saved.length + 4 > (eligible ? 100 : 20))
         throw new Error("Remove an existing alert before saving this ladder.");
       const alerts = [-2, -1, 1, 2].map((level) => ({
         id: crypto.randomUUID(),

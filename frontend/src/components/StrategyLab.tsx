@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownUp, ArrowUpRight, Bell, ChartNoAxesCombined, Landmark, SlidersHorizontal } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { api, money, type Access, type Protocol } from "../api";
+import { api, money, type Protocol } from "../api";
 import type { components } from "../api-schema";
 import { useData } from "../data";
-import { useWallet } from "../wallet";
+import { useBenefits } from "../benefits";
+import { StrategyTemplates, GpuCompare } from "./ResearchTools";
+import { downloadCsv } from "../workspace";
 import { LiveContract } from "./Live";
 import { PayoffChart } from "./PayoffChart";
 import { SmoothRange } from "./SmoothRange";
@@ -43,6 +45,7 @@ function PaperHistory({ book }: { book: Book | null }) {
 
 function Builder({ spread, overview, book, refresh, notify }: { spread: boolean; overview: Overview | null; book: Book | null; refresh: () => void; notify: (s: string) => void }) {
   const { snapshot } = useData();
+  const { eligible } = useBenefits();
   const [side, setSide] = useState<"call" | "put">(spread ? "call" : "put");
   const [days, setDays] = useState<7 | 14 | 30>(14);
   const [units, setUnits] = useState(1), [premium, setPremium] = useState("2"), [move, setMove] = useState(spread ? 5 : -5), [h100Move, setH100Move] = useState(0);
@@ -88,6 +91,7 @@ function Builder({ spread, overview, book, refresh, notify }: { spread: boolean;
         <button className="button primary full-width" disabled={pending || !validPremium || !fresh || !book} onClick={() => void save()}>{pending ? "Recording…" : !fresh ? "Waiting for fresh data" : "Record paper strategy"}<ArrowUpRight size={16} /></button>
         {error && <p className="inline-error" role="alert">{error}</p>}
         <p className="strategy-disclosure">No deposit or wallet needed. The record fixes your terms and actual starting references; the sliders only explore outcomes.</p>
+        <StrategyTemplates terms={{ spread, side, days, units, premium, thesis }} load={t => { setSide(t.side); setDays(t.days); setUnits(t.units); setPremium(t.premium); setThesis(t.thesis); }} notify={notify} />
       </div>
       <div className="strategy-scenario">
         <div className="strategy-section-heading"><h2>Explore the outcome</h2><span>Scenario</span></div>
@@ -100,6 +104,7 @@ function Builder({ spread, overview, book, refresh, notify }: { spread: boolean;
     </section>
     <Evidence overview={overview} spread={spread} />
     <PaperHistory book={book} />
+    {eligible && !!book?.records.length && <button className="button" onClick={() => downloadCsv("silicon-paper-strategies.csv", [["ID", "Kind", "Side", "Created UTC", "Expiry UTC", "Thesis", "Cost USDG", "Status", "Paper profit USDG"], ...book.records.map(r => [r.id, r.kind, r.side, r.created_at, r.expiry, r.thesis, r.cost, r.status, r.profit])])}>Export paper history CSV</button>}
   </>;
 }
 
@@ -111,28 +116,18 @@ function PremiumVault({ notify }: { notify: (s: string) => void }) {
   const finalPool = Math.max(0, 1000 + 80 + .8 - payouts), returned = finalPool * deposit / 1000;
   return <>
     <section className="strategy-builder panel vault-explainer"><div className="strategy-controls"><h2>Back one round of trades.</h2><p>You deposit USDG before the round opens. That pool covers capped H100 payouts. Once the round settles, you redeem your share of what remains.</p><ol className="vault-steps"><li><strong>Choose a defined round.</strong><span>Opening time, expiry and contract are visible before signing.</span></li><li><strong>Capital locks while trades run.</strong><span>Premiums and fees stay in the pool. Payouts come out of it.</span></li><li><strong>Redeem after settlement.</strong><span>Buyer claims remain reserved. Joining another round is a new decision.</span></li></ol><p className="strategy-availability">Your return can be negative. The full deposit is at risk. Each round is isolated and fully backs its maximum buyer liabilities.</p></div><div className="strategy-scenario"><div className="strategy-section-heading"><h2>Where the return comes from</h2><span>Example only</span></div><div className="vault-waterfall"><div><span>Deposits in the pool</span><strong>1,000.00 USDG</strong></div><div><span>Assumed premiums + fees</span><strong className="green">+80.80 USDG</strong></div><div><span>Assumed buyer payouts</span><strong className="red">−{money(payouts)} USDG</strong></div><div><span>Remaining pool value</span><strong>{money(finalPool)} USDG</strong></div></div><label className="field-label" htmlFor="vault-payouts">Change the buyer payouts</label><SmoothRange id="vault-payouts" label="Assumed buyer payouts" value={payouts} min={0} max={1080.8} step={.1} display={`${money(payouts)} USDG`} onChange={setPayouts} /><label className="field-label" htmlFor="vault-deposit">Your part of the initial pool</label><SmoothRange id="vault-deposit" label="Example vault deposit" value={deposit} min={10} max={1000} step={10} display={`${money(deposit)} USDG`} onChange={setDeposit} /><div className="vault-return"><span>Your returned amount</span><strong>{money(returned)} <small>USDG</small></strong><p className={returned >= deposit ? "green" : "red"}>{money(returned - deposit)} USDG · {money((returned / deposit - 1) * 100)}% for this round</p></div><p className="strategy-disclosure">These inputs explain the accounting. They are not an APY, a forecast or actual round performance.</p></div></section>
-    <section className="vault-rounds"><h2>Vault rounds</h2><p>Deposits use USDG on Robinhood Chain. A positive Silicon balance is required; ETH pays network fees.</p>{error ? <p className="inline-error" role="alert">{error}</p> : rounds === null ? <p>Checking configured rounds…</p> : !rounds.length ? <div className="panel strategy-empty"><Landmark size={28} /><h3>The first round is awaiting deployment.</h3><p>Round contracts and funding must be configured before deposits open. No advertised yield or simulated backing is shown as live.</p><Link className="text-button" to="/terminal/contracts">View contracts <ArrowUpRight size={15} /></Link></div> : rounds.map(round => round.contracts.length ? round.contracts.map(series => <LiveContract key={series.address} series={series} state={round} notify={notify} />) : <p className="inline-error" key={round.address}>Round {round.address}: verification unavailable.</p>)}</section>
+    <section className="vault-rounds"><h2>Vault rounds</h2><p>Deposits use USDG on Robinhood Chain. Silicon ownership is optional. ETH pays network fees.</p>{error ? <p className="inline-error" role="alert">{error}</p> : rounds === null ? <p>Checking configured rounds…</p> : !rounds.length ? <div className="panel strategy-empty"><Landmark size={28} /><h3>The first round is awaiting deployment.</h3><p>Round contracts and funding must be configured before deposits open. No advertised yield or simulated backing is shown as live.</p><Link className="text-button" to="/terminal/contracts">View contracts <ArrowUpRight size={15} /></Link></div> : rounds.map(round => round.contracts.length ? round.contracts.map(series => <LiveContract key={series.address} series={series} state={round} notify={notify} />) : <p className="inline-error" key={round.address}>Round {round.address}: verification unavailable.</p>)}</section>
   </>;
 }
 
 export default function StrategyLab({ notify }: { notify: (s: string) => void }) {
-  const wallet = useWallet();
-  const [access, setAccess] = useState<Access | null>(null);
-  useEffect(() => {
-    const controller = new AbortController(); setAccess(null);
-    if (wallet.address) void api<Access>(`/access/${wallet.address}`, { signal: controller.signal }).then(setAccess).catch(() => {});
-    return () => controller.abort();
-  }, [wallet.address]);
+  const [compare, setCompare] = useState(false);
   const [params, setParams] = useSearchParams();
   const raw = params.get("tool"), tool: Tool = raw === "vault" || raw === "spread" ? raw : "trend";
   const [overview, setOverview] = useState<Overview | null>(null), [book, setBook] = useState<Book | null>(null), [error, setError] = useState("");
   const [revision, setRevision] = useState(0), [legacy, setLegacy] = useState<string | null>(null);
   const openLegacy = async (name: string) => {
-    try {
-      if (!wallet.address) { await wallet.connect(); return; }
-      if (!access?.advanced) { notify("These holder tools require a positive Silicon balance. Paper strategies remain open to everyone."); return; }
-      setLegacy(name);
-    } catch (e) { notify((e as Error).message); }
+    setLegacy(name);
   };
   useEffect(() => {
     const controller = new AbortController();
@@ -145,7 +140,9 @@ export default function StrategyLab({ notify }: { notify: (s: string) => void })
     <div className="strategy-options">{(["vault", "trend", "spread"] as const).map(key => <button className={`panel strategy-option ${key === tool ? "selected" : ""}`} key={key} aria-pressed={key === tool} onClick={() => setParams({ tool: key })}>{key === "vault" ? <Landmark size={24} /> : key === "trend" ? <ChartNoAxesCombined size={24} /> : <ArrowDownUp size={24} />}<h2>{titles[key]}</h2><p>{key === "vault" ? "Earn premiums and fees, less buyer payouts. Your capital backs each round." : key === "trend" ? "Turn an H100 rental-price view into a position with a recorded paper result." : "Model whether B200 rental prices outperform H100 over the same period."}</p><span>{key === "vault" ? "USDG rounds" : "Paper strategies"}<ArrowUpRight size={16} /></span></button>)}</div>
     {error && <p className="inline-error" role="alert">{error} <button className="text-button" onClick={() => setRevision(v => v + 1)}>Retry</button></p>}
     {tool === "vault" ? <PremiumVault notify={notify} /> : <Builder key={tool} spread={tool === "spread"} overview={overview} book={book} refresh={() => setRevision(v => v + 1)} notify={notify} />}
-    <div className="strategy-existing"><span>Holder tools</span>{[{ name: "Compute spread", icon: <ArrowDownUp size={16} /> }, { name: "Two-way scenario", icon: <SlidersHorizontal size={16} /> }, { name: "Price ladder", icon: <Bell size={16} /> }].map(item => <button key={item.name} className="button" onClick={() => void openLegacy(item.name)}>{item.icon}{item.name}</button>)}</div>
+    <div className="strategy-existing"><span>Analysis tools</span>{[{ name: "Compute spread", icon: <ArrowDownUp size={16} /> }, { name: "Two-way scenario", icon: <SlidersHorizontal size={16} /> }, { name: "Price ladder", icon: <Bell size={16} /> }].map(item => <button key={item.name} className="button" onClick={() => void openLegacy(item.name)}>{item.icon}{item.name}</button>)}</div>
+    <button className="button" onClick={() => setCompare(true)}>Compare GPUs</button>
+    {compare && <GpuCompare close={() => setCompare(false)} />}
     {legacy && <StrategyTool mode={legacy} close={() => setLegacy(null)} notify={notify} />}
   </main>;
 }
