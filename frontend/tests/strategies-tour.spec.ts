@@ -66,9 +66,10 @@ test("strategy builders have instant outcomes, honest data and immutable paper r
   await expect(page.getByText("12 observations", { exact: false }).first()).toBeVisible();
   await page.getByLabel("H100 price change", { exact: true }).fill("-10");
   await expect(page.locator(".payoff-net-detail")).toContainText("7.98");
+  await page.getByLabel("Your thesis (optional)").fill("New supply lowers H100 rents over the next two weeks.");
   const saved = page.waitForRequest(r => r.url().endsWith("/strategies/paper") && r.method() === "POST");
   await page.getByRole("button", { name: "Record paper strategy" }).click();
-  expect((await saved).postDataJSON()).toEqual({ kind: "trend", side: "put", days: 14, units: 1, premium_per_unit: "2" });
+  expect((await saved).postDataJSON()).toEqual({ kind: "trend", side: "put", days: 14, units: 1, premium_per_unit: "2", thesis: "New supply lowers H100 rents over the next two weeks.", request_id: expect.stringMatching(/^[0-9a-f-]{36}$/) });
   await page.getByRole("button", { name: /Generation spread.*Model/ }).click();
   await page.getByLabel("B200 price change", { exact: true }).fill("10");
   await page.getByLabel("H100 comparison change", { exact: true }).fill("5");
