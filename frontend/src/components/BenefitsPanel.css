@@ -1,0 +1,41 @@
+.benefits-trigger { white-space: nowrap; gap: 7px; font-size: 13px; }
+.benefits-panel .modal { width: min(600px, calc(100vw - 32px)); }
+.benefits-body { padding: 24px; color: var(--secondary); font-size: 14px; line-height: 1.75; }
+.benefits-intro { display: flex; align-items: flex-start; gap: 15px; }
+.benefits-intro > svg { color: var(--accent); flex-shrink: 0; margin-top: 3px; }
+.benefits-intro h3 { margin: 0 0 6px; color: var(--ink); font-size: 18px; font-weight: 600; }
+.benefits-intro p, .benefits-access p { margin: 0; }
+.benefits-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 0; margin-top: 8px; border-bottom: 1px solid var(--border); }
+.benefits-stats span { display: block; color: var(--muted); }
+.benefits-stats strong { display: block; margin: 5px 0; font-size: 24px; color: var(--ink); font-weight: 500; }
+.benefits-stats small { font-size: 12px; color: var(--secondary); }
+.benefits-stats p { font-size: 12px; margin: 4px 0 0; }
+.benefits-access { display: flex; gap: 10px; padding: 21px 0; }
+.benefits-access svg { color: var(--green); flex-shrink: 0; margin-top: 5px; }
+.benefits-table { border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.benefits-table > div { display: grid; grid-template-columns: minmax(0, 1.7fr) 1fr 1fr; gap: 8px; padding: 11px 13px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.benefits-table > div:first-child { background: var(--raised); color: var(--ink); font-weight: 600; }
+.benefits-table > div:last-child { border-bottom: 0; }
+.benefits-table > div > span:last-child { color: var(--accent); }
+.benefits-note { color: var(--muted); font-size: 12px; margin: 16px 0; }
+.benefits-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 24px; }
+.workspace-tools { margin-top: 22px; padding: 18px; border: 1px solid var(--border); border-radius: 7px; }
+.workspace-tools h3 { color: var(--ink); margin: 0 0 10px; font-size: 16px; }
+.workspace-tools p { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.workspace-actions, .template-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.template-list { display: grid; gap: 8px; margin-top: 14px; }
+.template-row { justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; }
+.template-row > button:first-child { text-align: left; flex: 1; font-size: 13px; }
+.comparison-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+.comparison-picker button { border: 1px solid var(--border); border-radius: 5px; padding: 7px 12px; }
+.comparison-picker button[aria-pressed=true] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.comparison-scroll { overflow-x: auto; }
+.comparison-scroll table { min-width: 500px; width: 100%; font-size: 13px; }
+.comparison-scroll th, .comparison-scroll td { padding: 12px 9px; text-align: left; border-bottom: 1px solid var(--border); }
+.comparison-scroll th { color: var(--muted); font-weight: 500; }
+@media (max-width: 760px) { .benefits-trigger { padding: 9px; } .benefits-trigger > span { display: none; } .benefits-body { padding: 20px 16px; } .benefits-stats { gap: 16px; } .benefits-stats strong { font-size: 21px; } }
+@media (max-width: 480px) {
+  .terminal .header .wallet-button[aria-label="Connect wallet"] > span,
+  .terminal .header .wallet-address { display: none; }
+  .terminal .header .wallet-button { min-height: 36px; padding: 9px; }
+}
