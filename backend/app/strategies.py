@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal, ROUND_DOWN
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .store import Store
 
@@ -18,6 +18,13 @@ class PaperRequest(BaseModel):
     days: Literal[7, 14, 30] = 14
     units: Decimal = Field(default=Decimal("1"), ge=1, le=1000, decimal_places=3)
     premium_per_unit: Decimal = Field(default=Decimal("2"), ge=Decimal("0.1"), le=Decimal("9.9"), decimal_places=6)
+    thesis: str = Field(default="", max_length=600)
+    request_id: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9-]{16,64}$")
+
+    @field_validator("thesis")
+    @classmethod
+    def clean_thesis(cls, value: str) -> str:
+        return value.strip()
 
 
 class PaperRecord(BaseModel):
@@ -40,6 +47,7 @@ class PaperRecord(BaseModel):
     payout: str | None = None
     profit: str | None = None
     closed_at: str | None = None
+    thesis: str = ""
 
 
 class Evidence(BaseModel):
@@ -76,6 +84,9 @@ class Strategies:
                 id TEXT PRIMARY KEY, owner TEXT NOT NULL, created_at TEXT NOT NULL,
                 payload TEXT NOT NULL)""")
             store.db.execute("CREATE INDEX IF NOT EXISTS paper_owner ON paper_strategies(owner)")
+            store.db.execute("""CREATE TABLE IF NOT EXISTS paper_requests (
+                owner TEXT NOT NULL, request_id TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                record_id TEXT NOT NULL, PRIMARY KEY(owner,request_id))""")
 
     @staticmethod
     def owner(token: str) -> str:
@@ -114,6 +125,17 @@ class Strategies:
     def create(self, token: str, request: PaperRequest, at: datetime | None = None) -> PaperRecord:
         at = at or datetime.now(UTC)
         owner = self.owner(token)
+        fingerprint = hashlib.sha256(json.dumps(request.model_dump(mode="json", exclude={"request_id"}), sort_keys=True).encode()).hexdigest()
+        if request.request_id:
+            previous = self.store.db.execute(
+                "SELECT fingerprint,record_id FROM paper_requests WHERE owner=? AND request_id=?",
+                (owner, request.request_id),
+            ).fetchone()
+            if previous:
+                if previous["fingerprint"] != fingerprint:
+                    raise ValueError("This request was already used for different entry terms.")
+                row = self.store.db.execute("SELECT payload FROM paper_strategies WHERE id=? AND owner=?", (previous["record_id"], owner)).fetchone()
+                return self.settle(PaperRecord.model_validate_json(row[0]), at)
         if self.store.db.execute("SELECT count(*) FROM paper_strategies WHERE owner=?", (owner,)).fetchone()[0] >= 100:
             raise ValueError("This browser already has 100 recorded strategies.")
         if self.store.db.execute("SELECT count(*) FROM paper_strategies").fetchone()[0] >= 100000:
@@ -129,13 +151,15 @@ class Strategies:
         cost = premium + Decimal(amount(premium / 100))
         record = PaperRecord(
             id=secrets.token_hex(16), kind=request.kind, side=request.side, days=request.days,
-            units=str(request.units), premium_per_unit=str(request.premium_per_unit), cost=amount(cost),
+            units=str(request.units), premium_per_unit=str(request.premium_per_unit), cost=amount(cost), thesis=request.thesis,
             created_at=at.isoformat(), expiry=(at + timedelta(days=request.days)).isoformat(),
             entry_prices={m: v["price"] for m, v in entries.items() if v},
             entry_receipts={m: v["hash"] for m, v in entries.items() if v},
         )
         with self.store.db:
             self.store.db.execute("INSERT INTO paper_strategies VALUES (?,?,?,?)", (record.id, owner, record.created_at, record.model_dump_json()))
+            if request.request_id:
+                self.store.db.execute("INSERT INTO paper_requests VALUES (?,?,?,?)", (owner, request.request_id, fingerprint, record.id))
         return record
 
     def settle(self, record: PaperRecord, at: datetime) -> PaperRecord:

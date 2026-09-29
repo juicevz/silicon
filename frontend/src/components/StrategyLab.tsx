@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowDownUp, ArrowUpRight, Bell, ChartNoAxesCombined, Landmark, SlidersHorizontal } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api, money, type Access, type Protocol } from "../api";
@@ -34,6 +34,8 @@ function PaperHistory({ book }: { book: Book | null }) {
       <div><strong>{record.kind === "trend" ? `H100 ${record.side === "put" ? "fall" : "rise"}` : `${record.side === "call" ? "B200" : "H100"} outperforms`}</strong><span>{date(record.created_at)} → {date(record.expiry)}</span></div>
       <div><span>Assumed cost</span><strong>{money(record.cost)} USDG</strong></div>
       <div><span>{record.status === "settled" ? "Realized paper result" : "Status"}</span><strong className={record.status === "settled" ? Number(record.profit) >= 0 ? "green" : "red" : "gold"}>{record.status === "settled" ? `${money(record.profit)} USDG` : record.status === "cancelled" ? "Cancelled · no timely data" : "Recording forward"}</strong></div>
+      {record.thesis && <blockquote className="paper-saved-thesis">{record.thesis}</blockquote>}
+      <div className="paper-timeline"><span>Recorded {new Date(record.created_at).toLocaleString()}</span><span>{record.closed_at ? `${record.status === "settled" ? "Result recorded" : "Cancelled"} ${new Date(record.closed_at).toLocaleString()}` : `Observing until ${new Date(record.expiry).toLocaleString()}`}</span></div>
       <details><summary>Entry & outcome</summary><div className="paper-receipts"><p>{money(record.units, 3)} units · {money(record.premium_per_unit)} USDG assumed premium per unit · 1% fee. Expiry {new Date(record.expiry).toLocaleString()}.</p>{Object.entries(record.entry_prices).map(([market, price]) => <p key={market}>{market === "h100-sxm" ? "H100" : "B200"}: ${money(price, 4)}/hr at entry. <a href={`/api/v1/receipts/${record.entry_receipts[market]}`} target="_blank" rel="noreferrer">Entry receipt ↗</a>{record.exit_prices?.[market] && <> Exit ${money(record.exit_prices[market], 4)}/hr. <a href={`/api/v1/receipts/${record.exit_receipts?.[market]}`} target="_blank" rel="noreferrer">Exit receipt ↗</a></>}</p>)}{record.status === "cancelled" && <p>No paired reference was available inside the settlement window. The paper cost is returned and this entry is excluded from performance.</p>}<p>Paper results exclude gas and execution slippage. Premiums are your assumptions, so this is not a record of executable returns.</p></div></details>
     </article>)}</div> : <div className="strategy-empty"><ChartNoAxesCombined size={28} /><h3>Your first thesis starts the record.</h3><p>Record a strategy with the builder above. Its result will use the first eligible source observation after expiry, with a three-hour source window.</p></div>}
   </section>;
@@ -45,19 +47,30 @@ function Builder({ spread, overview, book, refresh, notify }: { spread: boolean;
   const [days, setDays] = useState<7 | 14 | 30>(14);
   const [units, setUnits] = useState(1), [premium, setPremium] = useState("2"), [move, setMove] = useState(spread ? 5 : -5), [h100Move, setH100Move] = useState(0);
   const [pending, setPending] = useState(false), [error, setError] = useState("");
+  const [thesis, setThesis] = useState("");
+  const saving = useRef(false);
+  const attempt = useRef<{ body: string; id: string } | null>(null);
   const validPremium = /^\d+(\.\d{1,6})?$/.test(premium) && Number(premium) >= .1 && Number(premium) <= 9.9;
   const cost = validPremium ? Math.floor(Number(premium) * units * 1e6) / 1e6 + Math.floor(Number(premium) * units * 10000) / 1e6 : 0;
   const relativeMove = spread ? move - h100Move : move;
   const market = snapshot?.markets.find(m => m.id === "h100-sxm"), b200 = snapshot?.markets.find(m => m.id === "b200");
   const fresh = overview?.evidence.filter(e => spread || e.market === "h100-sxm").every(e => e.fresh) && (overview?.evidence.length ?? 0) > 0;
   const save = async () => {
-    if (!validPremium || pending) return;
+    if (!validPremium || saving.current) return;
+    saving.current = true;
     setPending(true); setError("");
     try {
-      await api<Paper>("/strategies/paper", { method: "POST", body: JSON.stringify({ kind: spread ? "generation_spread" : "trend", side, days, units, premium_per_unit: premium }) });
+      const terms = { kind: spread ? "generation_spread" : "trend", side, days, units, premium_per_unit: premium, thesis };
+      const body = JSON.stringify(terms), storageKey = `silicon:paper-attempt:${terms.kind}`;
+      try { if (!attempt.current) attempt.current = JSON.parse(sessionStorage.getItem(storageKey) ?? "null"); } catch { /* The in-memory request ID still protects retries. */ }
+      if (attempt.current?.body !== body) attempt.current = { body, id: crypto.randomUUID() };
+      try { sessionStorage.setItem(storageKey, JSON.stringify(attempt.current)); } catch { /* Site storage can be restricted. */ }
+      await api<Paper>("/strategies/paper", { method: "POST", body: JSON.stringify({ ...terms, request_id: attempt.current!.id }) });
+      attempt.current = null;
+      try { sessionStorage.removeItem(storageKey); } catch { /* The server already saved the record. */ }
       refresh(); notify("Paper strategy recorded. No funds moved.");
     } catch (e) { setError((e as Error).message); }
-    finally { setPending(false); }
+    finally { saving.current = false; setPending(false); }
   };
   return <>
     <section className="strategy-builder panel">
@@ -66,6 +79,7 @@ function Builder({ spread, overview, book, refresh, notify }: { spread: boolean;
         <p>{spread ? "Compare each GPU against its own starting price. The difference in their percentage returns determines the payout." : "Build a position around a rental-price thesis, then record it against future observations."}</p>
         <div className="strategy-direction" aria-label="Strategy direction"><button aria-pressed={side === "put"} onClick={() => setSide("put")}>{spread ? "H100 outperforms" : "H100 prices fall"}</button><button aria-pressed={side === "call"} onClick={() => setSide("call")}>{spread ? "B200 outperforms" : "H100 prices rise"}</button></div>
         <p className="strategy-thesis">{spread ? (side === "call" ? "Newer hardware holds its rental price better." : "H100 holds its rental price better than B200.") : side === "put" ? "New supply pushes H100 rental prices down." : "Demand pushes H100 rental prices up."}</p>
+        <label className="field-label" htmlFor="strategy-thesis">Your thesis (optional)</label><textarea className="strategy-thesis-input" id="strategy-thesis" value={thesis} onChange={e => setThesis(e.target.value)} maxLength={600} placeholder="What do you expect to change, and why?" /><p className="strategy-disclosure">Saved with the entry terms so you can compare your original reasoning with the result.</p>
         <label className="field-label">Observation period</label><div className="strategy-durations">{([7, 14, 30] as const).map(d => <button key={d} aria-pressed={days === d} onClick={() => setDays(d)}>{d} days</button>)}</div>
         <label className="field-label" htmlFor="strategy-premium">Assumed premium per unit</label><div className="amount-input"><input id="strategy-premium" inputMode="decimal" value={premium} onChange={e => setPremium(e.target.value)} /><span>USDG</span></div>
         {!validPremium && <p className="inline-error">Use 0.10–9.90 USDG, with at most six decimals.</p>}
