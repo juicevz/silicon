@@ -170,6 +170,12 @@ class PositionView(BaseModel):
     profit: str | None
     tx: str
     opened_at: int
+    series_address: str | None = None
+    expiry: int | None = None
+    reference_price: float | None = None
+    final_index: float | None = None
+    premium: str | None = None
+    fee: str | None = None
 
 
 class Portfolio(BaseModel):

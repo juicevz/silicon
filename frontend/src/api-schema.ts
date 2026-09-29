@@ -72,6 +72,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/markets/{market}/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Context */
+        get: operations["context_api_v1_markets__market__context_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vaults/{address}/accounting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Accounting */
+        get: operations["accounting_api_v1_vaults__address__accounting_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/strategies": {
         parameters: {
             query?: never;
@@ -294,6 +328,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/transactions/{signature}/replacement/{replacement}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transaction Replacement */
+        get: operations["transaction_replacement_api_v1_transactions__signature__replacement__replacement__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stream": {
         parameters: {
             query?: never;
@@ -461,6 +512,36 @@ export interface components {
             /** Providers */
             providers?: components["schemas"]["ProviderQuote"][];
         };
+        /** MarketContext */
+        MarketContext: {
+            /** Market */
+            market: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "benchmark" | "comparison";
+            /** Ready */
+            ready: boolean;
+            /** Contract Verified */
+            contract_verified: boolean;
+            /** Reasons */
+            reasons: string[];
+            /** Source Fresh */
+            source_fresh: boolean;
+            /** Source Updated At */
+            source_updated_at: string | null;
+            /** Contracts */
+            contracts: components["schemas"]["Series"][];
+            /** Methodology */
+            methodology: string;
+            /** Exclusions */
+            exclusions: string[];
+            /** Receipt Hash */
+            receipt_hash?: string | null;
+            /** Receipt Time */
+            receipt_time?: string | null;
+        };
         /** Network */
         Network: {
             /**
@@ -552,6 +633,11 @@ export interface components {
             profit?: string | null;
             /** Closed At */
             closed_at?: string | null;
+            /**
+             * Thesis
+             * @default
+             */
+            thesis: string;
         };
         /** PaperRequest */
         PaperRequest: {
@@ -583,6 +669,13 @@ export interface components {
              * @default 2
              */
             premium_per_unit: number | string;
+            /**
+             * Thesis
+             * @default
+             */
+            thesis: string;
+            /** Request Id */
+            request_id?: string | null;
         };
         /** Point */
         Point: {
@@ -637,6 +730,18 @@ export interface components {
             tx: string;
             /** Opened At */
             opened_at: number;
+            /** Series Address */
+            series_address?: string | null;
+            /** Expiry */
+            expiry?: number | null;
+            /** Reference Price */
+            reference_price?: number | null;
+            /** Final Index */
+            final_index?: number | null;
+            /** Premium */
+            premium?: string | null;
+            /** Fee */
+            fee?: string | null;
         };
         /** Protocol */
         Protocol: {
@@ -990,6 +1095,43 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** VaultAccounting */
+        VaultAccounting: {
+            /** Address */
+            address: string;
+            /** Verified */
+            verified: boolean;
+            /** Index Synced */
+            index_synced: boolean;
+            /** Indexed Block */
+            indexed_block: number | null;
+            /** Checked At */
+            checked_at: string | null;
+            /** Phase */
+            phase: string;
+            /** Assets */
+            assets: string | null;
+            /** Reserved */
+            reserved: string | null;
+            /** Available */
+            available: string | null;
+            /** Deposits */
+            deposits: string | null;
+            /** Withdrawals */
+            withdrawals: string | null;
+            /** Premiums And Fees */
+            premiums_and_fees: string | null;
+            /** Buyer Payments */
+            buyer_payments: string | null;
+            /** Reconciled */
+            reconciled: boolean;
+            /** Final Provider Result */
+            final_provider_result: string | null;
+            /** Withdrawal Status */
+            withdrawal_status: string;
+            /** Notes */
+            notes?: string[];
+        };
     };
     responses: never;
     parameters: never;
@@ -1079,6 +1221,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    context_api_v1_markets__market__context_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                market: "h100-sxm" | "a100-80" | "b200" | "h200" | "b300" | "l40s" | "l40" | "l4" | "a10" | "t4" | "rtx-pro-6000" | "rtx-6000-ada" | "rtx-a6000" | "rtx-5090" | "rtx-4090" | "a100-40";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketContext"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accounting_api_v1_vaults__address__accounting_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                address: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultAccounting"];
                 };
             };
             /** @description Validation Error */
@@ -1454,6 +1658,38 @@ export interface operations {
             header?: never;
             path: {
                 signature: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transaction_replacement_api_v1_transactions__signature__replacement__replacement__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signature: string;
+                replacement: string;
             };
             cookie?: never;
         };
