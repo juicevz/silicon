@@ -27,6 +27,7 @@ import "./atmosphere.css";
 import "./interactions.css";
 import "./landing.css";
 import "./catalog.css";
+import "./dreamlike.css";
 
 const Terminal = lazy(() => import("./Terminal"));
 class ErrorBoundary extends Component<
@@ -45,7 +46,7 @@ class ErrorBoundary extends Component<
       <div
         className={`boot ${window.location.pathname === "/" || window.location.pathname === "/docs" ? "boot-light" : ""}`}
       >
-        <img src="/silicon.svg?v=2" alt="Silicon" />
+        <img src="/silicon.svg?v=3" alt="Silicon" />
         <h1>This view needs a refresh.</h1>
         <p>Your wallet and funds are unaffected.</p>
         <button
