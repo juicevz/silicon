@@ -8,11 +8,11 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: process.env.SILICON_API_PROXY ?? "http://127.0.0.1:4286",
-        changeOrigin: true,
+        changeOrigin: false,
       },
       "/health": {
         target: process.env.SILICON_API_PROXY ?? "http://127.0.0.1:4286",
-        changeOrigin: true,
+        changeOrigin: false,
       },
     },
   },
