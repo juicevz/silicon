@@ -37,8 +37,6 @@ def market_context(market: Market, protocol: Protocol, settings: Settings, store
     else:
         if not settings.trading_enabled:
             reasons.append("Live execution is not enabled.")
-        if not settings.token_address:
-            reasons.append("The Silicon token is not configured.")
         if not contracts:
             reasons.append("No verified H100 series is available.")
         if not protocol.verified:
