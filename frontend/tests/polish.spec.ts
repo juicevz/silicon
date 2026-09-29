@@ -31,7 +31,7 @@ test("the landing and hardware poster render while configuration is still pendin
     await expect(page.getByRole("heading", {name:"Trade the cost of compute."})).toBeVisible();
     await expect.poll(() => pending).toBe(true);
     await expect(page.getByText(/Opening Silicon|Loading Silicon/)).toHaveCount(0);
-    await expect.poll(async () => page.locator(".hardware-poster img.active").evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    await expect.poll(async () => page.locator(".dream-objects .silicon-objects-light").evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await page.getByRole("link",{name:"Open terminal",exact:true}).first().click();
     await expect(page.locator(".terminal-placeholder")).toBeVisible();
     await expect(page.getByRole("button",{name:"Connect wallet",exact:true})).toBeVisible();
@@ -44,38 +44,31 @@ test("the landing and hardware poster render while configuration is still pendin
   } finally { release(); }
 });
 
-test("hardware follows nearby input within 100ms, rests outside it, and reveals hovered models", async ({ page }) => {
-  // Deterministic no-WebGL path verifies the same interaction on low power devices.
+test("GPU posters respond smoothly and selection remains explicit", async ({ page }) => {
   await page.addInitScript(() => {
-    const original = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function(...args: Parameters<typeof original>) {
-      if (String(args[0]).includes("webgl")) return null;
-      return original.apply(this, args);
+    const original=HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext=function(...args: Parameters<typeof original>) {
+      if(String(args[0]).includes("webgl"))return null;
+      return original.apply(this,args);
     } as typeof original;
   });
   await page.goto("/");
-  const poster = page.locator(".hardware-poster");
-  await expect(page.locator(".hardware-ready")).toBeVisible();
-  await page.mouse.move(25,150);
-  await page.waitForTimeout(500);
-  const rest = await poster.evaluate(el => el.style.transform);
-  await page.mouse.move(400,300);
-  await page.waitForTimeout(200);
-  expect(await poster.evaluate(el => el.style.transform)).toBe(rest);
-  const box = (await poster.boundingBox())!;
-  await page.mouse.move(box.x + box.width * .77, box.y + box.height * .4);
-  await page.waitForTimeout(80);
-  await expect(poster).toHaveAttribute("data-pointer-active","true");
-  expect(await poster.evaluate(el => el.style.transform)).not.toBe(rest);
-  for (const name of ["A100","B200","H100","B200"]) {
-    await page.locator(".hardware-previews").getByRole("button",{name,exact:true}).hover();
-    await expect(page.locator(".hardware-previews").getByRole("button",{name,exact:true})).toHaveAttribute("aria-pressed","true");
-  }
+  await page.locator(".dream-gpu-exhibit").scrollIntoViewIfNeeded();
+  const scene=page.locator('.silicon-scene[data-kind="gpu"]');
+  await expect(scene).toHaveAttribute("data-renderer","poster");
+  const poster=scene.locator(".silicon-scene-poster");
+  await page.mouse.move(5,5);await page.waitForTimeout(500);
+  const rest=await poster.getAttribute("style");
+  const box=(await scene.boundingBox())!;
+  await page.mouse.move(box.x+box.width*.77,box.y+box.height*.4);
+  await expect.poll(()=>poster.getAttribute("style")).not.toBe(rest);
+  await page.getByRole("button",{name:"B200",exact:true}).hover();
+  await expect(page.getByRole("button",{name:"H100",exact:true})).toHaveAttribute("aria-pressed","true");
+  await page.getByRole("button",{name:"B200",exact:true}).click();
   await expect(poster.locator("img.active")).toHaveAttribute("src",/b200/);
   await expect(poster.locator("img.active")).toHaveCSS("opacity","1");
   await page.emulateMedia({reducedMotion:"reduce"});
-  await expect(poster).toHaveAttribute("data-pointer-active","false");
-  expect(await poster.locator("img.active").evaluate(el => getComputedStyle(el).transitionDuration)).toBe("0s");
+  await expect(poster.locator("img.active")).toHaveCSS("transition-duration","0s");
 });
 
 test("landing slider, curve and capped payout remain synchronized through keyboard input", async ({ page }) => {
@@ -87,24 +80,22 @@ test("landing slider, curve and capped payout remain synchronized through keyboa
   await expect(range).toHaveValue("15");
   await expect(range).toHaveAttribute("aria-valuetext","+15.0%");
   await expect(page.locator(".landing-results [data-value]")).toHaveAttribute("data-value","100.00");
-  await expect(page.locator(".landing-calculator .payoff-chart")).toHaveAttribute("aria-label",/15% reference move pays 100.00/);
+  await expect(page.locator(".landing-calculator .payoff-chart")).toHaveAttribute("aria-label",/\+15\.0% reference move pays 100\.00/);
   await page.keyboard.press("Home");
   await expect(page.locator(".landing-results [data-value]")).toHaveAttribute("data-value","0.00");
-  await expect(page.locator(".landing-calculator .payoff-chart")).toHaveAttribute("aria-label",/-15% reference move pays 0.00/);
+  await expect(page.locator(".landing-calculator .payoff-chart")).toHaveAttribute("aria-label",/-15\.0% reference move pays 0\.00/);
 });
 
-test("the landing preview uses actual markets and provider controls", async ({ page }) => {
+test("the featured GPU opens its complete provider market", async ({ page }) => {
+  await page.addInitScript(()=>localStorage.setItem("silicon:intro:v3","seen"));
   await page.goto("/");
-  const preview = page.locator(".terminal-preview");
-  await preview.scrollIntoViewIfNeeded();
-  await expect(preview.locator(".preview-market")).toHaveCount(16);
-  await preview.locator(".preview-market").filter({hasText:"B200"}).click();
-  await expect(preview.locator(".benchmark h2")).toContainText("B200");
-  await preview.getByRole("button",{name:"6h",exact:true}).click();
-  await expect(preview.getByRole("button",{name:"6h",exact:true})).toHaveClass("active");
-  await preview.getByRole("textbox",{name:"Search providers"}).fill("no matching provider");
-  await expect(preview.locator(".providers .table-empty")).toHaveText("No matching provider quotes.");
-  await preview.getByRole("link",{name:"Open terminal",exact:true}).click();
+  await page.getByRole("button",{name:"B200",exact:true}).click();
+  await expect(page.locator(".hardware-callout")).toHaveAttribute("data-model","b200");
+  await page.getByRole("link",{name:"Compare rates",exact:true}).click();
   await expect(page).toHaveURL(/\/terminal\?asset=b200/);
   await expect(page.locator(".ticket-asset")).toContainText("B200");
+  await page.getByRole("button",{name:"6h",exact:true}).click();
+  await expect(page.getByRole("button",{name:"6h",exact:true})).toHaveClass("active");
+  await page.getByRole("textbox",{name:"Search providers"}).fill("no matching provider");
+  await expect(page.locator(".providers .table-empty")).toHaveText("No matching provider quotes.");
 });

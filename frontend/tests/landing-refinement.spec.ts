@@ -1,8 +1,7 @@
 import { test, expect } from "@playwright/test";
 
-test("hardware switches reuse the scene through pointer, scroll and rapid selection", async ({ page }) => {
+test("GPU transitions reuse the canvas through rapid selection", async ({ page }) => {
   test.setTimeout(75000);
-  // Exercise the live WebGL path on CI's software GPU as well as real devices.
   await page.addInitScript(() => {
     const original = WebGL2RenderingContext.prototype.getParameter;
     WebGL2RenderingContext.prototype.getParameter = function(parameter: number) {
@@ -11,63 +10,66 @@ test("hardware switches reuse the scene through pointer, scroll and rapid select
     };
   });
   const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
-  await expect(page.locator(".hardware-ready")).toBeVisible({ timeout: 30000 });
-  const original = await page.locator(".hero-hardware-canvas canvas").elementHandle();
-  await expect(page.locator(".hardware-previews button")).toHaveCount(16);
-  const images = await page.locator(".hardware-previews img").evaluateAll((elements) => elements.map((element) => (element as HTMLImageElement).src));
-  expect(new Set(images).size).toBe(16);
-  await page.mouse.move(100, 330);
-  await page.mouse.move(1240, 500, { steps: 18 });
-  await page.mouse.wheel(0, 170);
-  await page.waitForTimeout(500);
-  for (const name of ["A100", "B200", "H100", "A100", "B200"]) {
-    await page.getByRole("button", { name, exact: true }).click();
-  }
-  await expect(page.locator(".hero-hardware-canvas")).toHaveAttribute("aria-label", /NVIDIA B200 Blackwell/);
-  await expect(page.locator(".hero-hardware-canvas canvas")).toHaveCSS("opacity", "1");
-  expect(await original!.evaluate((element) => element.isConnected)).toBe(true);
-  await expect(page.locator(".hero-hardware-canvas canvas")).toHaveCount(1);
-  await expect(page.locator(".hardware-fallback")).toHaveCount(0);
+  await page.locator(".dream-hardware-grid").scrollIntoViewIfNeeded();
+  const gpu = page.locator('.silicon-scene[data-kind="gpu"]');
+  await expect(gpu).toHaveAttribute("data-renderer","webgl",{ timeout:30000 });
+  const original = await gpu.locator("canvas").elementHandle();
+  await expect(page.locator(".dream-gpu-row")).toHaveCount(5);
+  for (const name of ["A100","B200","H100","H200","B200"]) await page.getByRole("button",{name,exact:true}).click();
+  await expect(gpu).toHaveAttribute("aria-label",/NVIDIA B200 Blackwell/);
+  await expect(gpu.locator(".silicon-canvas")).toHaveAttribute("data-displayed","b200");
+  await expect(gpu.locator("canvas")).toHaveCSS("opacity","1");
+  expect(await original!.evaluate(element => element.isConnected)).toBe(true);
+  await expect(gpu.locator("canvas")).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 
-test("landing theme persists, retains readable prices and works on narrow screens", async ({ page }) => {
+test("Dreamlike layout persists while light and Industrial dark palettes switch", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Switch to dark mode" }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-silicon-theme", "dark");
-  const typography = await page.locator("h1").evaluate((el) => ({ family: getComputedStyle(el).fontFamily, weight: getComputedStyle(el).fontWeight }));
-  expect(typography.family).toContain("Space Grotesk");
-  expect(typography.weight).toBe("448");
-  await expect.poll(async () => page.locator(".preview-market strong").first().evaluate((el) => {
-    const [r, g, b] = getComputedStyle(el).color.match(/\d+/g)!.map(Number);
-    return Math.min(r, g, b);
-  })).toBeGreaterThan(180);
+  const hero = await page.locator(".dream-intro").boundingBox();
+  await page.getByRole("button",{name:"Switch to dark mode"}).click();
+  await expect(page.locator("html")).toHaveAttribute("data-silicon-theme","dark");
+  await expect(page.locator(".dreamlike")).toHaveCSS("background-color","rgb(19, 28, 32)");
+  await expect(page.locator(".dream-environment-dark")).toHaveCSS("opacity","1");
+  expect(await page.locator(".dream-intro").boundingBox()).toEqual(hero);
+  const typography = await page.locator("h1").evaluate(el => ({family:getComputedStyle(el).fontFamily,weight:getComputedStyle(el).fontWeight}));
+  expect(typography.family).toContain("Space Grotesk"); expect(typography.weight).toBe("450");
   await page.reload();
-  await expect(page.getByRole("button", { name: "Switch to light mode" })).toBeVisible();
-  await page.getByRole("button", { name: "About", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await page.setViewportSize({ width: 320, height: 780 });
-  await expect(page.getByRole("button", { name: "Switch to light mode" })).toBeVisible();
-  await page.getByRole("button", { name: "Switch to light mode" }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-silicon-theme", "light");
+  await expect(page.getByRole("button",{name:"Switch to light mode"})).toBeVisible();
+  await page.getByRole("button",{name:"About",exact:true}).click();
+  await expect(page.getByRole("dialog")).toBeVisible(); await page.keyboard.press("Escape");
+  await page.setViewportSize({width:320,height:780});
+  await page.getByRole("button",{name:"Switch to light mode"}).click();
+  await expect(page.locator(".dreamlike")).toHaveCSS("background-color","rgb(240, 238, 245)");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await expect(page.locator(".section-label, .stage-hint, .hero-availability, .stage-heading, .step-index")).toHaveCount(0);
+  await expect(page.locator(".landing-header")).toHaveCSS("background-color","rgba(0, 0, 0, 0)");
 });
 
-test("hardware retains usable image previews when WebGL is unavailable", async ({ page }) => {
+test("all five models and the pause control remain usable without WebGL", async ({ page }) => {
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function (...args: Parameters<typeof original>) {
+    HTMLCanvasElement.prototype.getContext = function(...args: Parameters<typeof original>) {
       if (String(args[0]).includes("webgl")) return null;
-      return original.apply(this, args);
+      return original.apply(this,args);
     } as typeof original;
   });
   await page.goto("/");
-  await expect(page.locator(".hardware-fallback")).toBeVisible();
-  await page.getByRole("button", { name: "B200", exact: true }).click();
-  await expect(page.locator(".hardware-poster")).toHaveAttribute("aria-label", /B200/);
-  await expect.poll(async () => page.locator(".hardware-poster img.active").evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const objects = page.locator('.silicon-scene[data-kind="objects"]');
+  await expect(objects).toHaveAttribute("data-renderer","poster");
+  await expect(objects.locator(".silicon-objects-light")).toHaveCSS("opacity","1");
+  await page.getByRole("button",{name:"Pause motion",exact:true}).click();
+  const before = await objects.locator(".silicon-scene-poster").getAttribute("style");
+  await page.waitForTimeout(200);
+  expect(await objects.locator(".silicon-scene-poster").getAttribute("style")).toBe(before);
+  await page.getByRole("button",{name:"Resume motion",exact:true}).click();
+  for (const name of ["H200","B200","A100","L40S","H100"]) {
+    await page.getByRole("button",{name,exact:true}).click();
+    await expect(page.locator(".hardware-callout-name")).toHaveText(name);
+    await expect.poll(async () => page.locator('.silicon-scene[data-kind="gpu"] img.active').evaluate(el => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  }
+  await page.emulateMedia({reducedMotion:"reduce"});
+  await expect(page.getByRole("button",{name:"Reduced motion",exact:true})).toBeDisabled();
+  await expect(page.locator(".dream-gpu-marker")).toHaveCSS("transition-duration","0s");
 });
