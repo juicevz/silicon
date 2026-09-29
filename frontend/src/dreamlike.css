@@ -74,7 +74,7 @@
 .dreamlike .dream-intro h1 span { transition: color 650ms ease; }
 :root[data-silicon-theme=dark] .dreamlike .dream-intro h1 span { color: #d2b28b; }
 .dreamlike .dream-intro > p { max-width: 450px; margin: auto; color: var(--dream-muted); font-size: 16px; line-height: 1.7; }
-.dreamlike .dream-objects { position: absolute; left: 17%; right: 17%; top: 470px; bottom: 70px; z-index: 3; }
+.dreamlike .dream-objects { position: absolute; left: 17%; right: 17%; top: 470px; bottom: 70px; z-index: 3; container-type: size; }
 .dreamlike .dream-hero-bottom { position: absolute; left: 56px; right: 56px; bottom: 40px; display: flex; align-items: center; justify-content: space-between; color: var(--dream-muted); z-index: 5; }
 .dreamlike .dream-caption { display: flex; align-items: center; gap: 15px; }
 .dreamlike .dream-caption i { display: block; width: 47px; height: 1px; background: currentColor; opacity: .4; }
@@ -89,6 +89,8 @@
 .dreamlike .silicon-canvas canvas { display: block; width: 100%; height: 100%; }
 .dreamlike .silicon-scene-poster { pointer-events: none; opacity: 1; transition: opacity 380ms var(--dream-ease); }
 .dreamlike .silicon-scene-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 380ms var(--dream-ease), transform 450ms var(--dream-ease); }
+/* Both source canvases use a five-unit vertical view. Match the live camera's responsive framing. */
+.dreamlike .dream-objects .silicon-scene-poster img { inset: 50% auto auto 50%; width: auto; height: min(100cqh, 95.238095cqw); max-width: none; transform: translate(-50%, -50%); }
 .dreamlike .silicon-scene-poster img.active, .dreamlike .silicon-scene-poster .silicon-objects-light { opacity: 1; }
 .dreamlike .silicon-scene-poster img:not(.active):not(.silicon-objects-light):not(.silicon-objects-dark) { transform: translateY(8px) scale(.97); }
 .dreamlike .silicon-scene[data-renderer=webgl] .silicon-canvas { opacity: 1; }
