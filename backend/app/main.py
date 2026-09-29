@@ -31,6 +31,7 @@ from .pricing import preview
 from .store import Store, now
 from .transactions import Transactions
 from .strategies import PaperBook, PaperRecord, PaperRequest, Strategies, StrategyOverview
+from .insights import MarketContext, VaultAccounting, market_context, vault_accounting
 
 config = settings()
 store = Store(config.data_dir)
@@ -182,6 +183,19 @@ async def history(market: str, range: Literal["1h", "6h", "24h", "7d", "14d", "3
     if market not in data.markets:
         raise HTTPException(404, "Unknown market")
     return {"points": store.history(market, int(range[:-1]) * (24 if range.endswith("d") else 1)), "range": range}
+
+
+@app.get("/api/v1/markets/{market}/context", response_model=MarketContext)
+async def context(market: MarketId):
+    return market_context(data.markets[market], reader.snapshot, config, store)
+
+
+@app.get("/api/v1/vaults/{address}/accounting", response_model=VaultAccounting)
+async def accounting(address: str):
+    selected = reader if address.lower() == reader.address.lower() else round_readers.get(address.lower())
+    if selected is None or not selected.address:
+        raise HTTPException(404, "This round is not configured.")
+    return vault_accounting(selected.snapshot, store)
 
 
 def paper_session(request: Request, response: Response) -> str:
@@ -340,6 +354,16 @@ async def transaction_status(signature: str):
         raise HTTPException(
             503, "Robinhood confirmation is temporarily unavailable"
         ) from exc
+
+
+@app.get("/api/v1/transactions/{signature}/replacement/{replacement}")
+async def transaction_replacement(signature: str, replacement: str):
+    try:
+        return await transactions.replacement(signature, replacement)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(503, "Robinhood replacement verification is temporarily unavailable") from exc
 
 
 @app.get("/api/v1/stream")
