@@ -11,11 +11,13 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 
 from .chain import Chain
+from .benefits import wallet_benefits
 from .catalog import MarketId
 from .config import settings
 from .market_data import H100_BASKET, METHOD, MarketData, age
 from .models import (
     Access,
+    Benefits,
     Leaderboard,
     Portfolio,
     Protocol,
@@ -62,7 +64,6 @@ def execution_ready() -> bool:
     market = data.markets["h100-sxm"]
     return bool(
         config.trading_enabled
-        and config.token_address
         and series.phase == "open"
         and not series.paused
         and series.quote_valid_until > time()
@@ -305,6 +306,14 @@ async def quote(request: QuoteRequest):
 @app.get("/api/v1/protocol", response_model=Protocol)
 def protocol():
     return reader.snapshot
+
+
+@app.get("/api/v1/benefits/{address}", response_model=Benefits)
+async def benefits(address: str):
+    try:
+        return await wallet_benefits(chain, [reader, *round_readers.values()], address)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.get("/api/v1/vaults", response_model=list[Protocol])
