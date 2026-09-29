@@ -6,7 +6,7 @@ API, and Solidity contracts on **Robinhood Chain, chain ID 4663**.
 USDG settles positions. ETH pays network fees.
 
 Market data and calculators are available before launch. Trading remains disabled
-until a Silicon token and funded series are configured and verified onchain.
+until a funded series is configured and verified onchain. The Silicon token is optional.
 
 ## Setup and development
 
@@ -77,7 +77,7 @@ authenticated provider. The wallet receives the public Robinhood RPC address.
 The backend checks the RPC chain ID and USDG identity; arbitrary public-chain
 collateral substitutions are rejected. Loopback RPC supports isolated tests.
 `TOKEN_ADDRESS`, `MARKET_ADDRESS`, and `MARKET_START_BLOCK` identify the actual
-Silicon token, series, and deployment block. Set `TRADING_ENABLED=true` only for
+optional Silicon benefits token, series, and deployment block. Set `TRADING_ENABLED=true` only for
 a reviewed, funded launch. Claims and withdrawals remain available when new
 funding/trading is disabled.
 
@@ -93,7 +93,8 @@ missing history is not fabricated.
 Each `SiliconSeries` contract holds its own USDG collateral. Writers deposit
 before opening; their capital is locked during trading. Buyers purchase capped
 calls or puts, with index 100 as the strike and a 10 USDG payout cap per unit.
-A positive Silicon token balance is required for new positions and funding.
+New positions and funding are open to nonholders. An optional Silicon token
+provides a fee waiver; it is not a trading or deposit requirement.
 The standard fee is 1% of premium. Strictly more than 5,000 Silicon tokens waives
 the platform fee. ETH network fees remain separate.
 
@@ -274,6 +275,13 @@ The landing applies the approved Dreamlike composition and sliced-wafer logo.
 Light mode uses lavender, pearl and chrome; dark mode keeps the same layout with
 Industrial's graphite and copper palette. `dreamlike.css` scopes these styles to
 the landing and its menu. The existing terminal layout and market controls remain.
+Landing prose uses self-hosted Inter Variable with regular weights and lowercase
+copy, informed by Sophon's typography and reading rhythm. The Silicon wordmark
+keeps Space Grotesk; terminal data keeps IBM Plex Mono. Font licenses are included
+under `frontend/public/licenses/`. `landingStory.ts` handles staggered entrances
+and the mechanics section's scroll progress on the shared animation clock.
+Pause also disables scroll inertia and reveals all content immediately;
+keyboard focus and reduced motion keep every section accessible.
 The Gemini-generated Dreamlike and Industrial environments and their object
 fallback renders are self-hosted as WebP files in `public/assets/silicon/`.
 
@@ -311,3 +319,23 @@ chart pointer/keyboard scrubbing, menu focus, tutorial persistence and mobile ro
 The editorial image remains the terminal WebGL fallback. NVIDIA's mark comes from the
 Simple Icons project and is used only to identify the manufacturer. No affiliation
 with NVIDIA, cloud providers or GPU Economy is claimed.
+
+## Open access and optional benefits
+
+Series with `ACCESS_POLICY=2` allow nonholder purchases and funding. A zero token
+address launches a standard-fee round; its fee-token choice is immutable. A
+configured token waives the 1% premium fee strictly above 5,000 tokens. Failed
+balance reads fall back to the standard fee, bounded by the signed maximum cost.
+Readers reject legacy access policies rather than advertise their gates as open.
+
+`GET /api/v1/benefits/{address}` separates verified collateral balances from
+optional benefit verification. Recorded savings use indexed purchase events from
+configured rounds, exclude cancelled rounds, and remain unavailable until history
+is verified and synced. Claims and withdrawals remain independent of holdings.
+
+The existing terminal navigation is preserved. Benefits opens beside the wallet.
+Core calculators and paper recording are public. Browser workspace allowances are
+20 alerts / 10 strategy templates / 2 comparison models, or 100 / 50 / 16 for
+verified balances above the waiver threshold, with CSV batch exports. Existing
+items survive eligibility changes. Browser workspace limits are convenience
+entitlements, not server authorization or financial permissions.

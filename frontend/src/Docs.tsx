@@ -55,8 +55,8 @@ export default function Docs() {
             </p>
             <p>
               Anyone can browse current rates, provider comparisons and market
-              information. Opening a trade requires a positive balance of the
-              Silicon token and an active, funded contract.
+              information. Trading and vault deposits use USDG and require an active,
+              funded contract. Silicon token ownership is optional.
             </p>
           </section>
           <section id="strategies">
@@ -65,7 +65,7 @@ export default function Docs() {
             <p>The trend builder records an H100 rise or fall thesis over 7, 14 or 30 days. You choose an assumed premium and position size. Silicon fixes the starting price from a source receipt and records the later outcome. The scenario slider does not change those starting terms.</p>
             <p>The generation spread compares B200 and H100 percentage returns from their own starting prices. If B200 rises 10% and H100 rises 5%, B200 outperforms by 5 percentage points. One call unit would pay 5 USDG before subtracting the assumed premium and fee, with a 10 USDG payout cap.</p>
             <p>Trend and spread records are paper strategies. They move no funds and use assumed premiums, excluding network fees and slippage. Results use the first eligible observations within three hours after expiry; missing data cancels the record after 24 hours. Sparse or flat source history cannot establish a profitable strategy. Records are private to the browser cookie; clearing it loses access.</p>
-            <p>The B200 comparison reference needs a fixed benchmark before a live spread can launch. Vault deposits and live trades remain unavailable until their contracts, token and funding are configured and verified. The strategy screens show those states explicitly.</p>
+            <p>The B200 comparison reference needs a fixed benchmark before a live spread can launch. Vault deposits and live trades remain unavailable until their contracts, quotes and funding are configured and verified. The strategy screens show those states explicitly.</p>
             <Link className="text-button" to="/terminal/strategies">Explore strategies <ArrowUpRight size={14} /></Link>
           </section>
           <section id="reference">
@@ -218,45 +218,17 @@ export default function Docs() {
             </p>
           </section>
           <section id="token">
-            <h2>One token. Two thresholds.</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Balance</th>
-                  <th>Access</th>
-                  <th>Platform trading fee</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>0</td>
-                  <td>Market data and public terminal</td>
-                  <td>No new trades</td>
-                </tr>
-                <tr>
-                  <td>More than 0, up to 5,000</td>
-                  <td>Trading and advanced tools</td>
-                  <td>1% of premium</td>
-                </tr>
-                <tr>
-                  <td>Strictly more than 5,000</td>
-                  <td>Trading and advanced tools</td>
-                  <td>0%</td>
-                </tr>
-              </tbody>
-            </table>
-            <p>
-              The threshold is checked from the actual token balance when a
-              trade executes. Exactly 5,000 tokens does not qualify for the fee
-              exemption. The contract checks your wallet’s Silicon token balance
-              for this exemption. Platform trading fees stay in the contract’s collateral
-              pool. Network transaction fees are separate.
-            </p>
-            <p>
-              The token address will be provided at launch. Until it is
-              configured and verified, new trading and holder-only tools remain
-              locked.
-            </p>
+            <h2>Open access. Optional holder benefits.</h2>
+            <p>Everyone can explore markets, use the calculators, record paper strategies and manage their positions. Live trading and vault deposits need USDG, ETH for gas, and a ready contract. No Silicon holding is required.</p>
+            <table><thead><tr><th>Silicon balance</th><th>Trading and deposits</th><th>Platform fee</th></tr></thead><tbody>
+              <tr><td>0 to 5,000</td><td>Available when the round is live</td><td>1% of premium</td></tr>
+              <tr><td>Strictly above 5,000</td><td>Same access</td><td>0% in rounds supporting the token</td></tr>
+            </tbody></table>
+            <p>A round fixes its optional benefits token at deployment. Rounds launched without a token charge the standard fee throughout their lifetime. Configuring a token later does not change an existing round. Exactly 5,000 tokens does not qualify for the waiver.</p>
+            <p>The contract checks the balance when a trade executes. If that check fails, the standard fee applies, still bounded by the maximum cost you approved. A changed fee cannot silently exceed your reviewed cost. Claims and withdrawals do not require a Silicon holding.</p>
+            <p>Qualified holders can keep 100 browser alerts and 50 strategy templates, compare up to 16 GPUs, and export comparison and paper history CSV files. Standard access includes 20 alerts, 10 templates and two-model comparison. Existing saved items remain available after eligibility changes. Alerts work while the terminal is open; templates are browser-local inputs, separate from recorded paper positions.</p>
+            <p>The Benefits panel shows verified eligibility and fees waived on confirmed purchases across configured rounds, excluding cancelled rounds. It shows unavailable history honestly. Paper results and hypothetical trades never increase recorded savings.</p>
+            <p>Premiums and platform fees stay in the collateral pool for its capital providers and buyer obligations. No token buyback, staking return or reward stream is activated by these benefits. ETH network fees remain separate.</p>
           </section>
           <section id="data">
             <h2>Updates, history and alerts</h2>
