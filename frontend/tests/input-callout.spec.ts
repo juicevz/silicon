@@ -74,14 +74,15 @@ test("the selected model follows streamed provider rates without mixing models",
   await page.goto("/");
   await page.getByRole("button", { name: "H200", exact: true }).click();
   await expect(page.locator(".hardware-callout")).toHaveAttribute("data-model", "h200");
-  await expect(page.locator(".hardware-callout-release")).toHaveText("Released 2024");
+  await expect(page.locator(".hardware-callout-release")).toHaveCount(0);
+  await expect(page.locator(".hardware-callout-rate > span").first()).toHaveText("Average rental rate");
   await expect(page.locator(".hardware-callout-price")).toHaveText("$2.00 / GPU·hr");
   market.providers[2].price = 5;
   await page.evaluate((detail) => window.dispatchEvent(new CustomEvent("test:snapshot", { detail })), snapshot);
   await expect(page.locator(".hardware-callout-price")).toHaveText("$3.00 / GPU·hr");
   await page.getByRole("button", { name: "H100", exact: true }).click();
   await expect(page.locator(".hardware-callout")).toHaveAttribute("data-model", "h100");
-  await expect(page.locator(".hardware-callout-release")).toHaveText("Released 2022");
+  await expect(page.locator(".hardware-callout-name")).toHaveText("H100");
   market.providers = [];
   await page.evaluate((detail) => window.dispatchEvent(new CustomEvent("test:snapshot", { detail })), snapshot);
   await page.getByRole("button", { name: "H200", exact: true }).click();

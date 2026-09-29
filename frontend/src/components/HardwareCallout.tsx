@@ -3,7 +3,7 @@ import { useData } from "../data";
 import type { HARDWARE } from "./hardwareCatalog";
 import { HARDWARE_RELEASES } from "./hardwareReleases";
 
-export function HardwareCallout({ hardware }: { hardware: typeof HARDWARE[number] }) {
+export function HardwareCallout({ hardware, minimal = false }: { hardware: typeof HARDWARE[number]; minimal?: boolean }) {
   const { snapshot } = useData();
   const arrow = useId();
   const market = snapshot?.markets.find(({ id }) => id === hardware.market);
@@ -20,6 +20,15 @@ export function HardwareCallout({ hardware }: { hardware: typeof HARDWARE[number
   const updated = market?.source_updated_at;
   const detail = `Mean of ${providers.size} eligible provider rates per GPU-hour${updated ? `; source updated ${new Date(updated).toUTCString()}` : ""}.`;
   const endpoint = hardware.form === "package" || hardware.form === "compact" ? 118 : 79;
+  if (minimal) return <aside className="hardware-callout" data-model={hardware.id} aria-label={`${hardware.name} rental information`}>
+    <div className="hardware-callout-copy">
+      <strong className="hardware-callout-name">{hardware.name}</strong>
+      <div className="hardware-callout-rate" title={detail}>
+        <span>{market?.stale ? "Last average rate" : "Average rental rate"}</span>
+        <span className="hardware-callout-price">{average === null ? "Unavailable" : <>${average.toFixed(2)} <small>/ GPU·hr</small></>}</span>
+      </div>
+    </div>
+  </aside>;
   return <aside className="hardware-callout" data-model={hardware.id} aria-label={`${hardware.name} rental information`}>
     <svg className="hardware-callout-arrow" viewBox="0 0 140 140" aria-hidden="true">
       <defs><marker id={arrow} viewBox="0 0 8 8" refX="6" refY="4" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 1.5 6 4 2 6.5" /></marker></defs>
