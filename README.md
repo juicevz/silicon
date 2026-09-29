@@ -283,7 +283,7 @@ rows select H100, H200, B200, A100 or L40S; the terminal retains all 16 models.
 `catalogHardwareModels.ts` and `hardwareModels.ts` supply the same product-form
 GPU illustrations used by the catalogue. These are illustrations, not manufacturer
 CAD or changes to the rental benchmarks. The existing source-backed rental
-average and manufacturer release link remain in the exhibit caption.
+average remains in the exhibit caption, with the model name and a readable rate.
 
 GPU switches warm and cache meshes, then fade the canvas without rebuilding its
 WebGL context. Software-only WebGL and unavailable contexts use local rendered
@@ -291,8 +291,9 @@ images with compositor movement. `landingMotion.ts` advances Lenis and both scen
 in one frame loop. Critical damping is independent of refresh rate, the objects'
 movement range is multiplied by 1.10, and their ambient clock by 1.05. Offscreen
 scenes stop drawing. Pause freezes the pose; reduced motion removes ambient,
-pointer and transition movement. The light/dark choice persists as `silicon:theme`
-and is read before first paint. Material buttons use damped pointer reflections.
+pointer and transition movement. Each fresh page load starts in light mode before
+first paint. The theme toggle switches palettes for the current visit, without
+restoring an earlier saved dark preference. Material buttons use damped pointer reflections.
 `Gpu.tsx` uses lightweight transparent renders of the same hardware in searchable market rows.
 The 16-model catalogue spans Hopper, Blackwell, Ada, Ampere and Turing.
 `RentalChart.tsx` provides timestamp-scaled history, keyboard and pointer scrubbing,
