@@ -143,6 +143,12 @@ identity claim. Clearing browser cookies loses access to that browser's records.
 POSTs reject foreign origins. Reverse proxies must preserve the original Host
 and HTTPS scheme. Record limits and the API rate limiter bound storage growth.
 
+An optional `thesis` (up to 600 characters) is stored with the immutable entry.
+The builder supplies a `request_id`; retries with the same browser, ID and terms
+return the original record, including its original prices and expiry. Reusing
+an ID with different terms returns 409. The `paper_requests` table is created
+additively; existing paper records remain readable without a thesis.
+
 Reading a paper book reconciles expired entries using the first source receipt
 in the three hours after expiry. Spread legs must be within 15 minutes; the
 earlier feed advances to the first matching pair. Missing data remains pending
@@ -170,15 +176,18 @@ source and local tests are not evidence of a public deployment or an audit.
 | `GET /api/v1/config` | Public chain, USDG, token, market and dev-wallet addresses |
 | `GET /api/v1/markets`, `/stream` | Rental observations and network status |
 | `GET /api/v1/history/{market}?range=1h` | Recorded history |
+| `GET /api/v1/markets/{market}/context` | Market mode, readiness reasons, contracts and source rules |
 | `GET /api/v1/methodology`, `/receipts` | Source methodology and receipts |
 | `GET /api/v1/receipts/{hash}` | An archived receipt |
 | `GET /api/v1/access/{wallet}` | Verified USDG, ETH and Silicon balances |
 | `POST /api/v1/quote` | Calculator or funded-series quote |
 | `GET /api/v1/protocol` | Contract reserves, state and activity |
+| `GET /api/v1/vaults/{address}/accounting` | Verified balances, indexed cash flows and reconciled round result |
 | `GET /api/v1/portfolio/{wallet}` | Positions, claims and writer equity |
 | `GET /api/v1/leaderboard?period=7d` | Settled performance |
 | `POST /api/v1/transactions/review` | Validate and simulate exact EVM calldata |
 | `GET /api/v1/transactions/{hash}` | Receipt status after two confirmations |
+| `GET /api/v1/transactions/{hash}/replacement/{replacement}` | Check a mined replacement's wallet, nonce and confirmations |
 
 Privy connects EVM wallets, including MetaMask and WalletConnect. The app adds or
 switches to Robinhood Chain, rechecks the account, and compares reviewed calldata
@@ -186,6 +195,25 @@ with the exact action the user chose. Any required USDG approval is for the
 exact amount. Signing and broadcasting happen in the user's wallet. The API
 never signs transactions or receives a user's private key. Confirmation polling
 keeps tracking the original hash through temporary RPC failures.
+
+After submission, Activity stores the hash and reviewed terms in this browser,
+scoped to wallet and chain. Returning to the terminal with that wallet connected
+resumes receipt checks; it never signs or rebroadcasts automatically. A wallet
+flow lock prevents repeated clicks (and simultaneous tabs when Web Locks are
+available). Unresolved submissions block another wallet action. A wallet-cancelled
+or sped-up transaction can be resolved using its replacement hash only after
+the API verifies the same sender and nonce and two confirmations. If the node
+cannot retrieve the original transaction, it cannot prove the replacement and
+keeps the action unresolved. Confirmed approvals do not automatically resume a
+buy after reload: the user must review a fresh quote. Storage contains no keys.
+
+The source drawer exposes archived observation constituents separately from
+current provider quotes. Round accounting sums each configured contract's
+indexed deposits, premiums plus fees, buyer payments and provider withdrawals.
+It withholds cumulative totals while indexing and final performance until
+transfers reconcile with current accounted assets. A finalized provider result
+is withdrawals plus remaining available equity minus deposits; unclaimed buyer
+liabilities remain reserved. This is an amount for the whole round, not an APY.
 
 The service verifies token/methodology identity and reserve coverage. Source
 freshness is rechecked before reviewing a buy. Position and activity indexing
@@ -228,7 +256,7 @@ curl -fsS https://siliconmarkets.io/api/v1/config
 ## Design and asset provenance
 
 Landing typography is self-hosted variable Space Grotesk, the body family used by
-the Any Finance reference, at 448/560 for a 12% increase over 400/500. Its OFL
+the Any Finance reference, at 450/500 in the approved Dreamlike design. Its OFL
 license ships at `/licenses/space-grotesk.txt`. Any Finance's commercial Neue
 Machina heading face is not bundled. The terminal retains IBM Plex Mono and its
 license at `/licenses/ibm-plex-mono.txt`. Design rules are documented locally. References informed spacing and visual language;
@@ -242,22 +270,29 @@ Google Gemini API, model `gemini-3-pro-image`. Full prompt and generation code:
 photorealistic graphite SXM module with detailed solder, muted purple/gold lighting,
 and no text or branding. These are illustrations, not verified hardware CAD.
 
-`frontend/src/components/HeroHardware.tsx` and `hardwareModels.ts` contain the
-landing's hand-built H100/A100 passive PCIe cards and dual-die Blackwell package.
-Their forms reference NVIDIA's [H100 PCIe brief](https://www.nvidia.com/content/dam/en-zz/Solutions/gtcs22/data-center/h100/PB-11133-001_v01.pdf),
-[A100 imagery](https://www.nvidia.com/en-us/data-center/a100/) and
-[Blackwell imagery](https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/).
-They are product-form illustrations, not manufacturer CAD or changes to the SXM
-rental benchmark. A single renderer loads GPU models on selection and keeps the previous model visible while preparing the next; selectors blend
-the canvas rather than rebuild WebGL contexts or make metal surfaces transparent.
-Thumbnails and fallback images are renders of those same meshes. Software-only
-WebGL and unavailable contexts use those images as compositor layers with the
-same pointer/scroll damping, avoiding per-frame PBR work on the CPU. Ambient
-background drift pauses on that path while its colors remain visible.
-`landingMotion.ts` advances Lenis and the hardware in one frame loop, using stable
-viewport pointer coordinates and frame-independent critical damping. Rendering
-stops at rest/offscreen; reduced motion removes scroll and pointer movement.
-The light/dark choice persists as `silicon:theme` and is read before first paint.
+The landing applies the approved Dreamlike composition and sliced-wafer logo.
+Light mode uses lavender, pearl and chrome; dark mode keeps the same layout with
+Industrial's graphite and copper palette. `dreamlike.css` scopes these styles to
+the landing and its menu. The existing terminal layout and market controls remain.
+The Gemini-generated Dreamlike and Industrial environments and their object
+fallback renders are self-hosted as WebP files in `public/assets/silicon/`.
+
+`SiliconScene.tsx`, `siliconSceneRuntime.ts` and `siliconObjects.ts` render the wafer,
+crystal, ring, die and chrome beads, with a separate GPU exhibit. Five vertical
+rows select H100, H200, B200, A100 or L40S; the terminal retains all 16 models.
+`catalogHardwareModels.ts` and `hardwareModels.ts` supply the same product-form
+GPU illustrations used by the catalogue. These are illustrations, not manufacturer
+CAD or changes to the rental benchmarks. The existing source-backed rental
+average and manufacturer release link remain in the exhibit caption.
+
+GPU switches warm and cache meshes, then fade the canvas without rebuilding its
+WebGL context. Software-only WebGL and unavailable contexts use local rendered
+images with compositor movement. `landingMotion.ts` advances Lenis and both scenes
+in one frame loop. Critical damping is independent of refresh rate, the objects'
+movement range is multiplied by 1.10, and their ambient clock by 1.05. Offscreen
+scenes stop drawing. Pause freezes the pose; reduced motion removes ambient,
+pointer and transition movement. The light/dark choice persists as `silicon:theme`
+and is read before first paint. Material buttons use damped pointer reflections.
 `Gpu.tsx` uses lightweight transparent renders of the same hardware in searchable market rows.
 The 16-model catalogue spans Hopper, Blackwell, Ada, Ampere and Turing.
 `RentalChart.tsx` provides timestamp-scaled history, keyboard and pointer scrubbing,
