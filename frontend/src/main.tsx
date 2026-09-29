@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { createRoot } from "react-dom/client";
+import { BenefitsRoot } from "./benefits";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import { api, type Config } from "./api";
@@ -82,13 +83,13 @@ function TerminalPending({ error }: { error: string }) {
   );
 }
 function TerminalRoute({ ready, error, notify }: { ready: boolean; error: string; notify: (value: string) => void }) {
-  return <div className="terminal">
+  return <BenefitsRoot><div className="terminal">
     <Atmosphere tone="dark" />
     <Header notify={notify} />
     <Suspense fallback={<TerminalPending error={error} />}>
       {ready ? <Terminal notify={notify} /> : <TerminalPending error={error} />}
     </Suspense>
-  </div>;
+  </div></BenefitsRoot>;
 }
 function App() {
   const [config, setConfig] = useState<Config | null>(null),
