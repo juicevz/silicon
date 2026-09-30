@@ -39,11 +39,11 @@ export default function Docs() {
         </aside>
         <main>
           <span className="eyebrow">SILICON / PRODUCT AND MECHANICS</span>
-          <h1>Understand your position.</h1>
+          <h1>know what you’re taking a view on.</h1>
           <p className="docs-lead">
-            Silicon follows the cost of renting GPUs. Its first market is
-            designed for capped contracts on a published H100 rental-price
-            reference.
+            Start with the cost of renting a GPU. Silicon follows that price.
+            Its first contracts take a view on the H100 reference, with a cap
+            on what each position can pay out.
           </p>
           <section id="overview">
             <h2>What the product follows</h2>

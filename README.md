@@ -248,6 +248,13 @@ both frontend and backend, verify hashes and health, back up SQLite with its
 online backup API, then switch `current` atomically. Preserve the previous release
 and environment for rollback. A web deployment does not fund or deploy a market.
 
+`deploy/silicon-backup.timer` schedules a daily SQLite online backup at 04:15 UTC
+with up to ten minutes of jitter. Its service verifies the copy before retaining
+the latest 14 automatic backups in `shared/backups`; manual release backups are
+preserved. Install both backup units, create the backup directory for `ubuntu`,
+reload systemd, and enable the timer when applying an approved infrastructure
+release. These copies are local to the server; they do not replace an offsite backup.
+
 ```bash
 ssh deploy-server 'systemctl status silicon-api --no-pager'
 curl -fsS https://siliconmarkets.io/health
@@ -256,11 +263,11 @@ curl -fsS https://siliconmarkets.io/api/v1/config
 
 ## Design and asset provenance
 
-Landing typography is self-hosted variable Space Grotesk, the body family used by
-the Any Finance reference, at 450/500 in the approved Dreamlike design. Its OFL
-license ships at `/licenses/space-grotesk.txt`. Any Finance's commercial Neue
-Machina heading face is not bundled. The terminal retains IBM Plex Mono and its
-license at `/licenses/ibm-plex-mono.txt`. Design rules are documented locally. References informed spacing and visual language;
+Landing typography is self-hosted Inter Variable at 400/500, with Space Grotesk
+retained on the Silicon wordmark. Their OFL licenses ship at `/licenses/inter.txt`
+and `/licenses/space-grotesk.txt`. Sophon's Suisse Intl face is represented by the
+open-source Inter alternative. The terminal retains IBM Plex Mono and its license
+at `/licenses/ibm-plex-mono.txt`. Design rules are documented locally. References informed spacing and visual language;
 their source code and financial data were not cloned.
 
 Original editorial GPU imagery was generated through the explicitly requested
@@ -271,7 +278,22 @@ Google Gemini API, model `gemini-3-pro-image`. Full prompt and generation code:
 photorealistic graphite SXM module with detailed solder, muted purple/gold lighting,
 and no text or branding. These are illustrations, not verified hardware CAD.
 
-The landing applies the approved Dreamlike composition and sliced-wafer logo.
+The landing keeps the approved Dreamlike composition. The current logo is L02,
+the glass wafer bloom selected for [@SiliconGPU](https://x.com/SiliconGPU).
+`frontend/public/silicon.svg` clips the original generated artwork into its
+three-petal silhouette and embeds the image; it is not a newly generated mark or
+a pure vector redraw. The same versioned `?v=5` asset is used by the navbar,
+footer, docs, favicon, error view and Privy appearance. The H06 cover selected on
+X supplies the site's social preview under `/assets/identity/silicon-x-cover.jpg`.
+
+The `/#ambf` founder section uses the supplied checkerboard reference and the
+public [AMBF](https://x.com/AMBF) avatar. `FounderWorld.tsx` renders instanced 3D
+tiles with a procedural water surface and seamless forward movement; the supplied
+image provides the cloud band and the static fallback. It shares the landing's
+animation clock, pauses outside the viewport or when the document is hidden, and
+respects both the motion control and reduced-motion preferences. Founder links
+point to the supplied X and [GitHub](https://github.com/juicevz) profiles.
+
 Light mode uses lavender, pearl and chrome; dark mode keeps the same layout with
 Industrial's graphite and copper palette. `dreamlike.css` scopes these styles to
 the landing and its menu. The existing terminal layout and market controls remain.
