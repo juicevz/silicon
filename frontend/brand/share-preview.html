@@ -6,85 +6,42 @@
     <title>Silicon share preview</title>
     <style>
       @font-face {
-        font-family: "Space Grotesk";
-        font-style: normal;
-        font-weight: 300 700;
-        font-display: block;
+        font-family: "Space Grotesk"; font-style: normal; font-weight: 300 700; font-display: block;
         src: url("../node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2") format("woff2");
       }
-
-      body {
-        margin: 0;
-        overflow: hidden;
-        background: #0d1a1e;
+      @font-face {
+        font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: block;
+        src: url("../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");
       }
-
-      .canvas {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 1200px;
-        height: 630px;
-        overflow: hidden;
-        isolation: isolate;
-      }
-
-      .gradient {
-        position: absolute;
-        inset: -100px;
-        z-index: -2;
-        background:
-          radial-gradient(circle at 85% 15%, rgb(201 117 70 / 45%), transparent 50%),
-          radial-gradient(circle at 95% 85%, rgb(39 84 103 / 90%), transparent 60%),
-          radial-gradient(circle at 10% 90%, rgb(56 107 98 / 70%), transparent 55%),
-          linear-gradient(135deg, #0d1a1e, #0a1417);
-        filter: blur(60px);
-      }
-
-      .grain {
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        opacity: 0.008;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      }
-
-      .lockup {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 44px;
-        width: 58%;
-      }
-
-      .logo {
-        flex-shrink: 0;
-        width: 124px;
-        height: 124px;
-      }
-
-      .wordmark {
-        padding-top: 12px;
-        color: #f6f3ed;
-        font-family: "Space Grotesk", sans-serif;
-        font-size: 150px;
-        font-weight: 650;
-        letter-spacing: -0.055em;
-        line-height: 1;
-      }
-
-      .dot { color: #f16a35; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #f0eef5; color: #303043; font-family: "Inter", sans-serif; }
+      .canvas { position: relative; width: 1200px; height: 630px; overflow: hidden; isolation: isolate; }
+      .environment { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 70%; }
+      .canvas::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #f0eef5f5, #f0eef5c4 42%, #f0eef500 78%); }
+      .lockup { position: absolute; left: 68px; top: 50px; display: flex; align-items: center; gap: 15px; }
+      .logo { width: 43px; height: 46px; }
+      .wordmark { font-family: "Space Grotesk", sans-serif; font-size: 44px; font-weight: 650; letter-spacing: -.045em; line-height: 1; }
+      .dot { color: #dc794c; }
+      .copy { position: absolute; left: 68px; top: 183px; width: 590px; }
+      h1 { margin: 0; font-size: 78px; font-weight: 400; letter-spacing: -.048em; line-height: 1.07; }
+      p { margin: 25px 0 0; max-width: 415px; font-size: 21px; line-height: 1.55; letter-spacing: -.015em; color: #575368; }
+      .objects { position: absolute; right: -220px; top: 173px; width: 955px; height: 503px; object-fit: contain; }
+      .domain { position: absolute; left: 68px; bottom: 49px; font-size: 17px; letter-spacing: -.01em; color: #6e6a80; }
     </style>
   </head>
   <body>
-    <main class="canvas" aria-label="Silicon logo on a teal, blue and copper gradient">
-      <div class="gradient" aria-hidden="true"></div>
-      <div class="grain" aria-hidden="true"></div>
+    <main class="canvas" aria-label="Silicon, trade the cost of compute">
+      <img class="environment" src="../public/assets/silicon/dream-environment.webp" alt="" />
       <div class="lockup">
-        <img class="logo" src="../public/silicon.svg" alt="" width="124" height="124" />
+        <img class="logo" src="../public/silicon.svg" alt="" width="43" height="46" />
         <div class="wordmark">silicon<span class="dot">.</span></div>
       </div>
+      <img class="objects" src="../public/assets/silicon/dream-objects-poster.webp" alt="" />
+      <div class="copy">
+        <h1>trade the cost<br />of compute.</h1>
+        <p>compute has a price.<br />take a view on where it goes next.</p>
+      </div>
+      <span class="domain">siliconmarkets.io</span>
     </main>
   </body>
 </html>
