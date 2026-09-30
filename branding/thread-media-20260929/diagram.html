@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    @import url('https://fonts.cdnfonts.com/css/space-grotesk');
+    :root {
+      --porcelain: #f7f7f6;
+      --ink: #23232a;
+      --mauve: #8e697b;
+      --connector: #aa899c;
+      --subtle-text: #716a78;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      background-color: var(--porcelain);
+    }
+    .wordmark { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.03em; }
+    .mono { font-family: 'IBM Plex Mono', monospace; letter-spacing: -0.02em; }
+    .canvas { width: 1600px; height: 900px; position: relative; overflow: hidden; }
+    .headline { font-size: 62px; line-height: 70px; letter-spacing: -0.02em; }
+    .abs { position: absolute; }
+  </style>
+</head>
+<body>
+  <div class="canvas bg-[#f7f7f6]">
+    <!-- Background Gradient -->
+    <div class="abs top-0 right-0 w-[800px] h-[600px] bg-gradient-to-bl from-[#e9dfe4] to-transparent opacity-40 pointer-events-none"></div>
+
+    <!-- Header -->
+    <div class="abs left-[64px] top-[50px] wordmark text-[46px] font-semibold leading-none">silicon</div>
+    <div class="abs left-[1200px] top-[65px] text-[17px] tracking-widest font-medium opacity-70 lowercase">the hourly cost of ai</div>
+
+    <!-- Headline Section -->
+    <h1 class="abs left-[64px] top-[150px] headline font-medium">how silicon follows compute.</h1>
+    <p class="abs left-[66px] top-[241px] text-[27px] font-light text-slate-500 w-[1450px]">rental listings, a defined reference, and tools to explore price changes.</p>
+
+    <!-- Section Headings -->
+    <h2 class="abs left-[66px] top-[310px] text-[26px] font-medium lowercase">provider listings</h2>
+    <h2 class="abs left-1/2 -translate-x-1/2 top-[310px] text-[26px] font-medium">H100 reference</h2>
+    <h2 class="abs left-[1110px] top-[310px] text-[26px] font-medium lowercase">explore in silicon</h2>
+
+    <!-- Connectors Layer -->
+    <svg class="abs inset-0 pointer-events-none" width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Inward paths -->
+      <path d="M414 385C560 385 560 468 710 468" stroke="#aa899c" stroke-width="1.6" />
+      <path d="M414 429C560 429 560 468 710 468" stroke="#aa899c" stroke-width="1.6" />
+      <path d="M414 473C560 473 560 468 710 468" stroke="#aa899c" stroke-width="1.6" />
+      <path d="M414 517C560 517 560 468 710 468" stroke="#aa899c" stroke-width="1.6" />
+      <path d="M414 561C560 561 560 468 710 468" stroke="#aa899c" stroke-width="1.6" />
+      <path d="M700 464L710 468L700 472" stroke="#aa899c" stroke-width="1.6" stroke-linecap="round" />
+      
+      <!-- Outward paths -->
+      <path d="M890 468C987 468 987 391 1085 391" stroke="#aa899c" stroke-width="1.6" />
+      <path d="M890 468C987 468 987 471 1085 471" stroke="#aa899c" stroke-width="1.6" />
+      <path d="M890 468C987 468 987 551 1085 551" stroke="#aa899c" stroke-width="1.6" />
+      
+      <!-- Outward arrowheads -->
+      <path d="M1078 387L1085 391L1078 395" stroke="#aa899c" stroke-width="1.6" stroke-linecap="round" />
+      <path d="M1078 467L1085 471L1078 475" stroke="#aa899c" stroke-width="1.6" stroke-linecap="round" />
+      <path d="M1078 547L1085 551L1078 555" stroke="#aa899c" stroke-width="1.6" stroke-linecap="round" />
+    </svg>
+
+    <!-- Column 1: Provider Names -->
+    <div class="abs left-[66px] top-[362px] w-[348px] h-[56px] border-b border-black/5 flex items-center text-[25px]">Lambda</div>
+    <div class="abs left-[66px] top-[406px] w-[348px] h-[56px] border-b border-black/5 flex items-center text-[25px]">Hyperstack</div>
+    <div class="abs left-[66px] top-[450px] w-[348px] h-[56px] border-b border-black/5 flex items-center text-[25px]">Verda</div>
+    <div class="abs left-[66px] top-[494px] w-[348px] h-[56px] border-b border-black/5 flex items-center text-[25px]">Crusoe</div>
+    <div class="abs left-[66px] top-[538px] w-[348px] h-[56px] border-b border-black/5 flex items-center text-[25px]">Nebius</div>
+    <div class="abs left-[66px] top-[593px] mono text-[19px] opacity-70">five fixed H100 listings</div>
+
+    <!-- Column 2: Reference Chip -->
+    <div class="abs left-1/2 -translate-x-1/2 top-[468px] -translate-y-1/2 w-[180px] h-[180px] bg-white rounded-[12px] border border-[#8e697b]/20 shadow-sm flex items-center justify-center p-4">
+      <div class="w-full h-full rounded-[6px] bg-gradient-to-br from-[#d1d5db] via-[#f3f4f6] to-[#9ca3af] relative flex flex-col items-center justify-center shadow-inner overflow-hidden">
+         <div class="abs inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/30 via-transparent to-black/10"></div>
+         <span class="relative z-10 text-[22px] font-medium tracking-[0.15em] lowercase">median</span>
+      </div>
+    </div>
+    <div class="abs left-1/2 -translate-x-1/2 top-[578px] text-[23px] font-medium">USD per GPU-hour</div>
+    <div class="abs left-1/2 -translate-x-1/2 top-[612px] text-center text-[18px] leading-[25px] text-[#716a78] whitespace-nowrap">
+      missing a required listing?<br>new reference withheld
+    </div>
+
+    <!-- Column 3: Destinations -->
+    <div class="abs left-[1095px] top-[377px] flex items-center gap-4">
+       <div class="w-8 h-[1px] bg-[#8e697b]"></div>
+       <div class="text-[25px]">compare provider rates</div>
+    </div>
+    <div class="abs left-[1095px] top-[457px] flex items-center gap-4">
+       <div class="w-8 h-[1px] bg-[#8e697b]"></div>
+       <div class="text-[25px]">model a price move</div>
+    </div>
+    <div class="abs left-[1095px] top-[537px] flex items-center gap-4">
+       <div class="w-8 h-[1px] bg-[#8e697b]"></div>
+       <div class="text-[25px]">record a paper strategy</div>
+    </div>
+
+    <!-- Mechanism Strip -->
+    <div class="abs left-[64px] top-[680px] right-[64px] h-[1px] bg-black/10"></div>
+    
+    <div class="abs left-[64px] top-[694px] flex items-center gap-4">
+       <div class="mono text-[18px] font-medium uppercase tracking-tight text-[#8e697b]">contract design</div>
+       <div class="w-1.5 h-1.5 rounded-full bg-[#8e697b]/40"></div>
+       <div class="mono text-[18px] opacity-70">funded trading paused</div>
+    </div>
+
+    <div class="abs left-[64px] top-[739px] w-[450px]">
+      <div class="text-[25px] font-medium">USDG collateral</div>
+      <div class="text-[20px] top-[775px] text-slate-500 font-light mt-1">capital backs potential payouts</div>
+    </div>
+
+    <div class="abs left-[580px] top-[739px] w-[450px]">
+      <div class="text-[25px] font-medium flex items-center gap-4">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e697b" stroke-width="2.5"><path d="M5 12H19M19 12L13 6M19 12L13 18" /></svg>
+        capped calls + puts
+      </div>
+      <div class="text-[20px] text-slate-500 font-light mt-1 ml-9">premium, expiry, maximum payout</div>
+    </div>
+
+    <div class="abs left-[1110px] top-[739px] w-[426px]">
+      <div class="text-[25px] font-medium flex items-center gap-4">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e697b" stroke-width="2.5"><path d="M5 12H19M19 12L13 6M19 12L13 18" /></svg>
+        USDG settlement
+      </div>
+      <div class="text-[20px] text-slate-500 font-light mt-1 ml-9">based on the reference at expiry</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="abs left-[64px] top-[818px] mono text-[17px] text-[#716a78]">buyer premiums and provider capital are at risk.</div>
+    
+    <div class="abs left-[64px] top-[857px] mono text-[18px] font-medium leading-[22px]">siliconmarkets.io</div>
+    <div class="abs right-[64px] top-[857px] mono text-[18px] opacity-70 leading-[22px]">settlement on Robinhood Chain</div>
+  </div>
+</body>
+</html>
