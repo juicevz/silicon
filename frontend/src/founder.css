@@ -1,0 +1,113 @@
+/* The approved glass-petal artwork is shared across navigation, docs and the app. */
+.brand > .silicon-mark { width: 40px; height: 31px; object-fit: contain; }
+.dreamlike .header .brand > .silicon-mark { width: 40px; height: 31px; }
+.dreamlike .dream-footer .brand > .silicon-mark { width: 31px; height: 24px; }
+.dreamlike .header.landing-header { gap: 28px; }
+.dreamlike .header-right { gap: 17px; }
+.silicon-socials { display: flex; align-items: center; gap: 18px; }
+.silicon-socials a { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; color: var(--dream-ink); transition: opacity 200ms ease, transform 300ms var(--dream-ease); }
+.silicon-socials a:hover { opacity: .65; transform: translateY(-1px); }
+.silicon-x-link { width: 28px; }
+.silicon-founder-link { font: 500 12px 'Inter Variable', sans-serif; letter-spacing: .025em; }
+.silicon-socials::after { content: ''; width: 1px; height: 17px; background: var(--dream-line); margin-left: 1px; }
+
+.dreamlike .ambf-section { position: relative; isolation: isolate; min-height: 420px; color: #f3f8fd; background: #83aeca; overflow: hidden; scroll-margin-top: 0; outline: none; }
+/* Continue the closing section's exact surface into the world, including in dark mode. */
+.ambf-section::before { content: ''; position: absolute; z-index: 0; inset: -1px 0 auto; height: 180px; pointer-events: none; background: linear-gradient(180deg, var(--dream-surface) 0%, color-mix(in srgb, var(--dream-surface) 94%, transparent) 16%, color-mix(in srgb, var(--dream-surface) 68%, transparent) 42%, color-mix(in srgb, var(--dream-surface) 22%, transparent) 74%, transparent 100%); }
+.ambf-world, .ambf-world-poster, .ambf-canvas, .ambf-canvas canvas, .ambf-scrim { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ambf-world { z-index: -3; pointer-events: none; }
+.ambf-world-poster { object-fit: cover; object-position: center; }
+.ambf-canvas { opacity: 0; transition: opacity 1100ms cubic-bezier(.22, 1, .36, 1); }
+.ambf-canvas[data-renderer=webgl] { opacity: 1; }
+.ambf-canvas canvas { display: block; }
+.ambf-scrim { z-index: -1; pointer-events: none; background: linear-gradient(90deg, #10294082, #142e4b25 58%, #142e4b08), linear-gradient(0deg, #122b44 0%, #122b441f 32%, transparent 68%); }
+:root[data-silicon-theme=dark] .ambf-scrim { background: linear-gradient(90deg, #0c213c9e, #142e4b35 65%, #142e4b29), linear-gradient(0deg, #122b44 0%, #122b4445 42%, #142b4420 100%); }
+.dreamlike .ambf-content { position: relative; z-index: 1; min-height: inherit; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 60px; padding-top: 130px; padding-bottom: 72px; }
+.ambf-copy { padding-left: clamp(0px, 3vw, 42px); }
+.ambf-intro { color: #edf6ff; font-size: 12px; font-weight: 450; margin: 0 0 12px; letter-spacing: .01em; }
+.dreamlike .ambf-copy h2 { font-size: 68px; font-weight: 450; color: #fff; line-height: .95; letter-spacing: -.065em; margin: 0 0 16px; text-shadow: 0 3px 32px #142b4420; }
+.ambf-copy h2 span { color: #c4dbef; }
+.ambf-bio { margin: 0; color: #eff6fc; font-size: 16px; line-height: 1.55; font-weight: 400; letter-spacing: -.015em; }
+.ambf-bio a { display: inline-flex; align-items: center; gap: 7px; color: #fff; text-decoration: underline; text-decoration-color: #edf6ff65; text-underline-offset: 6px; text-decoration-thickness: 1px; }
+.ambf-bio a svg { opacity: .6; transition: transform 240ms ease; }
+.ambf-bio a:hover svg { opacity: 1; transform: translate(2px, -2px); }
+.ambf-links { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.ambf-links > a { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 42px; padding: 9px 15px; border: 1px solid #e5f3ff55; border-radius: 50px; color: #fff; background: #14304b50; backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); font-size: 12px; transition: background-color 250ms ease, border-color 250ms ease, transform 350ms var(--dream-ease); }
+.ambf-links > a > svg:last-child { margin-left: 10px; opacity: .65; transition: transform 250ms ease; }
+.ambf-links > a:hover { transform: translateY(-3px); border-color: #e5f3ffaf; background: #c1dbf028; }
+.ambf-links > a:hover > svg:last-child { transform: translate(2px, -2px); opacity: 1; }
+.ambf-links > a:active { transform: translateY(0); }
+.ambf-section :is(a, button):focus-visible { outline-color: #fff; }
+.ambf-portrait { justify-self: center; width: 162px; margin-right: clamp(25px, 8vw, 110px); perspective: 1000px; }
+.ambf-portrait-float { transform: rotate(-5deg); }
+.ambf-portrait-glass { position: relative; padding: 5px; border: 1px solid #f2faff88; border-radius: 20px; background: linear-gradient(135deg, #f0faff50, #d8e9fd12 45%, #e5f1ff30); box-shadow: 0 20px 45px #11253f33, inset 0 1px 0 #fff7; }
+.ambf-portrait-glass img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 15px; }
+.dreamlike .ambf-bottom { position: absolute; z-index: 1; inset: auto 0 15px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.ambf-back { display: inline-flex; align-items: center; gap: 16px; font-size: 12px; color: #e7f2ffc9; padding: 12px 0; transition: color 180ms ease; }
+.ambf-back:hover { color: white; }
+.ambf-motion { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #f0f8ff44; border-radius: 50%; background: #17314b45; color: #eaf4ff; }
+.ambf-motion:hover { background: #eaf4ff1a; }
+.ambf-motion:disabled { opacity: .55; cursor: default; }
+.dreamlike .dream-footer.founder-footer { background: #122b44; border-top: 0; color: #d8e7f7; }
+.dreamlike .founder-footer .brand { color: #edf6ff; }
+.dreamlike .founder-footer .brand-period { color: #b3cdeb; }
+.dreamlike .founder-footer .dream-wrap > div, .dreamlike .founder-footer .dream-wrap > span { color: #b2c9df; }
+.footer-social { display: inline-flex; align-items: center; color: #e6f3ff; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ambf-portrait-float { animation: ambf-drift 9s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
+}
+@keyframes ambf-drift { from { transform: translate3d(0, 8px, 0) rotate(-5deg); } to { transform: translate3d(0, -8px, 0) rotate(-3deg); } }
+@media (max-width: 1100px) {
+  .dreamlike .header.landing-header { gap: 20px; }
+  .dreamlike .landing-nav { gap: 20px; }
+  .dreamlike .header-right { gap: 13px; }
+  .silicon-socials { gap: 12px; }
+  .dreamlike .ambf-content { gap: 35px; }
+  .ambf-copy { padding-left: 0; }
+}
+@media (max-width: 930px) and (min-width: 761px) {
+  .dreamlike .landing-nav > a:nth-child(2) { display: none; }
+  .dreamlike .header .button.material-button { padding-inline: 13px; gap: 7px; }
+}
+@media (max-width: 760px) {
+  .dreamlike .header .brand > .silicon-mark { width: 33px; height: 26px; }
+  .dreamlike .header.landing-header { gap: 14px; }
+  .dreamlike .header .button.material-button { display: none; }
+  .dreamlike .header-right { margin-left: auto; gap: 12px; }
+  .dreamlike .landing-nav { margin-left: auto; }
+  .silicon-socials { gap: 12px; }
+  .silicon-founder-link { font-size: 11px; }
+  .dreamlike .ambf-content { display: block; padding: 126px 0 72px; }
+  .ambf-section::before { height: 160px; }
+  .ambf-portrait { position: absolute; top: 147px; right: 5px; width: clamp(92px, 21vw, 132px); margin: 0; }
+  .ambf-intro { font-size: 11px; margin-bottom: 12px; }
+  .dreamlike .ambf-copy h2 { font-size: 58px; margin-bottom: 17px; }
+  .ambf-bio { font-size: 15px; }
+  .ambf-links { margin-top: 22px; gap: 11px; }
+  .ambf-links > a { font-size: 12px; padding-inline: 13px; min-height: 44px; gap: 10px; }
+  .ambf-links > a > svg:last-child { margin-left: 5px; }
+  .ambf-scrim { background: linear-gradient(0deg, #122b44 0%, #142e4b60 62%, #142e4b1a 100%); }
+  :root[data-silicon-theme=dark] .ambf-scrim { background: linear-gradient(0deg, #122b44 0%, #142e4b8a 65%, #142e4b26 100%); }
+  .ambf-portrait-glass { padding: 4px; border-radius: 16px; }
+  .ambf-portrait-glass img { border-radius: 11px; }
+  .dreamlike .ambf-bottom { bottom: 20px; }
+  .dreamlike .founder-footer .dream-wrap > div { gap: 16px; font-size: 11px; }
+}
+@media (max-width: 560px) {
+  .dreamlike .landing-nav { display: none; }
+  .dreamlike .header.landing-header { gap: 10px; }
+  .silicon-socials { gap: 10px; }
+  .silicon-socials::after { margin-left: 0; }
+}
+@media (max-width: 359px) {
+  .dreamlike .header.landing-header { padding-inline: 15px; }
+  .dreamlike .header .brand { font-size: 22px; gap: 5px; }
+  .dreamlike .header .brand > .silicon-mark { width: 29px; height: 24px; }
+  .dreamlike .header-right { gap: 9px; }
+  .silicon-socials { gap: 6px; }
+  .dreamlike .ambf-copy h2 { font-size: 54px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambf-portrait-float { transform: rotate(-4deg); }
+}
