@@ -70,7 +70,7 @@ export default function Runtime({ appId, ...props }: Props) {
         appearance: {
           theme: "dark",
           accentColor: "#f18b54",
-          logo: "/silicon.svg?v=2",
+          logo: "/silicon.svg?v=5",
           showWalletLoginFirst: true,
           walletChainType: "ethereum-only",
           walletList: [
