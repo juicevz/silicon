@@ -16,5 +16,10 @@ export default defineConfig({
       },
     },
   },
-  build: { chunkSizeWarningLimit: 750 },
+  build: {
+    chunkSizeWarningLimit: 750,
+    // WebKit caches failed modulepreloads even across reloads. Native imports
+    // let Reload Silicon recover after a lost connection (WebKit bug 270357).
+    modulePreload: false,
+  },
 });
