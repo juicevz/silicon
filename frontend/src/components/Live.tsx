@@ -177,9 +177,9 @@ export function LiveContract({
             H100 rental series
           </h2>
           <span
-            className={`mini-label ${series.phase === "open" ? "green" : "gold"}`}
+            className={`mini-label ${series.phase === "open" && !series.paused ? "green" : "gold"}`}
           >
-            {series.phase.toUpperCase()}
+            {series.paused && !series.settled && !series.cancelled ? "PAUSED" : series.phase.toUpperCase()}
           </span>
         </div>
         <div className="contract-facts">
@@ -188,6 +188,10 @@ export function LiveContract({
             <External href={explorer(config, "address", series.address)}>
               {short(series.address)}
             </External>
+          </div>
+          <div>
+            <span>Scheduled opening</span>
+            <strong>{new Date(series.open_at * 1000).toLocaleString()}</strong>
           </div>
           <div>
             <span>Expiry</span>

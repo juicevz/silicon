@@ -17,6 +17,7 @@ import { short } from "../api";
 import { ThemeToggle } from "./ThemeToggle";
 import { useBenefits } from "../benefits";
 import BenefitsPanel from "./BenefitsPanel";
+import { XLogo } from "./SocialIcons";
 
 export const TABS = [
   "Markets",
@@ -80,6 +81,10 @@ export function Header({
         </nav>
       )}
       <div className="header-right">
+        {landing && <div className="silicon-socials" role="group" aria-label="Silicon and founder">
+          <a href="https://x.com/SiliconGPU" target="_blank" rel="noreferrer" className="silicon-x-link" aria-label="Silicon on X" title="Silicon on X"><XLogo size={17} /></a>
+          <a href="/#ambf" className="silicon-founder-link">AMBF</a>
+        </div>}
         {!landing && <button className="button benefits-trigger" onClick={benefits.open} aria-label="Benefits" title="Benefits" aria-haspopup="dialog" aria-expanded={benefits.opened}><BadgePercent size={15} /><span>Benefits</span></button>}
         {landing && <ThemeToggle />}
         {!landing && (

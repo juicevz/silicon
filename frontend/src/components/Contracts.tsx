@@ -62,7 +62,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
     entry.series?.address ??
     (entry.asset.id === "h100-sxm" ? config.market_address : null);
   const labelFor = (entry: (typeof entries)[number]) =>
-    entry.series?.phase ??
+    entry.series?.paused && !entry.series.settled && !entry.series.cancelled ? "Paused" : entry.series?.phase ??
     (addressFor(entry)
       ? "Awaiting contract data"
       : entry.asset.id === "h100-sxm"
