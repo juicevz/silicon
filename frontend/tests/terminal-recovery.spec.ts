@@ -51,14 +51,20 @@ test("provider comparison preserves the actual H100 reference listing", async ({
   await expect(page.locator(".provider-price-bar i")).toHaveAttribute("data-included", "true");
 });
 
-test("open contract details follow refreshed collateral and funding availability", async ({ page }) => {
+test("open contract details follow refreshed collateral and funding availability", async ({ page, request }) => {
+  const address = "0x1111111111111111111111111111111111111111";
+  const config = await (await request.get("/api/v1/config")).json();
+  await page.route("**/api/v1/config", route => route.fulfill({
+    json: { ...config, market_address: address, vault_round_addresses: [] },
+  }));
+  await page.route("**/api/v1/vaults", route => route.fulfill({ json: [] }));
   await page.clock.install();
   let funded = false;
   await page.route("**/api/v1/protocol", route => route.fulfill({ json: {
-    verified: true, funding_enabled: funded, index_synced: true,
+    address, verified: true, funding_enabled: funded, index_synced: true,
     status: "funding", checked_at: new Date().toISOString(), activity: [],
     contracts: [{
-      address: "0x1111111111111111111111111111111111111111", asset: "h100-sxm",
+      address, asset: "h100-sxm",
       phase: "funding", open_at: 1791000000, expiry: 1791003600,
       base_price: 3, current_index: 100, call_premium: "2", put_premium: "2",
       funded: funded ? "20" : "0", reserved: "0", available: funded ? "20" : "0",
