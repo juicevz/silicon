@@ -1,0 +1,122 @@
+[
+  {
+    "id": "01",
+    "name": "Die window",
+    "color": "#344847",
+    "silhouetteSha256": "b74f9e22c761b62b6063de435ff3f5f643c6e39bf14c8017dcce0f6a15ce6909"
+  },
+  {
+    "id": "02",
+    "name": "Parallel",
+    "color": "#516A81",
+    "silhouetteSha256": "eaf6c279e3203b18eeb64aa8d9416c5971bc65fe0525494e3c564f86a1a45ce1"
+  },
+  {
+    "id": "03",
+    "name": "Facet",
+    "color": "#8A685C",
+    "silhouetteSha256": "fff934cecd8fd9cb4f0de72642fb710ed50335a94bc04a421a34e7b6ae9b7e7a"
+  },
+  {
+    "id": "04",
+    "name": "Relay",
+    "color": "#52635F",
+    "silhouetteSha256": "2ee9c595a2eaa7849584f3f0d3e7d9a23afef46a06569ac843bcb8cd6a319b3f"
+  },
+  {
+    "id": "05",
+    "name": "Impeller",
+    "color": "#626781",
+    "silhouetteSha256": "c4f984908f4969693e1e2a3946a19ead41b350584d8e85f8b7794c95b559c58c"
+  },
+  {
+    "id": "06",
+    "name": "Wafer pair",
+    "color": "#82704F",
+    "silhouetteSha256": "641caf69b54faa473051aee77b0b4e48702671702db74446fa624389e6876707"
+  },
+  {
+    "id": "07",
+    "name": "Clearing",
+    "color": "#455D69",
+    "silhouetteSha256": "001fa63188fc4f7e0c748d0c3cd005646515807fdc8e4e8ab7de5266d9197a6b"
+  },
+  {
+    "id": "08",
+    "name": "Lattice",
+    "color": "#617265",
+    "silhouetteSha256": "66a67c772901c546f8d620880f9f682d99d92551f0968379a151ec21e9da49fb"
+  },
+  {
+    "id": "09",
+    "name": "Fin",
+    "color": "#805F69",
+    "silhouetteSha256": "afdd880459b6b333c1df9abbdd2c60b2518f9d87764bc6719a1c60ae5aca7c98"
+  },
+  {
+    "id": "10",
+    "name": "Phase",
+    "color": "#526C78",
+    "silhouetteSha256": "f1d39cc6a448f3424b8f9d2a20b0e6cc208eec3ef6e511a3d5ff07dca775932a"
+  },
+  {
+    "id": "11",
+    "name": "Fold",
+    "color": "#596363",
+    "silhouetteSha256": "4c05d825dbb2cdb751cf40ce11e3ddf231e217b0290ff17ec2ad42c3cd3e05e5"
+  },
+  {
+    "id": "12",
+    "name": "Channel",
+    "color": "#706B8A",
+    "silhouetteSha256": "2a9d93cd8626b98b47104bf0c75197e9608d40dc5f729d3b3805005eb4cd6b40"
+  },
+  {
+    "id": "13",
+    "name": "Bond",
+    "color": "#536963",
+    "silhouetteSha256": "c9e6875b339854a8566a25326b2d299cc703e21c651f66a31456866028e204af"
+  },
+  {
+    "id": "14",
+    "name": "Socket",
+    "color": "#8A6C50",
+    "silhouetteSha256": "d61a133bba8a108d7cefca0ea527ee93cbf9f5155b6893977905927092722b77"
+  },
+  {
+    "id": "15",
+    "name": "Hour",
+    "color": "#6F788A",
+    "silhouetteSha256": "ee72ac12e049d736f3d1853210046198d446354ee6ec1055078335db4f26c5d6"
+  },
+  {
+    "id": "16",
+    "name": "Flux",
+    "color": "#795F52",
+    "silhouetteSha256": "f3a23d7f3e566c23799405187ab66feec68d31504692fd2e7666312606178350"
+  },
+  {
+    "id": "17",
+    "name": "Register",
+    "color": "#485F74",
+    "silhouetteSha256": "441f5e09f3b59f3176556fe3ca193214c6a3540bacd90053bc2e054126e1277c"
+  },
+  {
+    "id": "18",
+    "name": "Seed",
+    "color": "#7A7560",
+    "silhouetteSha256": "9ba880faf7c98c903d926ce51d822f2ea4b6fd65fa9868feaab6911114cef7b4"
+  },
+  {
+    "id": "19",
+    "name": "Vector",
+    "color": "#78617A",
+    "silhouetteSha256": "8281531bba58182ef9a8b032666b792a80861bd92c9c250fbfc2871a02d11ee7"
+  },
+  {
+    "id": "20",
+    "name": "Torus",
+    "color": "#465C61",
+    "silhouetteSha256": "aa908f4741d411fa2a376f9e3f71fc4edb07e093b16e019dcd19e5068fe0d224"
+  }
+]
