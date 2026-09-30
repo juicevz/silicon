@@ -14,8 +14,10 @@ data/
 artifacts/
 cache/
 coverage/
-.superdesign/tmp/
-.superdesign/website/
+.superdesign/
+deploy/
+scripts/deploy.sh
+frontend/brand/studio-20260929/
 test-results/
 playwright-report/
 frontend/public/assets/generated/*.png
@@ -24,5 +26,3 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/
 *.tsbuildinfo
-
-.superdesign/init/
