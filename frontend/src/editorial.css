@@ -1,0 +1,32 @@
+/* One reading voice from the public site through the workspace. */
+:root { --reading-font: 'Inter Variable', 'Helvetica Neue', Arial, sans-serif; --entrance-ease: cubic-bezier(.22, 1, .36, 1); }
+.brand { font-family: 'Space Grotesk Variable', 'Space Grotesk', sans-serif; font-weight: 650; letter-spacing: -.045em; }
+.site-menu :is(.modal-title,.site-menu-grid > a > span) { font-family: var(--reading-font); }
+.docs { font-family: var(--reading-font); }
+.docs-layout :is(h1,h2) { font-weight: 400; letter-spacing: -.035em; }
+.docs-layout :is(p,li) { font-size: 16px; line-height: 1.8; }
+.docs-layout .docs-lead { font-size: 19px; line-height: 1.7; }
+.docs :is(.eyebrow,code,th) { font-family: var(--mono); }
+.terminal :is(h1,h2,h3,.page-intro > p,.empty-state p,.terminal-nav,.header-docs,.header-right > .button),
+.terminal-tour .tour-card { font-family: var(--reading-font); }
+.terminal :is(h1,h2,h3) { font-weight: 400; letter-spacing: -.03em; }
+.terminal :is(.mono,input[type=number]) { font-family: var(--mono); }
+
+/* Fade in a completed view once. Live prices and user input remain immediate. */
+@media (prefers-reduced-motion: no-preference) {
+  .terminal-body, .full-page, .docs-layout > main { animation: silicon-view-enter 900ms var(--entrance-ease) both; }
+  .terminal-placeholder { animation: silicon-view-enter 700ms var(--entrance-ease) both; }
+  .terminal-placeholder-panels > span { animation: silicon-placeholder-breathe 2400ms ease-in-out infinite alternate; }
+  .terminal-placeholder-panels > span:nth-child(2) { animation-delay: 160ms; }
+  .terminal-placeholder-panels > span:nth-child(3) { animation-delay: 320ms; }
+  .gpu-thumbnail img[data-loaded=true] { animation-duration: 900ms; animation-timing-function: var(--entrance-ease); }
+}
+@keyframes silicon-view-enter {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes silicon-placeholder-breathe { from { opacity: .45; } to { opacity: .85; } }
+@media (max-width:760px) {
+  .docs-layout :is(p,li) { font-size: 15px; }
+  .docs-layout .docs-lead { font-size: 17px; }
+}

@@ -40,7 +40,7 @@ test("every visit starts light and the manual dark toggle preserves the layout",
   await expect(page.locator(".dream-environment-dark")).toHaveCSS("opacity","1");
   expect(await page.locator(".dream-intro").boundingBox()).toEqual(hero);
   const typography = await page.locator("h1").evaluate(el => ({family:getComputedStyle(el).fontFamily,weight:getComputedStyle(el).fontWeight}));
-  expect(typography.family).toContain("Space Grotesk"); expect(typography.weight).toBe("450");
+  expect(typography.family).toContain("Inter Variable"); expect(typography.weight).toBe("400");
   await page.reload();
   await expect(page.getByRole("button",{name:"Switch to dark mode"})).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-silicon-theme","light");
