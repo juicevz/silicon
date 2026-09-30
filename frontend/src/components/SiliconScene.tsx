@@ -47,8 +47,11 @@ export default function SiliconScene({ kind, motion, paused, selected = "h100", 
         advanceSpring(x,targetX,frame.delta); advanceSpring(y,targetY,frame.delta);
         time += frame.delta*SILICON_MOTION_SPEED;
       }
-      const drift = kind === "objects" && !frame.reduced ? Math.sin(time*.48)*6.5*SILICON_MOTION_RANGE : 0;
-      const transform = `perspective(1100px) translate3d(${(x.value*7*SILICON_MOTION_RANGE).toFixed(3)}px,${(y.value*4*SILICON_MOTION_RANGE+drift).toFixed(3)}px,0) rotateX(${(-y.value*5*SILICON_MOTION_RANGE).toFixed(3)}deg) rotateY(${(x.value*7*SILICON_MOTION_RANGE).toFixed(3)}deg)`;
+      const floating = kind === "objects" && !frame.reduced;
+      const drift = floating ? Math.sin(time*.48)*8.5*SILICON_MOTION_RANGE : 0;
+      const sway = floating ? Math.sin(time*.31)*3*SILICON_MOTION_RANGE : 0;
+      const roll = floating ? Math.sin(time*.22)*.8 : 0;
+      const transform = `perspective(1100px) translate3d(${(x.value*7*SILICON_MOTION_RANGE+sway).toFixed(3)}px,${(y.value*4*SILICON_MOTION_RANGE+drift).toFixed(3)}px,0) rotateX(${(-y.value*5*SILICON_MOTION_RANGE).toFixed(3)}deg) rotateY(${(x.value*7*SILICON_MOTION_RANGE).toFixed(3)}deg) rotateZ(${roll.toFixed(3)}deg)`;
       if (transform !== previous) { poster.style.transform = transform; previous = transform; }
     });
     return () => { unsubscribe(); observer.disconnect(); element.removeEventListener("pointermove",move); element.removeEventListener("pointerleave",leave); poster.style.removeProperty("transform"); };

@@ -159,9 +159,12 @@ export function mountSiliconScene(el: HTMLDivElement, motion: LandingMotion, opt
       stage.rotation.set(y.value*.055*SILICON_MOTION_RANGE,x.value*.1*SILICON_MOTION_RANGE,0);
       const time = frame.reduced ? 0 : elapsed;
       objects?.pieces.forEach(({mesh,position,rotation,phase}) => {
-        mesh.position.y = position.y + Math.sin(time*.48+phase)*.065*SILICON_MOTION_RANGE;
-        mesh.rotation.x = rotation.x + Math.sin(time*.26+phase)*.04*SILICON_MOTION_RANGE;
-        mesh.rotation.y = rotation.y + Math.sin(time*.29+phase)*.075*SILICON_MOTION_RANGE;
+        mesh.position.x = position.x + Math.sin(time*.31+phase)*.03*SILICON_MOTION_RANGE;
+        mesh.position.y = position.y + Math.sin(time*.48+phase)*.085*SILICON_MOTION_RANGE;
+        mesh.position.z = position.z + Math.sin(time*.24+phase)*.025*SILICON_MOTION_RANGE;
+        mesh.rotation.x = rotation.x + Math.sin(time*.26+phase)*.05*SILICON_MOTION_RANGE;
+        mesh.rotation.y = rotation.y + Math.sin(time*.29+phase)*.09*SILICON_MOTION_RANGE;
+        mesh.rotation.z = rotation.z + Math.sin(time*.22+phase)*.018*SILICON_MOTION_RANGE;
       });
     }
     if (dirty || (!isGpu && !frame.reduced && !options.paused()) || Math.abs(oldX-x.value)+Math.abs(oldY-y.value) > .000001) {
