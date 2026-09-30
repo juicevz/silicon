@@ -48,6 +48,12 @@
 .dreamlike .header .material-button { text-transform: lowercase; }
 .dreamlike .header-right { margin-left: auto; gap: 16px; }
 .dreamlike .header .button.material-button { min-height: 42px; padding: 5px 17px; gap: 11px; font-size: 12px; }
+@media (min-width:1000px) {
+  .dreamlike .header.landing-header { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
+  .dreamlike .landing-header > .brand { justify-self: start; }
+  .dreamlike .landing-nav { margin-left: 0; justify-self: center; }
+  .dreamlike .header-right { margin-left: 0; justify-self: end; }
+}
 .dreamlike .theme-toggle { position: relative; width: 39px; height: 39px; flex: none; border: 1px solid var(--dream-line); border-radius: 50%; color: var(--dream-ink); background: #ffffff12; transition: background-color 220ms ease, transform 220ms ease; }
 .dreamlike .theme-toggle:hover { transform: translateY(-2px); background: #aebfd426; }
 .dreamlike .theme-toggle:active { transform: translateY(0) scale(.97); }
@@ -60,7 +66,7 @@
 :root .site-menu .modal-title h2 { color: var(--dream-muted); }
 
 .dreamlike .dream-hero { position: relative; height: 980px; isolation: isolate; }
-.dreamlike .dream-environment { position: absolute; inset: 0; background-size: cover; background-position: center 70%; pointer-events: none; z-index: -2; transition: opacity 750ms var(--dream-ease); }
+.dreamlike .dream-environment { position: absolute; inset: 0; background-size: cover; background-position: 68% 70%; pointer-events: none; z-index: -2; transition: opacity 750ms var(--dream-ease); }
 .dreamlike .dream-environment-light { background-image: url('/assets/silicon/dream-environment.webp'); }
 .dreamlike .dream-environment-dark { opacity: 0; background-image: url('/assets/silicon/industrial-environment.webp'); }
 :root[data-silicon-theme=dark] .dreamlike .dream-environment-dark { opacity: 1; }
@@ -74,6 +80,18 @@
 .dreamlike .dream-motion { position: absolute; bottom: 32px; right: 40px; z-index: 5; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--dream-line); border-radius: 50%; background: #ffffff12; color: var(--dream-muted); transition: color 220ms ease, background-color 220ms ease; }
 .dreamlike .dream-motion:hover { background: var(--landing-hover); color: var(--dream-ink); }
 .dreamlike .dream-motion:disabled { opacity: .7; cursor: default; }
+
+/* Translucent colour moves over the environment and through the quieter sections. */
+.dreamlike .dream-ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; contain: strict; opacity: .55; }
+.dreamlike .dream-hero > .dream-ambient { position: absolute; opacity: 1; }
+.dreamlike .dream-ambient-field { position: absolute; inset: -12%; will-change: transform; }
+.dreamlike .dream-ambient-lilac { background: radial-gradient(ellipse at 31% 24%, #a98cda38, transparent 58%); }
+.dreamlike .dream-ambient-blue { background: radial-gradient(ellipse at 77% 63%, #6fc6e03d, transparent 57%); }
+.dreamlike .dream-ambient-peach { background: radial-gradient(ellipse at 61% 44%, #efb08b30, transparent 48%); }
+:root[data-silicon-theme=dark] .dreamlike .dream-ambient-lilac { background: radial-gradient(ellipse at 31% 24%, #728eac28, transparent 58%); }
+:root[data-silicon-theme=dark] .dreamlike .dream-ambient-blue { background: radial-gradient(ellipse at 77% 63%, #3f899b38, transparent 57%); }
+:root[data-silicon-theme=dark] .dreamlike .dream-ambient-peach { background: radial-gradient(ellipse at 61% 44%, #c78b6330, transparent 48%); }
+.dreamlike[data-motion-paused=true] .dream-ambient-field { will-change: auto; }
 
 /* Shared native geometry, with a complete image fallback before WebGL is ready. */
 .dreamlike .silicon-scene, .dreamlike .silicon-canvas, .dreamlike .silicon-scene-poster { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -232,6 +250,7 @@
   .dreamlike .header .mini-wafer { display: none; }
   .dreamlike .header .button.material-button > svg { width: 14px; }
   .dreamlike .dream-hero { height: 920px; }
+  .dreamlike .dream-environment { background-position: center 70%; }
   .dreamlike .dream-intro { padding-top: 130px; }
   .dreamlike .dream-intro h1 { font-size: 52px; line-height: 1.08; }
   .dreamlike .dream-intro > p { max-width: 350px; font-size: 15px; line-height: 1.7; }
@@ -279,6 +298,7 @@
   .dreamlike .dream-calculator .landing-results strong { font-size: 18px; }
 }
 @media (prefers-reduced-motion:reduce) {
+  .dreamlike .dream-ambient-field { will-change: auto; }
   .dreamlike, .dreamlike *, .dreamlike *::before, .dreamlike *::after, .dreamlike details::details-content { transition: none !important; animation: none !important; }
   .dreamlike [data-reveal] { opacity: 1 !important; filter: none !important; transform: none !important; }
   .dreamlike .button.material-button:hover, .dreamlike .theme-toggle:hover, .dreamlike .button.material-button:hover > svg, .dreamlike .dream-gpu-row:hover :is(img,svg) { transform: none; }

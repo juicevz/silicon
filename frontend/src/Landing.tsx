@@ -15,6 +15,7 @@ import { HardwareCallout } from "./components/HardwareCallout";
 import { SiliconPoster } from "./components/SiliconPoster";
 import { FounderSection } from "./components/FounderSection";
 import { XLogo } from "./components/SocialIcons";
+import { DreamAtmosphere } from "./components/DreamAtmosphere";
 import { HARDWARE, hardwareThumbnail, type HardwareId } from "./components/hardwareCatalog";
 import type { SceneHandle } from "./components/SiliconScene";
 const SiliconScene = lazy(() => import("./components/SiliconScene"));
@@ -43,9 +44,11 @@ export default function Landing({ notify }: { notify: (value: string) => void })
     return () => preference.removeEventListener("change",update);
   }, []);
   return <div ref={root} className="landing dreamlike" data-motion-paused={paused}>
+    <DreamAtmosphere motion={motion} />
     <section className="dream-hero" id="top" aria-labelledby="dream-title">
       <div className="dream-environment dream-environment-light" aria-hidden="true" />
       <div className="dream-environment dream-environment-dark" aria-hidden="true" />
+      <DreamAtmosphere motion={motion} />
       <Header landing notify={notify} />
       <div className="dream-wrap dream-intro">
         <h1 id="dream-title" data-reveal data-reveal-delay="60">trade the cost <span>of compute.</span></h1>
