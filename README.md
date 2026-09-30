@@ -20,7 +20,7 @@ chmod 600 .env
 npm --prefix frontend ci
 ```
 
-Set `PRIVY_APP_ID` through a private secret store. The read API does not need the Privy app
+Set `PRIVY_APP_ID` through your secret manager. The read API does not need the Privy app
 secret or a signing key. All frontend values, including `VITE_` variables, are public.
 
 Run these in separate terminals:
@@ -69,7 +69,8 @@ USDG: `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` (six decimals).
 
 The original project dev/deployer wallet is
 `0xf7654bf2e3139d059Db1f015897766EA3A2aEfBE`, configured through
-`DEV_WALLET_ADDRESS`. The signing key is managed outside the repository. This public address is not a deployed token or market.
+`DEV_WALLET_ADDRESS`. The signing key is managed outside the repository.
+This public address is not a deployed token or market.
 Never install the signing key in the web service or frontend.
 
 `.env.example` documents the variables. `RPC_URL` is server-side and can use an
@@ -267,7 +268,7 @@ Landing typography is self-hosted Inter Variable at 400/500, with Space Grotesk
 retained on the Silicon wordmark. Their OFL licenses ship at `/licenses/inter.txt`
 and `/licenses/space-grotesk.txt`. Sophon's Suisse Intl face is represented by the
 open-source Inter alternative. The terminal retains IBM Plex Mono and its license
-at `/licenses/ibm-plex-mono.txt`. Design rules are documented locally. References informed spacing and visual language;
+at `/licenses/ibm-plex-mono.txt`. References informed spacing and visual language;
 their source code and financial data were not cloned.
 
 Original editorial GPU imagery was generated through the explicitly requested
