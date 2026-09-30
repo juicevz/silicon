@@ -35,6 +35,7 @@ export function useMaterialLight(root: RefObject<HTMLDivElement | null>, motion:
       } };
     });
     const unsubscribe = motion.subscribe(frame => {
+      if (frame.paused && !frame.reduced) return;
       for (const entry of entries) {
         const target = frame.reduced ? 50 : entry.target();
         if (Math.abs(entry.spring.value - target) + Math.abs(entry.spring.velocity) < .025) continue;
