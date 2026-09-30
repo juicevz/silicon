@@ -105,9 +105,13 @@ remaining equity after buyer obligations; writer principal is at risk.
 
 A designated publisher reports source observations and proposes the expiry
 result. A one-hour challenge period allows the guardian to cancel a disputed
-result and refund premiums plus fees. Missing or unresolved settlement cancels
-permissionlessly after 24 hours. The publisher is trusted for offchain data.
-Claims pay the recorded buyer and require no continuing Silicon token holding.
+result and refund premiums plus fees. Proposals close two hours before the
+24-hour settlement timeout, so every accepted result keeps at least a full
+hour to finalize. Missing or unresolved settlement cancels permissionlessly
+after 24 hours. The publisher is trusted for offchain data. Claims pay the
+recorded buyer and require no continuing Silicon token holding; a buyer may
+redirect a payout to another wallet with `claimTo` if their own address cannot
+receive USDG.
 
 ## Premium vaults and paper strategies
 

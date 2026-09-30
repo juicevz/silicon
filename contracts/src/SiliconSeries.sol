@@ -69,7 +69,7 @@ contract SiliconSeries is ReentrancyGuard {
     event ResultProposed(uint256 index, uint64 observedAt, bytes32 receipt);
     event Finalized(uint256 index, uint256 liability);
     event Cancelled(bytes32 reason);
-    event Claimed(uint256 indexed id, address indexed buyer, uint256 amount);
+    event Claimed(uint256 indexed id, address indexed recipient, uint256 amount);
     event Paused(bool value);
 
     error InvalidTerms();
@@ -109,6 +109,7 @@ contract SiliconSeries is ReentrancyGuard {
     }
 
     function _fund(uint256 amount) internal {
+        if (paused) revert WrongPhase();
         if (block.timestamp >= openAt || cancelled || settled) revert WrongPhase();
         if (amount == 0) revert InvalidAmount();
         uint256 beforeBalance = asset.balanceOf(address(this));
@@ -161,7 +162,11 @@ contract SiliconSeries is ReentrancyGuard {
         uint256 liability = Math.max(cap, cost);
         // Deliberately require collateral before collecting this trade's cost.
         if (accountedAssets - reserved < liability) revert NoCapacity();
+        uint256 beforeBalance = asset.balanceOf(address(this));
         asset.safeTransferFrom(msg.sender, address(this), cost);
+        // Reject deflating or fee-taking assets so accounting never exceeds
+        // the real balance; mirrors the receipt check in _fund().
+        if (asset.balanceOf(address(this)) - beforeBalance != cost) revert InvalidAmount();
         accountedAssets += cost; reserved += liability; totalCosts += cost;
         if (isCall) totalCallUnits += units; else totalPutUnits += units;
         id = positions.length;
@@ -176,7 +181,9 @@ contract SiliconSeries is ReentrancyGuard {
 
     function _proposeResult(uint256 index_, uint64 observedAt, bytes32 receipt) internal {
         if (msg.sender != publisher) revert NotAuthorized();
-        if (block.timestamp < expiry || block.timestamp >= expiry + SETTLEMENT_TIMEOUT - CHALLENGE_WINDOW || settled || cancelled || proposedAt != 0) revert WrongPhase();
+        // Proposals must leave a full challenge window plus at least one more
+        // hour to finalize before the settlement timeout force-cancels.
+        if (block.timestamp < expiry || block.timestamp >= expiry + SETTLEMENT_TIMEOUT - 2 * CHALLENGE_WINDOW || settled || cancelled || proposedAt != 0) revert WrongPhase();
         if (observedAt < expiry || observedAt > expiry + SOURCE_FRESHNESS || observedAt > block.timestamp || index_ == 0 || index_ > 1000e6 || receipt == bytes32(0)) revert InvalidTerms();
         finalIndex = index_; resultReceipt = receipt; proposedAt = uint64(block.timestamp);
         emit ResultProposed(index_, observedAt, receipt);
@@ -216,6 +223,20 @@ contract SiliconSeries is ReentrancyGuard {
     }
 
     function claim(uint256 id) external nonReentrant returns (uint256 amount) {
+        if (id >= positions.length) revert InvalidAmount();
+        amount = _claim(id, positions[id].buyer);
+    }
+
+    /// @notice Lets a buyer redirect a payout when their own wallet cannot
+    /// receive the asset (for example an asset-level blocklist).
+    function claimTo(uint256 id, address recipient) external nonReentrant returns (uint256 amount) {
+        if (id >= positions.length) revert InvalidAmount();
+        if (recipient == address(0)) revert InvalidAmount();
+        if (msg.sender != positions[id].buyer) revert NotHolder();
+        amount = _claim(id, recipient);
+    }
+
+    function _claim(uint256 id, address recipient) private returns (uint256 amount) {
         if (!settled && !cancelled) revert WrongPhase();
         Position storage position = positions[id];
         if (position.claimed) revert WrongPhase();
@@ -223,10 +244,14 @@ contract SiliconSeries is ReentrancyGuard {
         position.claimed = true;
         unclaimedCount--; reserved -= amount; accountedAssets -= amount;
         if (unclaimedCount == 0) reserved = 0; // Release aggregate rounding dust.
-        if (amount != 0) asset.safeTransfer(position.buyer, amount);
-        emit Claimed(id, position.buyer, amount);
+        if (amount != 0) asset.safeTransfer(recipient, amount);
+        emit Claimed(id, recipient, amount);
     }
 
     function positionCount() external view returns (uint256) { return positions.length; }
+
+    /// @notice Unreserved accounted assets. Assets sent directly to this
+    /// contract are not withdrawable by design; accounting is share-based to
+    /// block balance-inflation manipulation.
     function available() external view returns (uint256) { return accountedAssets - reserved; }
 }
