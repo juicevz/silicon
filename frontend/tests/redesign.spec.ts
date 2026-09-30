@@ -25,6 +25,37 @@ test("instant scenarios preserve capped payouts, fees and direction", () => {
   expect(withScenario(live, "put", -4).profit).toBe("-3.150000");
 });
 
+test("landing defers terminal downloads until the user opens it", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  const terminalAsset = /\/(?:assets\/Terminal-[^/]+\.(?:css|js)|src\/Terminal\.tsx)(?:\?|$)/;
+  let interrupted = false;
+  await page.route(terminalAsset, route => {
+    interrupted = true;
+    return route.abort();
+  });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("trade the cost of compute.");
+  // Wait past the previous background preload timer with terminal assets blocked.
+  await page.waitForTimeout(1600);
+  expect(interrupted).toBe(false);
+  expect(errors).toEqual([]);
+  await page.unroute(terminalAsset);
+  await page.goto("/terminal");
+  await expect(page.locator(".ticket")).toBeVisible();
+});
+
+test("Reload Silicon recovers after a terminal script download fails", async ({ page }) => {
+  const terminalScript = /\/(?:assets\/Terminal-[^/]+\.js|src\/Terminal\.tsx)(?:\?|$)/;
+  await page.route(terminalScript, route => route.abort());
+  await page.goto("/terminal");
+  const reload = page.getByRole("button", { name: "Reload Silicon", exact: true });
+  await expect(reload).toBeVisible();
+  await page.unroute(terminalScript);
+  await reload.click();
+  await expect(page.locator(".ticket")).toBeVisible();
+});
+
 test("slider values update in the next frame while quote network is delayed", async ({
   page,
 }) => {
@@ -107,11 +138,20 @@ test("chart scrubbing follows the pointer and keyboard without a data request", 
   );
 });
 
-test("contract directory, details and real settlement explorer link", async ({
+test("undeployed contract directory, details and real settlement explorer link", async ({
   page,
   request,
 }) => {
   const config = await (await request.get("/api/v1/config")).json();
+  // Exercise the empty state regardless of the live deployment's funding.
+  await page.route("**/api/v1/config", route => route.fulfill({
+    json: { ...config, market_address: null, vault_round_addresses: [] },
+  }));
+  await page.route("**/api/v1/protocol", route => route.fulfill({
+    json: { address: null, status: "awaiting_deployment", verified: false,
+      funding_enabled: false, contracts: [], activity: [], checked_at: new Date().toISOString() },
+  }));
+  await page.route("**/api/v1/vaults", route => route.fulfill({ json: [] }));
   await page.goto("/terminal/contracts");
   await expect(page.locator(".contract-entry")).toHaveCount(3);
   for (const asset of ["H100", "A100", "B200"]) {
@@ -182,7 +222,7 @@ test("new intro appears once, can be reopened, and reduced motion disables inert
   await expect(page.getByLabel("Terminal introduction")).toBeVisible();
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByLabel("Terminal introduction")).toContainText(
-    "Try a position.",
+    "Read the rental market.",
   );
   await page.getByRole("button", { name: "Dismiss introduction" }).click();
   await page.reload();
