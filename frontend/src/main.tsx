@@ -19,6 +19,8 @@ import Landing from "./Landing";
 import Docs from "./Docs";
 import { Header } from "./components/Header";
 import Atmosphere from "./components/Atmosphere";
+import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/inter";
 import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
 import "@fontsource/ibm-plex-mono/latin-600.css";
@@ -29,6 +31,8 @@ import "./interactions.css";
 import "./landing.css";
 import "./catalog.css";
 import "./dreamlike.css";
+import "./editorial.css";
+import "./founder.css";
 
 const Terminal = lazy(() => import("./Terminal"));
 class ErrorBoundary extends Component<
@@ -47,7 +51,7 @@ class ErrorBoundary extends Component<
       <div
         className={`boot ${window.location.pathname === "/" || window.location.pathname === "/docs" ? "boot-light" : ""}`}
       >
-        <img src="/silicon.svg?v=3" alt="Silicon" />
+        <img src="/silicon.svg?v=5" alt="Silicon" />
         <h1>This view needs a refresh.</h1>
         <p>Your wallet and funds are unaffected.</p>
         <button
@@ -97,15 +101,11 @@ function App() {
     [toast, setToast] = useState("");
   const notify = useCallback((value: string) => setToast(value), []);
   useEffect(() => {
-    const preload = setTimeout(() => {
-      void import("./Terminal");
-    }, 1200);
     void api<Config>("/config")
       .then(setConfig)
       .catch(() =>
         setError("The terminal is reconnecting. Please refresh in a moment."),
       );
-    return () => clearTimeout(preload);
   }, []);
   useEffect(() => {
     if (!toast) return;

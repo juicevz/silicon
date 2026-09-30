@@ -7,11 +7,7 @@ import type { Point } from "../api";
 export function Brand() {
   return (
     <Link to="/" className="brand" aria-label="Silicon home">
-      <svg className="silicon-mark" viewBox="200 185 600 630" width="29" height="31" fill="currentColor" aria-hidden="true" focusable="false">
-        <path d="M503 225C320 225 180 383 229 550Q234 611 287 597L643 255L625 238L641 221L621 201L605 217L587 198L310 471C334 368 423 291 503 225Z" />
-        <path d="M280 662L624 321C663 282 699 298 721 336L377 680C340 717 310 699 280 662Z" />
-        <path transform="rotate(180 500 500)" d="M503 225C320 225 180 383 229 550Q234 611 287 597L643 255L625 238L641 221L621 201L605 217L587 198L310 471C334 368 423 291 503 225Z" />
-      </svg>
+      <img className="silicon-mark" src="/silicon.svg?v=5" width="40" height="31" alt="" aria-hidden="true" />
       <span>
         silicon<span className="brand-period">.</span>
       </span>
