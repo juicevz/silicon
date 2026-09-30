@@ -18,6 +18,7 @@ coverage/
 deploy/
 scripts/deploy.sh
 frontend/brand/studio-20260929/
+AGENTS.local.md
 test-results/
 playwright-report/
 frontend/public/assets/generated/*.png

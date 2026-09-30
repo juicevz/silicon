@@ -237,31 +237,6 @@ eligible receipt, simulates from the contract's publisher, and prints unsigned
 calldata with an estimated gas limit. It does not sign or broadcast. Deployment,
 funding, quote publication and settlement are separate operator transactions.
 
-## Deployment
-
-Production is a self-hosted server. Immutable releases use
-`current` and `previous`. The `silicon-api` service runs as ubuntu on port 4286;
-nginx serves the frontend and proxies API/SSE. Persistent SQLite is
-`shared/data/silicon.sqlite`. Secrets are in `/etc/silicon/app.env`, mode 0600.
-
-Build an isolated snapshot when other sessions are editing the workspace. Stage
-both frontend and backend, verify hashes and health, back up SQLite with its
-online backup API, then switch `current` atomically. Preserve the previous release
-and environment for rollback. A web deployment does not fund or deploy a market.
-
-`deploy/silicon-backup.timer` schedules a daily SQLite online backup at 04:15 UTC
-with up to ten minutes of jitter. Its service verifies the copy before retaining
-the latest 14 automatic backups in `shared/backups`; manual release backups are
-preserved. Install both backup units, create the backup directory for `ubuntu`,
-reload systemd, and enable the timer when applying an approved infrastructure
-release. These copies are local to the server; they do not replace an offsite backup.
-
-```bash
-ssh deploy-server 'systemctl status silicon-api --no-pager'
-curl -fsS https://siliconmarkets.io/health
-curl -fsS https://siliconmarkets.io/api/v1/config
-```
-
 ## Design and asset provenance
 
 Landing typography is self-hosted Inter Variable at 400/500, with Space Grotesk
