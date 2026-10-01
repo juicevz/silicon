@@ -16,7 +16,7 @@ import { previewPosition, withScenario } from "../preview";
 import { SmoothRange } from "./SmoothRange";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { PayoffChart } from "./PayoffChart";
-import { useBenefits } from "../benefits";
+import { roundFeeBps, useBenefits } from "../benefits";
 import { useData } from "../data";
 
 export default function Ticket({
@@ -77,7 +77,8 @@ export default function Ticket({
   }, [deadline]);
   useEffect(() => { setReview(null); }, [quoteKey]);
   const fresh = confirmed && (confirmed.indicative || (confirmed.deadline != null && confirmed.deadline > now));
-  const fee = access?.fee_bps ?? config.fee_bps;
+  const walletAccess = wallet.address && access?.address.toLowerCase() === wallet.address.toLowerCase() ? access : null;
+  const fee = roundFeeBps(!!walletAccess?.fee_free, protocol) ?? config.fee_bps;
   const quote = fresh
     ? withScenario(confirmed, side, move)
     : previewPosition(size, move, side, market.price, fee);
@@ -202,7 +203,7 @@ export default function Ticket({
         <div className="field-label">
           <label htmlFor="premium">Premium</label>
           <span>
-            Balance: {access?.usdg != null ? money(access.usdg) : "—"} USDG
+            Balance: {walletAccess?.usdg != null ? money(walletAccess.usdg) : "—"} USDG
           </span>
         </div>
         <div className="amount-input">
@@ -332,11 +333,11 @@ export default function Ticket({
           <button
             className="button primary full-width"
             disabled={
-              busy || sending || Number(access?.usdg ?? 0) < Number(quote.cost)
+              busy || sending || Number(walletAccess?.usdg ?? 0) < Number(quote.cost)
             }
             onClick={() => setReview(quote)}
           >
-            {Number(access?.usdg ?? 0) < Number(quote.cost)
+            {Number(walletAccess?.usdg ?? 0) < Number(quote.cost)
               ? "Insufficient USDG"
               : "Review position"}
             <ArrowUpRight size={13} />
@@ -365,16 +366,16 @@ export default function Ticket({
         <p>
           Trade with USDG. Silicon ownership is optional.
           <br />
-          <strong>{!quote?.indicative && quote?.fee_bps === 0 ? "Holder fee waiver applied." : "Qualifying holders receive a platform fee waiver."}</strong>
+          <strong>{!quote?.indicative && quote?.fee_bps === 0 ? "Holder fee waiver applied." : "More than 5,000 SILICON unlocks holder tools. Fee waivers apply in token-enabled rounds."}</strong>
         </p>
         <button className="text-button" onClick={benefits.open}>
           View benefits
           <ArrowUpRight size={12} />
         </button>
       </div>
-      {access?.eth != null && (
+      {walletAccess?.eth != null && (
         <div className="wallet-gas mono">
-          Wallet gas balance <span>{money(access.eth, 5)} ETH</span>
+          Wallet gas balance <span>{money(walletAccess.eth, 5)} ETH</span>
         </div>
       )}
       {review && (

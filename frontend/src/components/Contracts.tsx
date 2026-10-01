@@ -5,6 +5,7 @@ import { useData, useConfig } from "../data";
 import { api, money, short, explorer, type Series, type Protocol } from "../api";
 import { External, Modal } from "./ui";
 import { LiveContract } from "./Live";
+import { TokenAddress } from "./TokenAddress";
 const Gpu = lazy(() => import("./Gpu"));
 const assets = [
   {
@@ -156,18 +157,6 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
           {config.market_address ? <External href={explorer(config, "address", config.market_address)}>{short(config.market_address)}</External> : <span className="muted">Awaiting deployment</span>}
         </div>
         <div>
-          <span>Silicon token</span>
-          {config.token_address ? (
-            <External
-              href={explorer(config, "address", config.token_address)}
-            >
-              {short(config.token_address)}
-            </External>
-          ) : (
-            <span className="muted">Awaiting launch</span>
-          )}
-        </div>
-        <div>
           <span>USDG · settlement asset</span>
           <External
             href={explorer(config, "address", config.usdg_address)}
@@ -176,6 +165,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
           </External>
         </div>
       </section>
+      <TokenAddress />
       {selected && (
         <Modal
           title={`${selected.asset.name} contract`}

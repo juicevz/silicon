@@ -85,7 +85,7 @@ export function Header({
           <a href="https://x.com/SiliconGPU" target="_blank" rel="noreferrer" className="silicon-x-link" aria-label="Silicon on X" title="Silicon on X"><XLogo size={17} /></a>
           <a href="/#ambf" className="silicon-founder-link">AMBF</a>
         </div>}
-        {!landing && <button className="button benefits-trigger" onClick={benefits.open} aria-label="Benefits" title="Benefits" aria-haspopup="dialog" aria-expanded={benefits.opened}><BadgePercent size={15} /><span>Benefits</span></button>}
+        {!landing && <button className="button benefits-trigger" onClick={benefits.open} aria-label="Benefits" title="$SILICON benefits" aria-haspopup="dialog" aria-expanded={benefits.opened}><BadgePercent size={15} /><span>$SILICON</span></button>}
         {landing && <ThemeToggle />}
         {!landing && (
           <Link className="header-docs" to="/docs">

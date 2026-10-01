@@ -5,11 +5,11 @@ import pytest
 
 from app.benefits import wallet_benefits
 from app.chain import Chain
-from app.config import Settings
+from app.config import SILICON_TOKEN_ADDRESS, Settings
 from app.models import Access, Protocol
 
 WALLET = "0x" + "1" * 40
-TOKEN = "0x" + "2" * 40
+TOKEN = SILICON_TOKEN_ADDRESS
 
 
 @pytest.mark.asyncio

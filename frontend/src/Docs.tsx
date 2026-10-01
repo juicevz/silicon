@@ -220,7 +220,7 @@ export default function Docs() {
           </section>
           <section id="token">
             <h2>The SILICON token</h2>
-            <p>Silicon Markets (SILICON) is on Robinhood Chain, chain ID 4663.</p>
+            <p>Silicon Markets ($SILICON) is on Robinhood Chain, chain ID 4663. The token uses 18 decimals and had a total supply of 1 billion SILICON when verified on October 1, 2026.</p>
             <TokenAddress />
             <p>This is the token contract address. USDG settlement and individual market and vault contracts use separate addresses.</p>
             <h2>Open access. Optional holder benefits.</h2>
@@ -260,15 +260,17 @@ export default function Docs() {
           <section id="status">
             <h2>Launch status</h2>
             <p>
-              The public data terminal, payout calculator and Compute workspace
-              are available. The SILICON token address is listed above. Live
-              trading depends on each market’s deployed contracts, funding and
-              verified onchain state.
+              The public data terminal, payout calculator, paper strategies,
+              Compute workspace and SILICON holder tools are available. Live
+              options require a verified, funded and unpaused round, a current
+              five-provider H100 reference and an executable quote.
             </p>
             <p>
-              Market and vault addresses and their current status are listed
-              on the Contracts page. A working interface does not imply an
-              active settlement pool. Silicon is an independent project, not
+              The Contracts page shows deployed rounds and their current status.
+              The initial 100 USDG pilot remains paused while its security-patched,
+              token-aware replacement is prepared. Its existing funds and withdrawal
+              schedule stay with the original contract. Trend and generation-spread
+              strategies remain paper positions. Silicon is an independent project, not
               affiliated with NVIDIA, GPU Economy or the cloud providers shown.
             </p>
           </section>

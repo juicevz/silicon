@@ -21,6 +21,18 @@ from app.chain import Chain  # noqa: E402
 from app.config import Settings  # noqa: E402
 
 
+def current_quote_observation(snapshot: dict, at: int) -> tuple[int, Decimal]:
+    """A prior complete receipt cannot override a currently withheld benchmark."""
+    market = next((m for m in snapshot.get("markets", []) if m.get("id") == "h100-sxm"), None)
+    if not market or market.get("stale") or market.get("status") != "benchmark" or market.get("coverage") != 5:
+        raise ValueError("The current H100 benchmark is withheld; all five fixed providers must be confirmed")
+    observed = int(datetime.fromisoformat(market["source_updated_at"].replace("Z", "+00:00")).timestamp())
+    price = Decimal(str(market["price"]))
+    if not 0 <= at - observed <= 10800 or not price.is_finite() or price <= 0:
+        raise ValueError("The current H100 benchmark is outside the publication window")
+    return observed, price
+
+
 async def prepare(args):
     config = Settings(_env_file=None, rpc_url=args.rpc, market_address=args.contract)
     chain = Chain(config)
@@ -40,7 +52,12 @@ async def prepare(args):
     )
     receipt_hash = None
     if args.mode in ("quote", "propose"):
+        current = None
         async with httpx.AsyncClient(timeout=15) as client:
+            if args.mode == "quote":
+                response = await client.get(args.api.rstrip("/") + "/api/v1/markets")
+                response.raise_for_status()
+                current = current_quote_observation(response.json(), at)
             response = await client.get(
                 args.api.rstrip("/") + "/api/v1/receipts", params={"market": "h100-sxm"}
             )
@@ -67,6 +84,7 @@ async def prepare(args):
             if (
                 args.mode == "quote"
                 and 0 <= at - timestamp <= 10800
+                and current == (timestamp, Decimal(str(receipt["price"])))
                 or args.mode == "propose"
                 and expiry <= timestamp <= min(expiry + 10800, at)
             ):
@@ -94,7 +112,7 @@ async def prepare(args):
             signature, types, values = (
                 "setQuote(uint256,uint64,uint256,uint256,uint64)",
                 ["uint256", "uint64", "uint256", "uint256", "uint64"],
-                [index, observed, *premiums, at + 600],
+                [index, observed, *premiums, min(at + 600, observed + 10800)],
             )
         else:
             signature, types, values = (

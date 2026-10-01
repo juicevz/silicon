@@ -6,6 +6,8 @@ from eth_utils import is_address, to_checksum_address
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+SILICON_TOKEN_ADDRESS = "0x389860f1f8eaba66d8b2925923a40b739a67e6b0"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -16,7 +18,7 @@ class Settings(BaseSettings):
     chain_id: int = 4663
     explorer_url: str = "https://robinhoodchain.blockscout.com"
     usdg_address: str = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
-    token_address: str = ""
+    token_address: str = SILICON_TOKEN_ADDRESS
     market_address: str = ""
     market_start_block: int = 0
     vault_round_addresses: list[str] = []
@@ -35,6 +37,8 @@ class Settings(BaseSettings):
             raise ValueError("The configured trading fee must be 100 basis points")
         endpoint = urlparse(self.rpc_url)
         local = endpoint.hostname in {"127.0.0.1", "localhost", "::1"}
+        if self.token_address and not local and self.token_address.lower() != SILICON_TOKEN_ADDRESS:
+            raise ValueError("TOKEN_ADDRESS must match the official SILICON token on Robinhood Chain")
         if endpoint.scheme != "https" and not (endpoint.scheme == "http" and local):
             raise ValueError("RPC must use HTTPS or loopback HTTP")
         for name in (

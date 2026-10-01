@@ -297,7 +297,10 @@ async def quote(request: QuoteRequest):
     if request.address:
         try:
             access = await chain.access(request.address)
-            fee = access.fee_bps
+            # Holder workspace access does not alter a legacy round's immutable
+            # fee token. Keep its calculator consistent with the actual round.
+            if reader.snapshot.verified and reader.snapshot.token_configured:
+                fee = access.fee_bps
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
     return preview(request, data.markets[request.market].price, fee)

@@ -67,7 +67,7 @@ def test_accounting_withholds_incomplete_unverified_or_unreconciled_results(tmp_
 
 def test_readiness_and_comparison_status_never_invent_live_markets(tmp_path):
     store = Store(tmp_path)
-    settings = Settings(_env_file=None, trading_enabled=True, token_address=ADDRESS)
+    settings = Settings(_env_file=None, rpc_url="http://127.0.0.1:8545", trading_enabled=True, token_address=ADDRESS)
     market = Market(id="h100-sxm", name="H100", architecture="Hopper", memory="80 GB", color="orange",
                     stale=False, source_updated_at=datetime.now(UTC).isoformat())
     state = snapshot(phase="open", settled=False)

@@ -1,8 +1,23 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
+from types import SimpleNamespace
 
 import httpx
 import pytest
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("verified,round_token,expected", [(True, False, 100), (False, True, 100), (True, True, 0)])
+async def test_holder_calculator_respects_current_round_fee_token(api_module, monkeypatch, verified, round_token, expected):
+    monkeypatch.setattr(api_module.reader, "quote", AsyncMock(return_value=None))
+    monkeypatch.setattr(api_module.reader.snapshot, "verified", verified)
+    monkeypatch.setattr(api_module.reader.snapshot, "token_configured", round_token)
+    monkeypatch.setattr(api_module.chain, "access", AsyncMock(return_value=SimpleNamespace(fee_bps=0)))
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api_module.app), base_url="http://test") as client:
+        response = await client.post("/api/v1/quote", json={"address": "0x" + "1" * 40})
+    assert response.status_code == 200
+    assert response.json()["indicative"] is True
+    assert response.json()["fee_bps"] == expected
 
 
 @pytest.mark.asyncio

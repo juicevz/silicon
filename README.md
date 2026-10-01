@@ -5,8 +5,9 @@ H100 rental reference. The app uses React, TypeScript and Vite, a Python/FastAPI
 API, and Solidity contracts on **Robinhood Chain, chain ID 4663**.
 USDG settles positions. ETH pays network fees.
 
-Market data and calculators are available before launch. Trading remains disabled
-until a funded series is configured and verified onchain. The Silicon token is optional.
+Market data, calculators, paper strategies and holder workspace tools are available.
+Live trading requires a verified, funded, unpaused series and a fresh executable quote.
+SILICON ownership is optional; launching the token does not activate a trading round.
 
 ## SILICON token
 
@@ -15,12 +16,26 @@ until a funded series is configured and verified onchain. The Silicon token is o
 | Name | Silicon Markets |
 | Symbol | SILICON |
 | Network | Robinhood Chain (4663) |
+| Decimals | 18 |
+| Total supply, verified October 1, 2026 | 1,000,000,000 SILICON |
 | Contract address | `0x389860f1f8eaba66d8b2925923a40b739a67e6b0` |
 | Explorer | [View the SILICON token](https://robinhoodchain.blockscout.com/token/0x389860f1f8eaba66d8b2925923a40b739a67e6b0) |
 
 This is the SILICON token address. USDG settlement and individual market and vault
-contracts use separate addresses. Holder benefits depend on each round's configured
-token.
+contracts use separate addresses. The app checks the connected wallet's onchain
+balance of this exact token. Strictly more than 5,000 SILICON unlocks 100 browser
+alerts, 50 saved templates, comparisons across 16 GPU models and batch CSV export.
+Exactly 5,000 tokens keeps standard access. Holder balances refresh every 30 seconds;
+RPC failures do not grant eligibility. Saved alerts and templates remain accessible
+after a balance change.
+
+The 1% premium fee is waived only in rounds deployed with this token configured.
+The original 100 USDG pilot remains paused and has no fee token; its fee and
+withdrawal calendar cannot be changed by updating app configuration. Its
+security-patched replacement still requires confirmed opening/expiry dates,
+backing and writer-approved call/put premiums. No collateral has been migrated.
+Live H100 quotes require all five fixed provider listings; a currently withheld
+reference cannot be replaced by an older archived receipt.
 
 ## Setup and development
 
@@ -92,7 +107,9 @@ authenticated provider. The wallet receives the public Robinhood RPC address.
 The backend checks the RPC chain ID and USDG identity; arbitrary public-chain
 collateral substitutions are rejected. Loopback RPC supports isolated tests.
 `TOKEN_ADDRESS`, `MARKET_ADDRESS`, and `MARKET_START_BLOCK` identify the actual
-optional Silicon benefits token, series, and deployment block. Set `TRADING_ENABLED=true` only for
+official SILICON benefits token, series, and deployment block. On public RPCs,
+`TOKEN_ADDRESS` must match the official address above; loopback test chains may use
+disposable tokens. Set `TRADING_ENABLED=true` only for
 a reviewed, funded launch. Claims and withdrawals remain available when new
 funding/trading is disabled.
 
@@ -110,8 +127,8 @@ before opening; their capital is locked during trading. Buyers purchase capped
 calls or puts, with index 100 as the strike and a 10 USDG payout cap per unit.
 New positions and funding are open to nonholders. An optional Silicon token
 provides a fee waiver; it is not a trading or deposit requirement.
-The standard fee is 1% of premium. Strictly more than 5,000 Silicon tokens waives
-the platform fee. ETH network fees remain separate.
+The standard fee is 1% of premium. Strictly more than 5,000 SILICON waives
+the platform fee in token-enabled rounds. ETH network fees remain separate.
 
 Every purchase reserves the larger of maximum payout and cancellation refund
 before its premium enters the contract. Fees stay in the pool. Writers receive
@@ -250,8 +267,9 @@ Prepare unsigned transactions from archived source receipts:
 .venv/bin/python scripts/prepare_series_tx.py --mode finalize --contract "$SILICON_SERIES"
 ```
 
-Premiums above are examples. The script verifies Robinhood Chain, selects an
-eligible receipt, simulates from the contract's publisher, and prints unsigned
+Premiums above are examples. The script verifies Robinhood Chain, requires the
+current complete benchmark for quote publication, selects its matching archived
+receipt, simulates from the contract's publisher, and prints unsigned
 calldata with an estimated gas limit. It does not sign or broadcast. Deployment,
 funding, quote publication and settlement are separate operator transactions.
 
