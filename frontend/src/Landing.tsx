@@ -16,6 +16,7 @@ import { SiliconPoster } from "./components/SiliconPoster";
 import { FounderSection } from "./components/FounderSection";
 import { XLogo } from "./components/SocialIcons";
 import { DreamAtmosphere } from "./components/DreamAtmosphere";
+import { TokenAddress } from "./components/TokenAddress";
 import { HARDWARE, hardwareThumbnail, type HardwareId } from "./components/hardwareCatalog";
 import type { SceneHandle } from "./components/SiliconScene";
 const SiliconScene = lazy(() => import("./components/SiliconScene"));
@@ -54,6 +55,7 @@ export default function Landing({ notify }: { notify: (value: string) => void })
         <h1 id="dream-title" data-reveal data-reveal-delay="60">trade the cost <span>of compute.</span></h1>
         <p data-reveal data-reveal-delay="160">compute has a price. follow the GPU rental market and take a view on where H100 goes next.</p>
         <div className="dream-actions" data-reveal data-reveal-delay="260"><TerminalButton /><a className="dream-text-link" href="#how-it-works">how it works <ArrowDown size={17} /></a></div>
+        <div data-reveal data-reveal-delay="1020"><TokenAddress landing /></div>
       </div>
       <div className="dream-objects" data-reveal data-reveal-delay="180">
         <Suspense fallback={<SiliconPoster kind="objects" />}><SiliconScene kind="objects" motion={motion} paused={paused} /></Suspense>

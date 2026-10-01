@@ -8,6 +8,20 @@ USDG settles positions. ETH pays network fees.
 Market data and calculators are available before launch. Trading remains disabled
 until a funded series is configured and verified onchain. The Silicon token is optional.
 
+## SILICON token
+
+| Property | Value |
+| --- | --- |
+| Name | Silicon Markets |
+| Symbol | SILICON |
+| Network | Robinhood Chain (4663) |
+| Contract address | `0x389860f1f8eaba66d8b2925923a40b739a67e6b0` |
+| Explorer | [View the SILICON token](https://robinhoodchain.blockscout.com/token/0x389860f1f8eaba66d8b2925923a40b739a67e6b0) |
+
+This is the SILICON token address. USDG settlement and individual market and vault
+contracts use separate addresses. Holder benefits depend on each round's configured
+token.
+
 ## Setup and development
 
 Requirements: Python 3.12+, Node 22+, Foundry (Forge and Anvil).

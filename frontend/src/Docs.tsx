@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Brand, External } from "./components/ui";
 import Atmosphere from "./components/Atmosphere";
+import { TokenAddress } from "./components/TokenAddress";
 
 export default function Docs() {
   return (
@@ -218,6 +219,10 @@ export default function Docs() {
             </p>
           </section>
           <section id="token">
+            <h2>The SILICON token</h2>
+            <p>Silicon Markets (SILICON) is on Robinhood Chain, chain ID 4663.</p>
+            <TokenAddress />
+            <p>This is the token contract address. USDG settlement and individual market and vault contracts use separate addresses.</p>
             <h2>Open access. Optional holder benefits.</h2>
             <p>Everyone can explore markets, use the calculators, record paper strategies and manage their positions. Live trading and vault deposits need USDG, ETH for gas, and a ready contract. No Silicon holding is required.</p>
             <table><thead><tr><th>Silicon balance</th><th>Trading and deposits</th><th>Platform fee</th></tr></thead><tbody>
@@ -255,14 +260,14 @@ export default function Docs() {
           <section id="status">
             <h2>Launch status</h2>
             <p>
-              The public data terminal and payout calculator are available
-              before the token and funded market launch. Contract addresses,
-              reserves, transactions, positions and leaderboard results appear
-              only after their onchain state is verified.
+              The public data terminal, payout calculator and Compute workspace
+              are available. The SILICON token address is listed above. Live
+              trading depends on each market’s deployed contracts, funding and
+              verified onchain state.
             </p>
             <p>
-              The Solidity contract source is implementation code awaiting deployment
-              and independent review. A working interface does not imply an
+              Market and vault addresses and their current status are listed
+              on the Contracts page. A working interface does not imply an
               active settlement pool. Silicon is an independent project, not
               affiliated with NVIDIA, GPU Economy or the cloud providers shown.
             </p>
