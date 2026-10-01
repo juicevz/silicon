@@ -295,6 +295,196 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/holders/auth/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Challenge */
+        post: operations["challenge_api_v1_holders_auth_challenge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/auth/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify */
+        post: operations["verify_api_v1_holders_auth_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_v1_holders_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Account */
+        get: operations["account_api_v1_holders_account_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workspaces */
+        get: operations["workspaces_api_v1_holders_workspaces_get"];
+        put?: never;
+        /** Create Workspace */
+        post: operations["create_workspace_api_v1_holders_workspaces_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/workspaces/{identifier}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Workspace */
+        put: operations["save_workspace_api_v1_holders_workspaces__identifier__put"];
+        post?: never;
+        /** Remove Workspace */
+        delete: operations["remove_workspace_api_v1_holders_workspaces__identifier__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alerts */
+        get: operations["alerts_api_v1_holders_alerts_get"];
+        put?: never;
+        /** Create Alert */
+        post: operations["create_alert_api_v1_holders_alerts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/alerts/{identifier}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Alert */
+        delete: operations["remove_alert_api_v1_holders_alerts__identifier__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/alerts/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read */
+        post: operations["read_api_v1_holders_alerts_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/alerts/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Subscribe */
+        post: operations["subscribe_api_v1_holders_alerts_push_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holders/alerts/push/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unsubscribe */
+        delete: operations["unsubscribe_api_v1_holders_alerts_push_subscription_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -758,6 +948,96 @@ export interface components {
             /** Error */
             error?: string | null;
         };
+        /** AdvancedAlert */
+        AdvancedAlert: {
+            /** Name */
+            name: string;
+            /** Conditions */
+            conditions: components["schemas"]["AlertCondition"][];
+            /**
+             * Recurring
+             * @default true
+             */
+            recurring: boolean;
+            /**
+             * Cooldown Minutes
+             * @default 60
+             * @enum {integer}
+             */
+            cooldown_minutes: 5 | 15 | 30 | 60 | 240 | 1440;
+            /** Id */
+            id: string;
+            /** Created At */
+            created_at: string;
+            /** Expires At */
+            expires_at: string;
+            /** Last Triggered At */
+            last_triggered_at?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "watching" | "waiting_data" | "cooldown" | "waiting_reset" | "paused" | "complete" | "expired";
+        };
+        /** AdvancedAlertRequest */
+        AdvancedAlertRequest: {
+            /** Name */
+            name: string;
+            /** Conditions */
+            conditions: components["schemas"]["AlertCondition"][];
+            /**
+             * Recurring
+             * @default true
+             */
+            recurring: boolean;
+            /**
+             * Cooldown Minutes
+             * @default 60
+             * @enum {integer}
+             */
+            cooldown_minutes: 5 | 15 | 30 | 60 | 240 | 1440;
+        };
+        /** AdvancedInbox */
+        AdvancedInbox: {
+            /** Rules */
+            rules: components["schemas"]["AdvancedAlert"][];
+            /** Events */
+            events: components["schemas"]["AlertEvent"][];
+            /** Push Enabled */
+            push_enabled: boolean;
+            /** Push Available */
+            push_available: boolean;
+            /** Vapid Public Key */
+            vapid_public_key: string | null;
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+        };
+        /** AlertCondition */
+        AlertCondition: {
+            /**
+             * Market
+             * @default h100-sxm
+             * @enum {string}
+             */
+            market: "h100-sxm" | "a100-80" | "b200" | "h200" | "b300" | "l40s" | "l40" | "l4" | "a10" | "t4" | "rtx-pro-6000" | "rtx-6000-ada" | "rtx-a6000" | "rtx-5090" | "rtx-4090" | "a100-40";
+            /**
+             * Kind
+             * @default price
+             * @enum {string}
+             */
+            kind: "price" | "change" | "benchmark";
+            /**
+             * Direction
+             * @default below
+             * @enum {string}
+             */
+            direction: "above" | "below";
+            /** Threshold */
+            threshold?: number | null;
+        };
         /** AlertEvent */
         AlertEvent: {
             /** Id */
@@ -1044,6 +1324,27 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HolderAccount */
+        HolderAccount: {
+            /** Address */
+            address: string;
+            /** Eligible */
+            eligible: boolean;
+            /** Verified */
+            verified: boolean;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Workspace Limit
+             * @default 5
+             */
+            workspace_limit: number;
+            /**
+             * Alert Limit
+             * @default 100
+             */
+            alert_limit: number;
         };
         /** KeyInfo */
         KeyInfo: {
@@ -1673,6 +1974,46 @@ export interface components {
             /** Expires At */
             expires_at: number;
         };
+        /** SavedTemplate */
+        SavedTemplate: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Spread */
+            spread: boolean;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "call" | "put";
+            /**
+             * Days
+             * @enum {integer}
+             */
+            days: 7 | 14 | 30;
+            /** Units */
+            units: number;
+            /** Premium */
+            premium: string;
+            /** Thesis */
+            thesis: string;
+        };
+        /** SavedWorkspace */
+        SavedWorkspace: {
+            /** Name */
+            name: string;
+            state: components["schemas"]["WorkspaceState"];
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
+            /** Id */
+            id: string;
+            /** Updated At */
+            updated_at: string;
+        };
         /** Series */
         Series: {
             /** Address */
@@ -1928,6 +2269,46 @@ export interface components {
             challenge_id: string;
             /** Signature */
             signature: string;
+        };
+        /** WorkspaceRequest */
+        WorkspaceRequest: {
+            /** Name */
+            name: string;
+            state: components["schemas"]["WorkspaceState"];
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
+        };
+        /** WorkspaceState */
+        WorkspaceState: {
+            /**
+             * Market
+             * @default h100-sxm
+             * @enum {string}
+             */
+            market: "h100-sxm" | "a100-80" | "b200" | "h200" | "b300" | "l40s" | "l40" | "l4" | "a10" | "t4" | "rtx-pro-6000" | "rtx-6000-ada" | "rtx-a6000" | "rtx-5090" | "rtx-4090" | "a100-40";
+            /**
+             * Range
+             * @default 24h
+             * @enum {string}
+             */
+            range: "1h" | "6h" | "24h";
+            /**
+             * Filter
+             * @default
+             */
+            filter: string;
+            /** Watchlist */
+            watchlist?: ("h100-sxm" | "a100-80" | "b200" | "h200" | "b300" | "l40s" | "l40" | "l4" | "a10" | "t4" | "rtx-pro-6000" | "rtx-6000-ada" | "rtx-a6000" | "rtx-5090" | "rtx-4090" | "a100-40")[];
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Templates */
+            templates?: components["schemas"]["SavedTemplate"][];
         };
     };
     responses: never;
@@ -2408,6 +2789,390 @@ export interface operations {
         };
     };
     unsubscribe_api_v1_alerts_push_subscription_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    challenge_api_v1_holders_auth_challenge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChallengeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Challenge"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_api_v1_holders_auth_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderAccount"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_holders_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    account_api_v1_holders_account_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderAccount"];
+                };
+            };
+        };
+    };
+    workspaces_api_v1_holders_workspaces_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedWorkspace"][];
+                };
+            };
+        };
+    };
+    create_workspace_api_v1_holders_workspaces_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedWorkspace"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_workspace_api_v1_holders_workspaces__identifier__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedWorkspace"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_workspace_api_v1_holders_workspaces__identifier__delete: {
+        parameters: {
+            query: {
+                revision: number;
+            };
+            header?: never;
+            path: {
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alerts_api_v1_holders_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdvancedInbox"];
+                };
+            };
+        };
+    };
+    create_alert_api_v1_holders_alerts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdvancedAlertRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdvancedAlert"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_alert_api_v1_holders_alerts__identifier__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_api_v1_holders_alerts_read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    subscribe_api_v1_holders_alerts_push_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscription"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsubscribe_api_v1_holders_alerts_push_subscription_delete: {
         parameters: {
             query?: never;
             header?: never;

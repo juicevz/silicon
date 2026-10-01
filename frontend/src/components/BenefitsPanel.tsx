@@ -41,11 +41,11 @@ export default function BenefitsPanel() {
       <div className="benefits-access"><Check size={17} /><p>Markets, calculators, paper strategies and claims are available to everyone. Live positions and deposits open when a funded round is ready.</p></div>
       <div className="benefits-table" role="table" aria-label="Optional holder benefits">
         <div role="row"><span role="columnheader">Workspace</span><span role="columnheader">Standard</span><span role="columnheader">Holder</span></div>
-        {[['Browser price alerts', '20', '100'], ['Saved strategy templates', '10', '50'], ['GPU comparison', '2 models', '16 models'], ['Batch CSV export', '—', 'Included']].map(row => <div role="row" key={row[0]}>{row.map((cell, i) => <span role="cell" key={i}>{cell}</span>)}</div>)}
+        {[['Browser price alerts', '20', '100'], ['Saved strategy templates', '10', '50'], ['GPU comparison', '2 models', '16 models'], ['Batch CSV export', '—', 'Included'], ['Synced wallet workspaces', '—', '5'], ['Recurring server alerts', '—', '100']].map(row => <div role="row" key={row[0]}>{row.map((cell, i) => <span role="cell" key={i}>{cell}</span>)}</div>)}
       </div>
-      <p className="benefits-note">Holder benefits require strictly more than 5,000 SILICON in your connected wallet on Robinhood Chain. Balances refresh every 30 seconds. Existing alerts and templates remain available if your balance changes. Alerts run while this browser is open.</p>
+      <p className="benefits-note">Holder benefits require strictly more than 5,000 SILICON in your connected wallet on Robinhood Chain. Balances refresh every 30 seconds. Existing alerts and templates remain available if your balance changes. Browser alerts run while this browser is open. Wallet workspaces and advanced server alerts use a separate signature sign-in; recurring monitoring continues while away and pauses if holder eligibility cannot be verified.</p>
       {config?.token_address && roundHasNoToken ? <p className="benefits-note">This round was deployed without a fee token and charges the standard fee. Future rounds can support the holder waiver.</p> : null}
-      <div className="benefits-footer"><Link className="button" to="/terminal/strategies" onClick={close}>Open strategies <ArrowUpRight size={15} /></Link><Link className="text-button" to="/docs#token" onClick={close}>Benefits & fees</Link></div>
+      <div className="benefits-footer"><Link className="button" to="/terminal?workspaces=1" onClick={close}>Open workspaces <ArrowUpRight size={15} /></Link><Link className="text-button" to="/docs#token" onClick={close}>Benefits & fees</Link></div>
     </div>
   </Modal>;
 }

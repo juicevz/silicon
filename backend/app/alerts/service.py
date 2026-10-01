@@ -138,11 +138,15 @@ class Alerts:
                 vapid_private_key=str(self.settings.alerts_vapid_private_key_path),
                 vapid_claims={"sub": self.settings.compute_origin}, timeout=10, ttl=86400)
 
-    async def deliver(self) -> None:
-        rows = self.db.execute("SELECT e.*,p.payload FROM alert_events e JOIN alert_push p ON p.owner=e.owner WHERE e.delivery='pending' AND e.attempts<3 ORDER BY e.created LIMIT 20").fetchall()
+    async def deliver(self, owners: set[str] | None = None) -> None:
+        if owners == set():
+            return
+        scope = "e.owner NOT LIKE 'holder:%'" if owners is None else "e.owner IN (" + ",".join("?" for _ in owners) + ")"
+        rows = self.db.execute(f"SELECT e.*,p.payload FROM alert_events e JOIN alert_push p ON p.owner=e.owner WHERE e.delivery='pending' AND e.attempts<3 AND {scope} ORDER BY e.created LIMIT 20", tuple(owners or ())).fetchall()
         for row in rows:
             subscription = PushSubscription.model_validate_json(row["payload"])
-            payload = json.dumps({"id": row["id"], "message": row["message"], "url": f"/terminal?asset={row['market']}&alerts=1"})
+            query = "holderAlerts=1" if row["owner"].startswith("holder:") else "alerts=1"
+            payload = json.dumps({"id": row["id"], "message": row["message"], "url": f"/terminal?asset={row['market']}&{query}"})
             try:
                 await asyncio.to_thread(self.send, subscription.model_dump(), payload)
                 delivery = "sent"

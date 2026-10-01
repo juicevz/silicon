@@ -42,6 +42,8 @@ from .alerts.routes import alert_routes
 from .movers import Movers, daily_movers
 from .compute.service import ComputeService
 from .compute.routes import compute_routes
+from .holders.service import Holders
+from .holders.routes import holder_routes
 
 config = settings()
 store = Store(config.data_dir)
@@ -53,6 +55,7 @@ transactions = Transactions(chain, reader, round_readers)
 strategies = Strategies(store)
 compute = ComputeService(config, store, data, reader)
 alerts = Alerts(config, store, data)
+holders = Holders(chain, alerts)
 rate_limits: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
 
@@ -101,6 +104,7 @@ async def lifespan(app: FastAPI):
         *(asyncio.create_task(repeat(r.poll, 60)) for r in round_readers.values()),
         asyncio.create_task(repeat(compute.reconcile, 60)),
         asyncio.create_task(repeat(alerts.poll, 30)),
+        asyncio.create_task(repeat(holders.poll, 30)),
     ]
     yield
     for task in tasks:
@@ -119,11 +123,12 @@ app = FastAPI(
 )
 app.include_router(compute_routes(compute))
 app.include_router(alert_routes(alerts))
+app.include_router(holder_routes(holders))
 
 
 @app.exception_handler(RequestValidationError)
 async def safe_validation(request: Request, exc: RequestValidationError):
-    if request.url.path.startswith("/api/v1/compute") or request.url.path == "/api/v1/chat/completions":
+    if request.url.path.startswith(("/api/v1/compute", "/api/v1/holders")) or request.url.path == "/api/v1/chat/completions":
         return JSONResponse({"detail": "Check the request fields and supported limits."}, status_code=422)
     return await request_validation_exception_handler(request, exc)
 
@@ -132,7 +137,8 @@ async def safe_validation(request: Request, exc: RequestValidationError):
 async def security(request: Request, call_next):
     is_compute = request.url.path.startswith("/api/v1/compute") or request.url.path in {"/api/v1/chat/completions", "/api/v1/models", "/api/v1/key"}
     is_alerts = request.url.path.startswith("/api/v1/alerts")
-    if (is_compute or is_alerts) and request.method in {"POST", "PUT", "PATCH"}:
+    is_holders = request.url.path.startswith("/api/v1/holders")
+    if (is_compute or is_alerts or is_holders) and request.method in {"POST", "PUT", "PATCH"}:
         length = request.headers.get("content-length", "0")
         if not length.isdigit() or int(length) > 96000:
             return JSONResponse({"detail": "Request too large."}, status_code=413)
@@ -149,10 +155,14 @@ async def security(request: Request, call_next):
         or request.url.path.startswith("/api/v1/strategies/paper")
         or is_compute
         or is_alerts
+        or is_holders
     ):
         host = request.client.host if request.client else "unknown"
         transaction = request.url.path.startswith("/api/v1/transactions")
         group, limit = (
+            ("holders", 90)
+            if is_holders
+            else
             ("alerts", 60)
             if is_alerts
             else ("compute", 60)

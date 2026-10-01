@@ -5,6 +5,7 @@ import {
   Bell,
   CircleHelp,
   Clock3,
+  Cloud,
   Layers3,
   Radio,
   Search,
@@ -37,6 +38,10 @@ import TerminalTour from "./components/TerminalTour";
 import { PositionRows, usePortfolio } from "./components/Live";
 import Contracts from "./components/Contracts";
 import { MarketContextBar, SavedTransactions, useTransactionRecovery } from "./components/TerminalInsights";
+import HolderTools from "./components/HolderTools";
+import { useHolderSession } from "./holder-session";
+import type { WorkspaceState } from "./holders-api";
+import { readTemplates, TEMPLATE_KEY } from "./workspace";
 
 type PriceAlert = {
   id: string;
@@ -325,6 +330,10 @@ export default function Terminal({
 }) {
   const { snapshot, protocol, connected, marketError, protocolError, retryData } = useData();
   const alertState = useAlertInbox();
+  const [holderTab, setHolderTab] = useState<"workspaces" | "alerts" | null>(null);
+  const holderSession = useHolderSession(holderTab !== null);
+  const [watchlist, setWatchlist] = useState<WorkspaceState["watchlist"]>([]);
+  const [notes, setNotes] = useState("");
   const { eligible } = useBenefits();
   const journal = useTransactionRecovery();
   const location = useLocation();
@@ -346,6 +355,17 @@ export default function Terminal({
   const market =
     markets.find((m) => m.id === params.get("asset")) ?? markets[0];
   const tab = location.pathname.replace(/^\/terminal\/?/, "").replace(/\/$/, "") || "markets";
+  useEffect(() => { setWatchlist([]); setNotes(""); }, [holderSession.address]);
+  const captureWorkspace = (): WorkspaceState => ({ market: (market?.id ?? "h100-sxm") as WorkspaceState["market"], range: range as WorkspaceState["range"], filter, watchlist, notes, templates: readTemplates() });
+  const loadWorkspace = (state: WorkspaceState) => {
+    const templates = [...state.templates, ...readTemplates().filter(item => !state.templates.some(saved => saved.id === item.id))];
+    if (templates.length > 50) throw new Error("Loading this workspace would exceed 50 templates. Remove unused local templates first; your saved workspace is safe.");
+    try { localStorage.setItem(TEMPLATE_KEY, JSON.stringify(templates)); }
+    catch { throw new Error("Browser storage is unavailable. The workspace was not loaded."); }
+    window.dispatchEvent(new Event("silicon:templates"));
+    setRange(state.range); setFilter(state.filter); setShowSearch(!!state.filter); setWatchlist(state.watchlist); setNotes(state.notes);
+    const next = new URLSearchParams(params); next.set("asset", state.market); setParams(next, { replace: true });
+  };
   useEffect(() => {
     if (!snapshot) return;
     setAlerts((current) => {
@@ -378,6 +398,8 @@ export default function Terminal({
   const openAlert = () => setAlertOpen(true);
   useEffect(() => {
     if (params.get("alerts") === "1") setAlertOpen(true);
+    if (params.get("holderAlerts") === "1") setHolderTab("alerts");
+    else if (params.get("workspaces") === "1") setHolderTab("workspaces");
   }, [params]);
   return (
     <>
@@ -417,6 +439,7 @@ export default function Terminal({
                 <span className="muted">Rental rates, across providers.</span>
               </div>
               <div className="workspace-tools">
+                <button className="strategies-shortcut" aria-label="Open holder workspaces" onClick={() => setHolderTab("workspaces")}><Cloud size={17} /><span>Workspaces</span></button>
                 <Link className="strategies-shortcut" to="/terminal/strategies" aria-label="Explore strategies"><Layers3 size={17} /><span>Strategies</span></Link>
                 {showSearch && (
                   <input
@@ -459,8 +482,10 @@ export default function Terminal({
             </div>
             {markets.length ? (
               <>
+                {!!watchlist.length && <div className="holder-watchlist-bar"><span>Watching {watchlist.length} GPUs</span><button className="text-button" onClick={() => setWatchlist([])}>Show all</button><button className="text-button" onClick={() => setHolderTab("workspaces")}>Edit workspace</button></div>}
                 <AssetCards
                   markets={markets.filter((m) =>
+                    (!watchlist.length || watchlist.includes(m.id as WorkspaceState["market"])) &&
                     `${m.name} ${m.architecture}`
                       .toLowerCase()
                       .includes(filter.toLowerCase()),
@@ -565,6 +590,7 @@ export default function Terminal({
           setAlertOpen(false);
           if (params.has("alerts")) { const next = new URLSearchParams(params); next.delete("alerts"); setParams(next, { replace: true }); }
         }}>
+          <div className="modal-body"><button className="button" onClick={() => { setAlertOpen(false); setHolderTab("alerts"); }}><Cloud size={14} />Holder recurring alerts</button></div>
           <BackgroundAlerts market={market} markets={markets} state={alertState} notify={notify} legacy={alerts} localLimit={eligible ? 100 : 20} saveLocal={(rule) => {
             const next = [...alerts, rule]; setAlerts(next); remember("silicon:alerts", JSON.stringify(next));
           }} migrated={(id) => {
@@ -573,6 +599,10 @@ export default function Terminal({
           }} />
         </Modal>
       )}
+      {holderTab && <HolderTools key={holderSession.address} session={holderSession} initialTab={holderTab} markets={markets} capture={captureWorkspace} load={loadWorkspace} notify={notify} close={() => {
+        setHolderTab(null);
+        if (params.has("holderAlerts") || params.has("workspaces")) { const next = new URLSearchParams(params); next.delete("holderAlerts"); next.delete("workspaces"); setParams(next, { replace: true }); }
+      }} />}
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Download, Trash2 } from "lucide-react";
 import { useBenefits } from "../benefits";
 import { useData } from "../data";
@@ -10,7 +11,7 @@ export function StrategyTemplates({ terms, load, notify }: { terms: TemplateTerm
   const { eligible, open } = useBenefits();
   const limit = eligible ? 50 : 10;
   const [saved, setSaved] = useState(readTemplates), [error, setError] = useState("");
-  useEffect(() => { const refresh = () => setSaved(readTemplates()); window.addEventListener("storage", refresh); return () => window.removeEventListener("storage", refresh); }, []);
+  useEffect(() => { const refresh = () => setSaved(readTemplates()); window.addEventListener("storage", refresh); window.addEventListener("silicon:templates", refresh); return () => { window.removeEventListener("storage", refresh); window.removeEventListener("silicon:templates", refresh); }; }, []);
   const persist = (next: StrategyTemplate[]) => {
     try { localStorage.setItem(TEMPLATE_KEY, JSON.stringify(next)); setSaved(next); setError(""); return true; }
     catch { setError("Browser storage is unavailable. This template was not saved."); return false; }
@@ -22,7 +23,7 @@ export function StrategyTemplates({ terms, load, notify }: { terms: TemplateTerm
     const name = terms.thesis.trim().slice(0, 80) || `${terms.spread ? "Generation spread" : "H100"} ${terms.side === "call" ? "rise" : "fall"} · ${terms.days} days`;
     if (persist([...current, { ...terms, id: crypto.randomUUID(), name }])) notify("Template saved on this browser. No paper position was opened.");
   };
-  return <section className="workspace-tools" aria-label="Saved strategy templates"><h3>Saved templates</h3><p>{saved.length} / {limit} templates on this browser. Loading one restores the inputs; recording a paper strategy remains a separate action.</p><div className="workspace-actions"><button className="button" onClick={save}>Save current template</button><button className="text-button" onClick={open}>Workspace benefits</button></div>{error && <p className="inline-error" role="alert">{error}</p>}<div className="template-list">{saved.filter(t => t.spread === terms.spread).map(template => <div className="template-row" key={template.id}><button onClick={() => { load(template); notify("Template loaded. Review its assumptions before recording."); }}>{template.name}</button><button className="icon-button" aria-label={`Remove template ${template.name}`} onClick={() => persist(readTemplates().filter(t => t.id !== template.id))}><Trash2 size={15} /></button></div>)}</div></section>;
+  return <section className="workspace-tools" aria-label="Saved strategy templates"><h3>Saved templates</h3><p>{saved.length} / {limit} templates on this browser. Loading one restores the inputs; recording a paper strategy remains a separate action.</p><div className="workspace-actions"><button className="button" onClick={save}>Save current template</button><Link className="text-button" to="/terminal?workspaces=1">Sync wallet workspace</Link><button className="text-button" onClick={open}>Workspace benefits</button></div>{error && <p className="inline-error" role="alert">{error}</p>}<div className="template-list">{saved.filter(t => t.spread === terms.spread).map(template => <div className="template-row" key={template.id}><button onClick={() => { load(template); notify("Template loaded. Review its assumptions before recording."); }}>{template.name}</button><button className="icon-button" aria-label={`Remove template ${template.name}`} onClick={() => persist(readTemplates().filter(t => t.id !== template.id))}><Trash2 size={15} /></button></div>)}</div></section>;
 }
 
 export function GpuCompare({ close }: { close: () => void }) {
