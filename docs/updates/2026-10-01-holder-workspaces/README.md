@@ -61,3 +61,23 @@ screenshots are captured separately after deployment.
 [Advanced alerts screenshot](media/saved-alert-desktop.png) ·
 [Mobile screenshot](media/workspaces-mobile.png) ·
 [MP4 preview](media/holder-tools-preview.mp4) · [GIF preview](media/holder-tools-preview.gif)
+
+
+### Production verification
+
+The release is live at siliconmarkets.io. Public HTML matched the tested build;
+API health and the new routes passed, with the released planner and Compute key
+controls preserved. A disposable in-memory signer verified the actual production
+challenge/signature/cookie flow, owner isolation, live zero-balance verification,
+nonholder write rejection, origin checks and logout. It created no workspace and
+signed no transaction. Browser push is configured on production.
+
+All four holder browser flows also passed against the deployed frontend using
+test-only wallet/API fixtures. Separate unmodified Chromium desktop and WebKit
+mobile checks verified the live sign-in panel and public docs, without page
+errors or horizontal overflow. The live guest screenshots below use no fixtures.
+
+[Live desktop](media/live-workspaces-chromium.png) ·
+[Live mobile](media/live-workspaces-webkit.png)
+
+[Download the complete update pack](https://raw.githubusercontent.com/juicevz/silicon/main/brand/copy/SILICON-HOLDER-UPDATE-2026-10-01.zip)
