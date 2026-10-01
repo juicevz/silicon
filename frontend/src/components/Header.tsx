@@ -21,6 +21,7 @@ import { GithubLogo, XLogo } from "./SocialIcons";
 
 export const TABS = [
   "Markets",
+  "Planner",
   "Contracts",
   "Strategies",
   "Compute",

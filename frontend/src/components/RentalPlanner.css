@@ -1,0 +1,26 @@
+.rental-planner { max-width: 1180px; margin: 0 auto; }
+.rental-input-grid { display:grid;grid-template-columns:1.6fr repeat(4,1fr);gap:16px;padding:20px; }
+.rental-input-grid label { display:grid;gap:9px;font-size:11px;color:var(--secondary);min-width:0; }
+.rental-input-grid input,.rental-input-grid select { width:100%;padding:12px;min-width:0; }
+.rental-plan-note { color:var(--muted);font-size:11px;line-height:1.8;margin:16px 0; }
+.rental-plan-inputs > p { padding:0 20px 14px;margin:0; }
+.rental-estimate-heading { display:flex;gap:20px;justify-content:space-between;align-items:center;margin:28px 0 16px; }
+.rental-estimate-heading h2 { font-size:18px;font-weight:400;margin:9px 0; }
+.rental-estimate-heading p { font-size:11px;color:var(--muted); }
+.rental-plan-actions { display:flex;gap:8px;flex-wrap:wrap; }
+.rental-totals { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px; }
+.rental-totals > div { border:1px solid var(--border);background:var(--panel);padding:22px;border-radius:8px; }
+.rental-totals span { display:block;font-size:11px;color:var(--muted);margin-bottom:14px; }
+.rental-totals strong { font-size:26px;font-weight:400;color:var(--green);overflow-wrap:anywhere; }
+.rental-provider-scroll { overflow-x:auto; }
+.rental-provider-scroll table { width:100%;border-collapse:collapse;text-align:left;font-size:12px; }
+.rental-provider-scroll th,.rental-provider-scroll td { padding:15px 20px;border-top:1px solid var(--subtle);vertical-align:top; }
+.rental-provider-scroll th { color:var(--muted);font-size:10px;font-weight:400;white-space:nowrap; }
+.rental-provider-scroll small { display:block;font-size:10px;color:var(--muted);margin-top:7px;line-height:1.5; }
+.rental-provider-scroll button { padding:0;text-align:left;color:var(--ink); }
+.rental-provider-scroll tr.selected { background:color-mix(in srgb,var(--green) 5%,transparent); }
+.rental-assumptions,.rental-plan-empty { padding:24px;margin-top:20px; }
+.rental-assumptions h2,.rental-plan-empty h2 { font-size:14px;font-weight:400; }
+.rental-assumptions ul { padding-left:18px;color:var(--muted);font-size:11px;line-height:1.9; }
+.rental-plan-empty p { color:var(--muted);font-size:12px; }
+@media(max-width:760px) { .rental-input-grid { grid-template-columns:repeat(2,1fr);gap:14px; } .rental-input-grid label:first-child { grid-column:1/-1; } .rental-estimate-heading { flex-direction:column;align-items:flex-start; } .rental-totals { grid-template-columns:1fr; } .rental-totals > div { padding:18px; } }

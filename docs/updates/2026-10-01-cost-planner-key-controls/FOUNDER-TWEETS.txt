@@ -1,0 +1,7 @@
+added a rental cost planner and per-key compute caps to silicon.
+
+compare provider estimates for your gpu count and runtime, then give each tool its own budget and pause switch.
+
+gpu movers and background price alerts are there too.
+
+siliconmarkets.io

@@ -52,6 +52,7 @@ class ComputeAccount(BaseModel):
 
 class KeyRequest(StrictModel):
     name: str = Field(min_length=1, max_length=60)
+    limit_usd: Decimal | None = Field(default=None, ge=0, le=100000, decimal_places=9)
     @field_validator("name")
     @classmethod
     def clean_name(cls, value: str) -> str:
@@ -61,6 +62,19 @@ class KeyRequest(StrictModel):
         return value
 
 
+class KeyUpdate(StrictModel):
+    limit_usd: Decimal | None = Field(default=None, ge=0, le=100000, decimal_places=9)
+    paused: bool | None = None
+
+    @model_validator(mode="after")
+    def nonempty(self):
+        if not self.model_fields_set:
+            raise ValueError("Choose a spending limit or pause state")
+        if "paused" in self.model_fields_set and self.paused is None:
+            raise ValueError("Pause must be true or false")
+        return self
+
+
 class KeyInfo(BaseModel):
     id: str
     name: str
@@ -68,6 +82,12 @@ class KeyInfo(BaseModel):
     created_at: int
     last_used_at: int | None
     revoked: bool
+    paused: bool = False
+    limit_usd: str | None = None
+    used_usd: str = "0.000000000"
+    pending_usd: str = "0.000000000"
+    available_usd: str | None = None
+    request_count: int = 0
 
 
 class CreatedKey(BaseModel):
@@ -76,6 +96,8 @@ class CreatedKey(BaseModel):
 
 
 class UsageRecord(BaseModel):
+    key_id: str | None = None
+    key_name: str | None = None
     id: str
     model: str
     mode: str

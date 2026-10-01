@@ -40,6 +40,7 @@ from .insights import MarketContext, VaultAccounting, market_context, vault_acco
 from .alerts.service import Alerts
 from .alerts.routes import alert_routes
 from .movers import Movers, daily_movers
+from .rental_planner import RentalPlanRequest, RentalPlan, rental_plan
 from .compute.service import ComputeService
 from .compute.routes import compute_routes
 
@@ -144,7 +145,7 @@ async def security(request: Request, call_next):
         request._body = bytes(body)  # Starlette replays this bounded body downstream.
     if (
         request.url.path.startswith("/api/v1/access")
-        or request.url.path == "/api/v1/quote"
+        or request.url.path in {"/api/v1/quote", "/api/v1/rental-plan"}
         or request.url.path.startswith("/api/v1/transactions")
         or request.url.path.startswith("/api/v1/strategies/paper")
         or is_compute
@@ -215,6 +216,11 @@ async def snapshot():
         collection_interval=config.collection_interval,
         trading_enabled=execution_ready(),
     )
+
+
+@app.post("/api/v1/rental-plan", response_model=RentalPlan)
+async def plan_rental(body: RentalPlanRequest):
+    return rental_plan(body, data.markets[body.market], config)
 
 
 @app.get("/api/v1/movers", response_model=Movers)

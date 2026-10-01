@@ -217,7 +217,7 @@ def test_simultaneous_reservations_cannot_overspend_or_reset_on_restart(tmp_path
     def reserve(_):
         connection = ComputeLedger(tmp_path, settings)
         try:
-            return connection.reserve(address, secrets.token_hex(16), "fingerprint", MODEL, "api", atoms("0.075"))
+            return connection.reserve(address, secrets.token_hex(16), "fingerprint", MODEL, "chat", atoms("0.075"))
         except HTTPException as error:
             return error.status_code
         finally:
@@ -251,3 +251,92 @@ def test_global_budget_and_admission_caps_are_atomic(tmp_path):
         ledger.reserve(addresses[1], secrets.token_hex(16), "b", MODEL, "chat", atoms("0.075"))
     assert error.value.status_code == 503
     ledger.close()
+
+
+def test_key_controls_block_both_api_modes_and_scope_usage(compute):
+    client, service, calls, _ = compute
+    wallet, _, _ = login(client)
+    created = client.post('/api/v1/compute/keys', json={'name':'Agent', 'limit_usd':'0'}).json()
+    key_id=created['info']['id']
+    headers={'Authorization':'Bearer '+created['key']}
+    body={'model':MODEL,'messages':[{'role':'user','content':'test'}]}
+    for stream in (False,True):
+        assert client.post('/api/v1/chat/completions',headers=headers,json={**body,'stream':stream}).status_code == 402
+    assert calls == []
+    assert client.patch('/api/v1/compute/keys/'+key_id,json={'limit_usd':'0.05','paused':True}).status_code == 200
+    for stream in (False,True):
+        assert client.post('/api/v1/chat/completions',headers=headers,json={**body,'stream':stream}).status_code == 403
+    assert client.get('/api/v1/key',headers=headers).json()['data']['limit_remaining'] == '0'
+    assert client.patch('/api/v1/compute/keys/'+key_id,json={'paused':False}).status_code == 200
+    assert client.post('/api/v1/chat/completions',headers=headers,json=body).status_code == 200
+    usage=client.get('/api/v1/compute/usage',params={'key_id':key_id}).json()
+    assert len(usage)==1 and usage[0]['key_id']==key_id and usage[0]['key_name']=='Agent'
+    info=client.get('/api/v1/compute/keys').json()[0]
+    assert info['used_usd']=='0.000012300' and info['request_count']==1
+    login(client)
+    assert client.patch('/api/v1/compute/keys/'+key_id,json={'paused':True}).status_code == 404
+    assert client.get('/api/v1/compute/usage',params={'key_id':key_id}).status_code == 404
+    login(client,wallet)
+    for invalid in ({},{'paused':None},{'limit_usd':-1},{'limit_usd':'0.0000000001'}):
+        assert client.patch('/api/v1/compute/keys/'+key_id,json=invalid).status_code == 422
+    assert client.patch('/api/v1/compute/keys/'+key_id,json={'limit_usd':None}).json()['limit_usd'] is None
+
+
+def test_per_key_holds_are_atomic_persistent_and_survive_pause(tmp_path):
+    from app.compute.models import KeyUpdate
+    settings=Settings(_env_file=None,data_dir=tmp_path,compute_enabled=True,compute_spend_limit_usd='1')
+    ledger=ComputeLedger(tmp_path,settings)
+    address='0x'+'1'*40
+    ledger.db.execute('INSERT INTO compute_accounts(address,granted,created_at) VALUES (?,?,?)',(address,atoms('1'),int(time())))
+    key=ledger.create_key(address,'Agent',Decimal('0.1'))
+    def reserve(_):
+        connection=ComputeLedger(tmp_path,settings)
+        try:
+            return connection.reserve(address,secrets.token_hex(16),'a',MODEL,'api',atoms('0.075'),key.info.id)
+        except HTTPException as error:
+            return error.status_code
+        finally:
+            connection.close()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results=list(pool.map(reserve,range(2)))
+    assert sum(isinstance(v,str) for v in results)==1 and 402 in results
+    request=next(v for v in results if isinstance(v,str))
+    ledger.pending(request)
+    ledger.update_key(address,key.info.id,KeyUpdate(paused=True,limit_usd=Decimal('0.01')))
+    ledger.close()
+    ledger=ComputeLedger(tmp_path,settings)
+    info=ledger.key(address,key.info.id)
+    assert info.paused and info.pending_usd=='0.075000000' and info.available_usd=='0.000000000'
+    ledger.settle(request,atoms('0.02'))
+    ledger.settle(request,atoms('0.9'))
+    assert ledger.key(address,key.info.id).used_usd=='0.020000000'
+    assert ledger.key(address,key.info.id).pending_usd=='0.000000000'
+    ledger.close()
+
+
+def test_legacy_database_upgrade_preserves_unattributed_holds(tmp_path):
+    import sqlite3
+    settings=Settings(_env_file=None,data_dir=tmp_path,compute_spend_limit_usd='1')
+    ledger=ComputeLedger(tmp_path,settings)
+    address='0x'+'1'*40
+    ledger.db.execute('INSERT INTO compute_accounts(address,granted,created_at) VALUES (?,?,?)',(address,atoms('1'),int(time())))
+    key=ledger.create_key(address,'Legacy')
+    request=ledger.reserve(address,'legacy-request','a',MODEL,'chat',atoms('0.01'))
+    path=tmp_path/'silicon.sqlite'
+    ledger.close()
+    db=sqlite3.connect(path)
+    db.execute('ALTER TABLE compute_keys DROP COLUMN paused')
+    db.execute('ALTER TABLE compute_keys DROP COLUMN spend_limit')
+    db.execute('DROP INDEX compute_usage_key')
+    db.execute('ALTER TABLE compute_requests DROP COLUMN key_id')
+    db.commit()
+    db.close()
+    upgraded=ComputeLedger(tmp_path,settings)
+    assert upgraded.authenticate_key(key.key)==(address,key.info.id)
+    assert upgraded.key(address,key.info.id).limit_usd is None
+    assert upgraded.account(address).pending_usd=='0.010000000'
+    assert upgraded.usage(address)[0].key_id is None
+    assert upgraded.usage(address,key.info.id)==[]
+    upgraded.settle(request,atoms('0.005'))
+    assert upgraded.account(address).used_usd=='0.005000000'
+    upgraded.close()

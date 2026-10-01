@@ -502,3 +502,7 @@ Core calculators and paper recording are public. Browser workspace allowances ar
 verified balances above the waiver threshold, with CSV batch exports. Existing
 items survive eligibility changes. Browser workspace limits are convenience
 entitlements, not server authorization or financial permissions.
+
+### Rental planner and API key controls
+
+See the [release notes](docs/updates/2026-10-01-cost-planner-key-controls/README.md) for planner inputs, estimate assumptions, per-key lifetime caps, atomic reservations, pause/resume and usage attribution. Public routes: `/terminal/planner` and `/compute?view=api`. No additional service or credentials are required.

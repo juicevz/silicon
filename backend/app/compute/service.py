@@ -128,9 +128,9 @@ class ComputeService:
         self.ledger.settle(request_id, cost, prompt, completion, failed=bool(payload.get("error")))
         return cost
 
-    async def start(self, address: str, body: dict[str, Any], client_id: str, mode: str) -> tuple[str, dict[str, Any]]:
+    async def start(self, address: str, body: dict[str, Any], client_id: str, mode: str, key_id: str | None = None) -> tuple[str, dict[str, Any]]:
         prepared, reserve = await self.provider.prepare(body)
-        request_id = self.ledger.reserve(address, client_id, digest(json.dumps(body, sort_keys=True, separators=(",", ":"))), body["model"], mode, reserve)
+        request_id = self.ledger.reserve(address, client_id, digest(json.dumps(body, sort_keys=True, separators=(",", ":"))), body["model"], mode, reserve, key_id=key_id)
         return request_id, prepared
 
     def rejected(self, request_id: str, response: httpx.Response) -> None:
@@ -146,8 +146,8 @@ class ComputeService:
         if cost is None and not payload.get("id") and response.status_code in {400, 401, 402, 403, 404, 422, 429}:
             self.ledger.settle(request_id, 0, failed=True)
 
-    async def completion(self, address: str, body: dict[str, Any], client_id: str, mode: str) -> tuple[str, dict[str, Any], int | None]:
-        request_id, prepared = await self.start(address, body, client_id, mode)
+    async def completion(self, address: str, body: dict[str, Any], client_id: str, mode: str, key_id: str | None = None) -> tuple[str, dict[str, Any], int | None]:
+        request_id, prepared = await self.start(address, body, client_id, mode, key_id=key_id)
         try:
             response = await self.provider.complete(prepared)
             if response.status_code >= 400:

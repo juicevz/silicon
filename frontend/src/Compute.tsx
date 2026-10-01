@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Activity, ArrowUpRight, Check, ChevronRight, Code2, Copy, KeyRound, Layers3, Loader2, MessageSquare, Play, RefreshCw, Trash2 } from "lucide-react";
+import { Activity, ArrowUpRight, Check, ChevronRight, Code2, Copy, KeyRound, Layers3, Loader2, MessageSquare, Play, RefreshCw } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCompute } from "./compute-context";
 import { computeApi, usageCost, type ComputeKey, type CreatedKey, type MarketId, type Mode, type UsageRecord } from "./compute-api";
 import { useData } from "./data";
 import { money, short } from "./api";
+import ApiKeyControls from "./components/ApiKeyControls";
 import { ComputeAssistant, ComputeSignIn } from "./components/ComputeAssistant";
 import "./compute.css";
 
@@ -26,7 +27,7 @@ function CopyButton({ value, label = "Copy" }: { value: string; label?: string }
 function ApiAccess() {
   const { account, catalog, sessionVersion } = useCompute();
   const [keys, setKeys] = useState<ComputeKey[]>([]), [created, setCreated] = useState<CreatedKey | null>(null);
-  const [name, setName] = useState(""), [error, setError] = useState("");
+  const [name, setName] = useState(""), [limit, setLimit] = useState(""), [error, setError] = useState("");
   const [busy, setBusy] = useState(false), [loaded, setLoaded] = useState(false), [revision, setRevision] = useState(0);
   const endpoint = `${window.location.origin}/api/v1`;
   const model = catalog?.models.find(m => m.available)?.id;
@@ -39,26 +40,18 @@ function ApiAccess() {
   }, [account?.address, revision, sessionVersion]);
   const create = async () => {
     if (busy || !name.trim()) return;
+    if (limit.trim() && (!Number.isFinite(Number(limit)) || Number(limit) < 0 || Number(limit) > 100000 || !/^\d+(?:\.\d{1,9})?$/.test(limit))) { setError("Enter a valid nonnegative USD cap, or leave it blank for the account cap."); return; }
     setBusy(true); setError(""); setCreated(null);
     try {
-      const value = await computeApi<CreatedKey>("/keys", { method: "POST", body: JSON.stringify({ name }) });
-      setCreated(value); setName(""); setRevision(v => v + 1);
+      const value = await computeApi<CreatedKey>("/keys", { method: "POST", body: JSON.stringify({ name, limit_usd: limit.trim() ? limit : null }) });
+      setCreated(value); setName(""); setLimit(""); setRevision(v => v + 1);
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   };
-  const revoke = async (key: ComputeKey) => {
-    setBusy(true); setError("");
-    try {
-      await computeApi<void>(`/keys/${key.id}`, { method: "DELETE" });
-      if (created?.info.id === key.id) setCreated(null);
-      setRevision(v => v + 1);
-    } catch (e) { setError((e as Error).message); }
-    finally { setBusy(false); }
-  };
-  return <div className="compute-detail-view"><section className="compute-detail-section"><div className="compute-section-title"><KeyRound size={19} /><h2>Your API keys</h2></div><p>Use a separate key for each tool. Requests share your Compute access and appear in Usage.</p><ComputeSignIn />{account && <>
-    <form className="compute-key-form" onSubmit={e => { e.preventDefault(); void create(); }}><label htmlFor="compute-key-name">Key name<input id="compute-key-name" placeholder="My terminal" value={name} onChange={e => setName(e.target.value)} maxLength={60} autoComplete="off" /></label><button className="button primary" disabled={busy || !name.trim() || account.access !== "ready"}>{busy ? <Loader2 size={15} className="spin" /> : <KeyRound size={15} />}Create key</button></form>
+  return <div className="compute-detail-view"><section className="compute-detail-section"><div className="compute-section-title"><KeyRound size={19} /><h2>Your API keys</h2></div><p>Use a separate key for each tool. Set a lifetime spending cap for each key and pause a tool without revoking it. Account capacity also applies.</p><ComputeSignIn />{account && <>
+    <form className="compute-key-form" onSubmit={e => { e.preventDefault(); void create(); }}><label htmlFor="compute-key-name">Key name<input id="compute-key-name" placeholder="My terminal" value={name} onChange={e => setName(e.target.value)} maxLength={60} autoComplete="off" /></label><label className="compute-key-create-limit" htmlFor="compute-key-cap">Lifetime cap (USD)<input id="compute-key-cap" aria-label="New key lifetime cap" inputMode="decimal" placeholder="Account cap" value={limit} onChange={e => setLimit(e.target.value)} autoComplete="off" /></label><button className="button primary" disabled={busy || !name.trim() || account.access !== "ready"}>{busy ? <Loader2 size={15} className="spin" /> : <KeyRound size={15} />}Create key</button></form>
     {created && <div className="compute-created-key" role="status"><strong>Save your key now</strong><p>It is shown once. Keep it in your tool’s secret settings.</p><label className="sr-only" htmlFor="created-compute-key">New Silicon API key</label><input id="created-compute-key" type="password" value={created.key} readOnly autoComplete="off" onFocus={e => e.currentTarget.select()} /><div><CopyButton value={created.key} label="Copy key" /><button className="text-button" onClick={() => setCreated(null)}>I saved it</button></div></div>}
-    {!loaded ? <p className="compute-note">Loading keys…</p> : keys.length ? <div className="compute-key-list">{keys.map(key => <div key={key.id}><div><strong>{key.name}</strong><code>{key.prefix}</code><span>{key.revoked ? "Revoked" : key.last_used_at ? `Last used ${new Date(key.last_used_at * 1000).toLocaleString()}` : "Not used yet"}</span></div>{!key.revoked && <button className="button" aria-label={`Revoke ${key.name}`} disabled={busy} onClick={() => void revoke(key)}><Trash2 size={14} />Revoke</button>}</div>)}</div> : <p className="compute-empty-row">You have no API keys yet.</p>}
+    {!loaded ? <p className="compute-note">Loading keys…</p> : keys.length ? <div>{keys.map(key => <ApiKeyControls key={key.id} value={key} changed={() => setRevision(v => v + 1)} revoked={(id) => { if (created?.info.id === id) setCreated(null); }} />)}</div> : <p className="compute-empty-row">You have no API keys yet.</p>}
   </>}{error && <p className="inline-error" role="alert">{error}</p>}</section>
   <section className="compute-detail-section"><div className="compute-section-title"><Code2 size={19} /><h2>Connect a compatible client</h2></div><p>Set your tool’s API base URL and Silicon key. Choose a model from <code>GET /models</code>.</p><div className="compute-endpoint"><code>{endpoint}</code><CopyButton value={endpoint} /></div><div className="compute-code-heading"><span className="eyebrow">SHELL · CHAT COMPLETIONS</span><CopyButton value={example} /></div><pre className="compute-code"><code>{example}</code></pre><p className="compute-note">Set <code>SILICON_API_KEY</code> through your shell’s secret manager. Text chat, streamed responses and tool-call messages are supported. Your client runs any tools you enable locally.</p></section>
   </div>;
@@ -66,15 +59,20 @@ function ApiAccess() {
 
 function Usage() {
   const { account, refresh } = useCompute();
+  const [params, setParams] = useSearchParams();
+  const keyId = params.get("key") ?? "";
+  const [keys, setKeys] = useState<ComputeKey[]>([]);
   const [rows, setRows] = useState<UsageRecord[] | null>(null), [error, setError] = useState(""), [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!account) return;
     const abort = new AbortController();
-    const load = () => { void computeApi<UsageRecord[]>("/usage", { signal: abort.signal }).then(value => { setRows(value); setError(""); }).catch(e => { if (!abort.signal.aborted) setError((e as Error).message); }); void refresh(); };
+    const load = () => { void computeApi<UsageRecord[]>(keyId ? `/usage?key_id=${encodeURIComponent(keyId)}` : "/usage", { signal: abort.signal }).then(value => { setRows(value); setError(""); }).catch(e => { if (!abort.signal.aborted) setError((e as Error).message); }); void refresh(); };
+    setRows(null);
+    void computeApi<ComputeKey[]>("/keys", { signal: abort.signal }).then(setKeys).catch(() => setKeys([]));
     load(); const timer = setInterval(load, 15_000);
     return () => { abort.abort(); clearInterval(timer); };
-  }, [account?.address, refresh, revision]);
-  return <div className="compute-detail-view"><ComputeSignIn />{account && <><div className="compute-usage-stats"><div><span>Recorded usage</span><strong>{usageCost(account.used_usd)}</strong></div><div><span>Requests</span><strong>{account.request_count}</strong></div><div><span>Access</span><strong className={account.access === "ready" ? "green" : "gold"}>{account.access === "ready" ? "Ready" : account.access === "pending" ? "Pending" : account.access === "exhausted" ? "Exhausted" : "Unavailable"}</strong></div></div><section className="compute-detail-section"><div className="compute-usage-heading"><h2>Recent requests</h2><button className="button" onClick={() => setRevision(v => v + 1)}><RefreshCw size={14} />Refresh</button></div><p>Usage is recorded after the model responds. Interrupted requests can remain pending while their final cost is checked.</p>{error && <p className="inline-error" role="alert">{error}</p>}{rows === null ? <p className="compute-note" role="status">Loading usage…</p> : rows.length === 0 ? <div className="compute-usage-empty"><Activity size={28} /><h3>Your requests will appear here.</h3><p>Start a conversation or connect a tool with your Silicon key.</p><Link className="button" to="/compute">Open playground <ArrowUpRight size={14} /></Link></div> : <div className="compute-usage-table"><table><thead><tr><th>Model / time</th><th>Tool</th><th>Tokens in / out</th><th>Status</th><th>Cost</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><strong>{row.model.split("/").at(-1)}</strong><time dateTime={new Date(row.created_at * 1000).toISOString()}>{new Date(row.created_at * 1000).toLocaleString()}</time></td><td>{row.mode === "chat" ? "Playground" : row.mode === "market" ? "Assistant" : row.mode === "strategy" ? "Draft" : "API"}</td><td className="mono">{row.prompt_tokens ?? "—"} / {row.completion_tokens ?? "—"}</td><td><span className={`compute-status ${row.status === "completed" ? "green" : row.status === "failed" ? "red" : "gold"}`}>{row.status === "reserved" ? "Running" : row.status === "completed" ? "Complete" : row.status === "failed" ? "Failed" : "Pending"}</span></td><td className="mono">{usageCost(row.cost_usd)}</td></tr>)}</tbody></table></div>}</section></>}</div>;
+  }, [account?.address, refresh, revision, keyId]);
+  return <div className="compute-detail-view"><ComputeSignIn />{account && <><div className="compute-usage-stats"><div><span>Account recorded usage</span><strong>{usageCost(account.used_usd)}</strong></div><div><span>Account requests</span><strong>{account.request_count}</strong></div><div><span>Access</span><strong className={account.access === "ready" ? "green" : "gold"}>{account.access === "ready" ? "Ready" : account.access === "pending" ? "Pending" : account.access === "exhausted" ? "Exhausted" : "Unavailable"}</strong></div></div><section className="compute-detail-section"><div className="compute-usage-heading"><h2>Recent requests</h2><button className="button" onClick={() => setRevision(v => v + 1)}><RefreshCw size={14} />Refresh</button></div><label className="compute-usage-filter">Filter requests<select aria-label="Usage API key" value={keyId} onChange={e => setParams({ view: "usage", ...(e.target.value ? { key: e.target.value } : {}) })}><option value="">All account requests</option>{keys.map(key => <option value={key.id} key={key.id}>{key.name}{key.revoked ? " (revoked)" : ""}</option>)}</select></label><p>Usage is recorded after the model responds. Interrupted requests can remain pending while their final cost is checked.</p>{error && <p className="inline-error" role="alert">{error}</p>}{rows === null ? <p className="compute-note" role="status">Loading usage…</p> : rows.length === 0 ? <div className="compute-usage-empty"><Activity size={28} /><h3>Your requests will appear here.</h3><p>Start a conversation or connect a tool with your Silicon key.</p><Link className="button" to="/compute">Open playground <ArrowUpRight size={14} /></Link></div> : <div className="compute-usage-table"><table><thead><tr><th>Model / time</th><th>Tool</th><th>Tokens in / out</th><th>Status</th><th>Cost</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><strong>{row.model.split("/").at(-1)}</strong><time dateTime={new Date(row.created_at * 1000).toISOString()}>{new Date(row.created_at * 1000).toLocaleString()}</time></td><td>{row.key_name ?? (row.mode === "chat" ? "Playground" : row.mode === "market" ? "Assistant" : row.mode === "strategy" ? "Draft" : "Legacy API · unattributed")}</td><td className="mono">{row.prompt_tokens ?? "—"} / {row.completion_tokens ?? "—"}</td><td><span className={`compute-status ${row.status === "completed" ? "green" : row.status === "failed" ? "red" : "gold"}`}>{row.status === "reserved" ? "Running" : row.status === "completed" ? "Complete" : row.status === "failed" ? "Failed" : "Pending"}</span></td><td className="mono">{usageCost(row.cost_usd)}</td></tr>)}</tbody></table></div>}</section></>}</div>;
 }
 
 function ContextPanel({ view, marketId }: { view: View; marketId: MarketId }) {

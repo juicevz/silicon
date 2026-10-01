@@ -2,6 +2,7 @@ import json
 import re
 import secrets
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from urllib.parse import urlparse
 
 from eth_account import Account
@@ -14,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from .models import (
     AssistantReply, AssistantRequest, Challenge, ChallengeRequest,
     CompletionRequest, ComputeAccount, ComputeCatalog, CreatedKey,
-    KeyInfo, KeyRequest, UsageRecord, VerifyRequest,
+    KeyInfo, KeyRequest, KeyUpdate, UsageRecord, VerifyRequest,
 )
 from .service import ComputeService
 
@@ -34,11 +35,11 @@ def compute_routes(service: ComputeService) -> APIRouter:
             origin(request)
         return ledger.authenticate(request.cookies.get(COOKIE, ""))
 
-    def api_owner(request: Request) -> str:
+    def api_owner(request: Request) -> tuple[str, str]:
         authorization = request.headers.get("authorization", "")
         if not authorization.startswith("Bearer "):
             raise HTTPException(401, "Use your Silicon API key as a Bearer token.")
-        return ledger.authenticate(authorization[7:], api_key=True)
+        return ledger.authenticate_key(authorization[7:])
 
     def require_enabled() -> None:
         if not service.provider.enabled:
@@ -99,15 +100,19 @@ def compute_routes(service: ComputeService) -> APIRouter:
         require_enabled()
         if ledger.account(address).access != "ready":
             raise HTTPException(403, "Your account needs active Compute access to create a key.")
-        return ledger.create_key(address, body.name)
+        return ledger.create_key(address, body.name, body.limit_usd)
+
+    @router.patch("/compute/keys/{key_id}", response_model=KeyInfo)
+    async def update_key(key_id: str, body: KeyUpdate, request: Request):
+        return ledger.update_key(session(request, write=True), key_id, body)
 
     @router.delete("/compute/keys/{key_id}", status_code=204)
     async def revoke_key(key_id: str, request: Request):
         ledger.revoke_key(session(request, write=True), key_id)
 
     @router.get("/compute/usage", response_model=list[UsageRecord])
-    async def usage(request: Request):
-        return ledger.usage(session(request))
+    async def usage(request: Request, key_id: str | None = None):
+        return ledger.usage(session(request), key_id)
 
     @router.post("/compute/chat", response_model=AssistantReply)
     async def assistant(body: AssistantRequest, request: Request):
@@ -121,21 +126,27 @@ def compute_routes(service: ComputeService) -> APIRouter:
 
     @router.get("/key")
     async def gateway_account(request: Request):
-        account = ledger.account(api_owner(request))
-        return {"data": {"limit_remaining": account.available_usd, "usage": account.used_usd, "pending": account.pending_usd, "currency": "USD"}}
+        address, key_id = api_owner(request)
+        account, key = ledger.account(address), ledger.key(address, key_id)
+        remaining = min(Decimal(account.available_usd), Decimal(key.available_usd)) if key.available_usd is not None else Decimal(account.available_usd)
+        if key.paused:
+            remaining = Decimal(0)
+        return {"data": {"limit_remaining": str(remaining), "usage": key.used_usd, "pending": key.pending_usd,
+                         "limit": key.limit_usd, "paused": key.paused, "currency": "USD",
+                         "account_limit_remaining": account.available_usd}}
 
     @router.post("/chat/completions")
     async def completions(body: CompletionRequest, request: Request):
-        address = api_owner(request)
+        address, key_id = api_owner(request)
         client_id = request.headers.get("idempotency-key") or secrets.token_hex(16)
         if not re.fullmatch(r"[a-zA-Z0-9-]{16,64}", client_id):
             raise HTTPException(400, "Use a 16 to 64 character Idempotency-Key.")
         prepared = body.model_dump(exclude_none=True)
         prepared["max_tokens"] = prepared.pop("max_completion_tokens", prepared["max_tokens"])
         if body.stream:
-            request_id, upstream = await service.start(address, prepared, client_id, "api")
+            request_id, upstream = await service.start(address, prepared, client_id, "api", key_id=key_id)
             return StreamingResponse(service.stream(request_id, upstream), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no", "X-Silicon-Request-Id": request_id})
-        request_id, payload, _cost = await service.completion(address, prepared, client_id, "api")
+        request_id, payload, _cost = await service.completion(address, prepared, client_id, "api", key_id=key_id)
         clean = {name: payload[name] for name in ("id", "object", "created", "model", "choices", "usage") if name in payload}
         return Response(content=json.dumps(clean), media_type="application/json", headers={"X-Silicon-Request-Id": request_id})
 
