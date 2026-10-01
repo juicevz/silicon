@@ -102,11 +102,13 @@ each rule fires once. your inbox keeps the event for 30 days.
 
 GPU price movers now show receipt-backed daily rental reference changes and matched provider listing changes. Background alerts monitor price thresholds, provider prices and H100 benchmark recovery, with a persistent private browser inbox and optional Web Push notifications.
 
-## Suggested capture shots
+## Ready-to-use live captures
 
-1. Desktop terminal with GPU price movers expanded and one Source details drawer open. Use actual observed data; if daily history is missing, show that state honestly.
-2. Alert dialog with the three rule types and browser notification controls.
-3. Mobile alert inbox. Use test fixtures only for internal QA screenshots; do not publish synthetic prices or events as live activity.
+Captured from siliconmarkets.io after release verification on 2026-10-01. Prices and source timestamps are actual observed data at capture time; they are not forecasts or synthetic fixtures. The empty alert inbox belongs to the capture browser.
+
+- [GPU price movers with receipt evidence](media/gpu-movers-live.png)
+- [Background alerts on desktop](media/background-alerts-live.png)
+- [Background alerts on mobile](media/background-alerts-mobile-live.png)
 
 ## Reply copy
 
