@@ -7,7 +7,7 @@
 .silicon-socials { display: flex; align-items: center; gap: 18px; }
 .silicon-socials a { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; color: var(--dream-ink); transition: opacity 200ms ease, transform 300ms var(--dream-ease); }
 .silicon-socials a:hover { opacity: .65; transform: translateY(-1px); }
-.silicon-x-link { width: 28px; }
+.silicon-x-link, .silicon-github-link { width: 28px; }
 .silicon-founder-link { font: 500 12px 'Inter Variable', sans-serif; letter-spacing: .025em; }
 .silicon-socials::after { content: ''; width: 1px; height: 17px; background: var(--dream-line); margin-left: 1px; }
 
@@ -31,12 +31,9 @@
 .ambf-bio a { display: inline-flex; align-items: center; gap: 7px; color: #fff; text-decoration: underline; text-decoration-color: #edf6ff65; text-underline-offset: 6px; text-decoration-thickness: 1px; }
 .ambf-bio a svg { opacity: .6; transition: transform 240ms ease; }
 .ambf-bio a:hover svg { opacity: 1; transform: translate(2px, -2px); }
-.ambf-links { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
-.ambf-links > a { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 42px; padding: 9px 15px; border: 1px solid #e5f3ff55; border-radius: 50px; color: #fff; background: #14304b50; backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); font-size: 12px; transition: background-color 250ms ease, border-color 250ms ease, transform 350ms var(--dream-ease); }
-.ambf-links > a > svg:last-child { margin-left: 10px; opacity: .65; transition: transform 250ms ease; }
-.ambf-links > a:hover { transform: translateY(-3px); border-color: #e5f3ffaf; background: #c1dbf028; }
-.ambf-links > a:hover > svg:last-child { transform: translate(2px, -2px); opacity: 1; }
-.ambf-links > a:active { transform: translateY(0); }
+.ambf-links { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; margin: 0 0 12px; }
+.ambf-links > a { display: inline-flex; align-items: center; min-height: 44px; padding: 12px 0; color: #fff; font-family: var(--mono); font-size: 12px; font-weight: 400; letter-spacing: -.02em; transition: opacity 200ms ease; }
+.ambf-links > a:hover { opacity: .65; }
 .ambf-section :is(a, button):focus-visible { outline-color: #fff; }
 .ambf-portrait { justify-self: center; width: 162px; margin-right: clamp(25px, 8vw, 110px); perspective: 1000px; }
 .ambf-portrait-float { transform: rotate(-5deg); }
@@ -58,6 +55,9 @@
   .ambf-portrait-float { animation: ambf-drift 9s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
 }
 @keyframes ambf-drift { from { transform: translate3d(0, 8px, 0) rotate(-5deg); } to { transform: translate3d(0, -8px, 0) rotate(-3deg); } }
+@media (min-width: 1000px) {
+  .dreamlike .header.landing-header { grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); }
+}
 @media (max-width: 1100px) {
   .dreamlike .header.landing-header { gap: 20px; }
   .dreamlike .landing-nav { gap: 20px; }
@@ -84,9 +84,6 @@
   .ambf-intro { font-size: 11px; margin-bottom: 12px; }
   .dreamlike .ambf-copy h2 { font-size: 58px; margin-bottom: 17px; }
   .ambf-bio { font-size: 15px; }
-  .ambf-links { margin-top: 22px; gap: 11px; }
-  .ambf-links > a { font-size: 12px; padding-inline: 13px; min-height: 44px; gap: 10px; }
-  .ambf-links > a > svg:last-child { margin-left: 5px; }
   .ambf-scrim { background: linear-gradient(0deg, #122b44 0%, #142e4b60 62%, #142e4b1a 100%); }
   :root[data-silicon-theme=dark] .ambf-scrim { background: linear-gradient(0deg, #122b44 0%, #142e4b8a 65%, #142e4b26 100%); }
   .ambf-portrait-glass { padding: 4px; border-radius: 16px; }

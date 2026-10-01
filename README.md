@@ -257,6 +257,83 @@ freshness is rechecked before reviewing a buy. Position and activity indexing
 use contract logs with a confirmation delay. A history outage is displayed as
 syncing and does not invalidate an independently verified series.
 
+## GPU price movers and background alerts
+
+The terminal's GPU price movers rank absolute percentage changes over 24 hours
+from immutable rental receipts. Each comparison ends at that GPU's latest source
+observation and uses a baseline at or before 24 hours earlier, with at most two
+hours of baseline tolerance. Both receipt hashes, timestamps and matched provider
+listing changes are visible. A changed provider/instance/region/scope basket,
+stale source or insufficient history withholds the percentage. No interpolation
+or synthetic changes are used. Other GPU models remain comparison references.
+
+The bell opens server alerts for price thresholds, exact provider listing price
+changes, and H100 benchmark recovery. The API collector and a 30-second monitor
+continue when the tab is closed. Price thresholds trigger on the first observed
+fresh reference at or beyond the chosen level, including if the condition already
+holds when saved. Provider alerts compare the same provider, instance, region and
+scope, and can report fresh individual listings while a median is withheld.
+Recovery means the H100 feed becomes fresh again; it does not enable trading.
+All rules fire once, expire after 90 days, and can be deleted and recreated.
+Changes that occur entirely between collection cycles may not be observed.
+
+An anonymous HttpOnly, SameSite=Strict cookie identifies the browser session.
+Only its SHA-256 digest is stored. Server rules have a separate 20-rule limit,
+with at most 10,000 browser sessions. Rules, checkpoints, triggered events and
+push delivery state persist in the existing SQLite database. Events are retained
+for 30 days, the inbox displays the latest 100, and inactive sessions are deleted
+after 90 days. Clearing browser site data loses access to that inbox. Existing
+local browser alerts remain available, retain the 20/100 holder allowances, and
+can be explicitly moved to the server. Local alerts run only while Silicon is open.
+
+Optional Web Push requires browser permission and a supported browser. See the
+[Web Push overview](https://web.dev/articles/push-notifications-overview) and
+[pywebpush documentation](https://github.com/web-push-libs/pywebpush). The worker
+`/alerts-sw.js` handles notifications and same-origin terminal navigation only;
+it does not cache API responses or wallet data. The push service receives an
+encrypted message. Only supported browser push-service HTTPS hosts are accepted.
+Failed delivery leaves the event in the inbox; transient failures retry at most
+three times and expired subscriptions are removed. Delivery is best effort.
+On iPhone/iPad, Web Push requires the installed Home Screen app. The server inbox
+works without push permission or wallet connection.
+
+Configure a persistent VAPID identity outside the repository:
+
+```bash
+.venv/bin/python scripts/init_alert_push.py --directory /absolute/private/silicon-alerts
+```
+
+The command preserves an existing private key and creates an `alerts.env` file
+containing the public key and private-key file path. Load it through the API
+service's `EnvironmentFile` or export its two settings in local development.
+`ALERTS_VAPID_PUBLIC_KEY` is public browser data;
+`ALERTS_VAPID_PRIVATE_KEY_PATH` points to a mode-600 server file. Keep that file
+outside source control, readable only by the service user, and backed up with the
+persistent database. Do not regenerate it on every release. Serve `/alerts-sw.js`
+as JavaScript over HTTPS with revalidation; service-worker scope is `/`.
+Without this configuration, monitoring/inbox work and the push control states
+that browser push is unavailable.
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/v1/movers` | Daily recorded changes and receipt evidence |
+| `GET /api/v1/alerts` | Establish session and read rules/inbox/push availability |
+| `POST /api/v1/alerts` | Create a single-use background rule |
+| `DELETE /api/v1/alerts/{id}` | Delete this session's rule and events |
+| `POST /api/v1/alerts/read` | Mark this session's inbox read |
+| `POST /api/v1/alerts/push` | Save this browser's opt-in subscription |
+| `DELETE /api/v1/alerts/push/subscription` | Disable push while preserving rules |
+
+Alert mutations require an existing session, reject cross-site origins, and use
+bounded request bodies and IP rate limits. The reverse proxy must preserve Host
+and HTTPS scheme, and the API should use one worker with the current SQLite setup.
+
+Validation: `PYTHONPATH=backend .venv/bin/pytest -q backend/tests/test_monitoring.py`
+and `npm --prefix frontend run test:e2e -- monitoring.spec.ts` cover receipt
+comparisons, session isolation, restart persistence, stale sources, one-shot
+alerts, delivery failures, migration and desktop/mobile behavior. Mock push
+transport in tests; do not notify real subscribers during release verification.
+
 ## Publisher operations
 
 Prepare unsigned transactions from archived source receipts:
@@ -272,6 +349,58 @@ current complete benchmark for quote publication, selects its matching archived
 receipt, simulates from the contract's publisher, and prints unsigned
 calldata with an estimated gas limit. It does not sign or broadcast. Deployment,
 funding, quote publication and settlement are separate operator transactions.
+
+## Compute workspace
+
+`/compute` provides text model chat, a market assistant, paper-strategy drafts,
+private API keys and usage history. The terminal embeds the same market assistant.
+Drafts pre-fill editable paper inputs; recording still requires the user's existing
+action. Model-generated payout estimates are discarded and the paper builder
+calculates outcomes and fees. The assistant cannot trade, provision GPUs or run
+server commands.
+
+Development loads ignored `.env.compute` after `.env`. Set `OPENROUTER_API_KEY`
+through a secret manager and keep this file permission-restricted. No provider
+keys, balances, funding amounts or pilot allocations belong in public configuration
+or copy. Set `COMPUTE_ORIGIN` to the exact frontend origin, HTTPS in production.
+Compute defaults to disabled and requires a positive private spend limit.
+
+`COMPUTE_GRANT_USD` assigns one allowance per admitted wallet.
+`COMPUTE_GRANT_POOL_USD` bounds all admission allocations and must fit inside
+`COMPUTE_SPEND_LIMIT_USD`. `COMPUTE_MAX_ACCOUNTS` caps enrollment. Access defaults
+to `COMPUTE_ALLOWED_WALLETS`, a JSON address array; `COMPUTE_OPEN_ENROLLMENT`
+permits bounded public admission when enabled. A wallet is not a unique person.
+Signing in or creating more keys never replenishes an account. Changing the grant
+configuration does not retroactively credit accounts that already exist.
+
+Sign-in consumes a five-minute wallet-message nonce and creates a twelve-hour
+HttpOnly, SameSite=Strict cookie. Browser mutations check Origin. API keys are
+shown once, stored as hashes and revocable. All keys for a wallet share its ledger.
+Conversations stay in browser memory; SQLite stores request metadata, without
+prompt or answer text. Prompts reach OpenRouter and the selected model provider,
+with data-collection opt-out and price ceilings. Provider retention policies apply.
+
+The persistent SQLite ledger atomically reserves a conservative maximum before
+each request. Upstream usage settles the reservation. Disconnected requests retain
+their holds while the reconciler checks known generation IDs. Requests without
+an ID require operator review against provider billing. Do not delete the ledger
+or release unknown holds to reset a budget. Back up the database before releases.
+Compute does not change onchain fee distribution or activate a trading-fee subsidy.
+
+Browser endpoints use `/api/v1/compute`: `/models`, `/auth/challenge`,
+`/auth/verify`, `/auth/logout`, `/account`, `/chat`, `/keys`, `/keys/{id}` and
+`/usage`. Compatible clients use Bearer-authenticated `/api/v1/models`,
+`/api/v1/chat/completions` and `/api/v1/key`. Text chat, SSE and client-executed
+function tools are supported. Images, audio, Responses API, provider plugins and
+arbitrary models are not accepted. Extended reasoning is disabled on the selected
+models so the bounded completion allowance produces visible answers. A repeated
+`Idempotency-Key` returns 409 without another upstream request. `/api/docs`
+documents request limits and schemas.
+
+Run `PYTHONPATH=backend .venv/bin/pytest backend/tests/test_compute.py` for mocked
+authentication, accounting and failure checks. With the backend and frontend
+running, `npm --prefix frontend run test:e2e -- compute.spec.ts` checks browser
+flows using mocked model responses. These tests do not spend provider credit.
 
 ## Design and asset provenance
 

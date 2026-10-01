@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -12,6 +13,9 @@ type State = {
   protocol: Protocol | null;
   config: Config | null;
   connected: boolean;
+  marketError: string;
+  protocolError: string;
+  retryData: () => void;
 };
 const Context = createContext<State | null>(null);
 export function DataRoot({
@@ -24,33 +28,57 @@ export function DataRoot({
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [protocol, setProtocol] = useState<Protocol | null>(null);
   const [connected, setConnected] = useState(false);
+  const [marketError, setMarketError] = useState("");
+  const [protocolError, setProtocolError] = useState("");
+  const [revision, setRevision] = useState(0);
+  const retryData = useCallback(() => setRevision(value => value + 1), []);
   useEffect(() => {
-    let alive = true;
+    const controller = new AbortController();
+    let streamVersion = 0;
+    setMarketError("");
+    setProtocolError("");
     const fetchSnapshot = () => {
-      void api<Snapshot>("/markets")
+      const version = streamVersion;
+      void api<Snapshot>("/markets", { signal: controller.signal })
         .then((value) => {
-          if (alive) setSnapshot(value);
+          if (!controller.signal.aborted && version === streamVersion) {
+            setSnapshot(value);
+            setMarketError("");
+          }
         })
         .catch(() => {
-          if (alive) setConnected(false);
+          if (!controller.signal.aborted && version === streamVersion) {
+            setConnected(false);
+            setMarketError("Market data could not be refreshed.");
+          }
         });
     };
     fetchSnapshot();
     const fetchProtocol = () => {
-      void api<Protocol>("/protocol")
+      void api<Protocol>("/protocol", { signal: controller.signal })
         .then((value) => {
-          if (alive) setProtocol(value);
+          if (!controller.signal.aborted) {
+            setProtocol(value);
+            setProtocolError("");
+          }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setProtocolError("Contract balances and activity could not be refreshed.");
+            setProtocol(current => current && { ...current, verified: false, funding_enabled: false });
+          }
+        });
     };
     fetchProtocol();
     const stream = new EventSource("/api/v1/stream");
     stream.onmessage = (event) => {
       try {
         const value = JSON.parse(event.data) as Snapshot;
-        if (alive) {
+        if (!controller.signal.aborted) {
+          streamVersion += 1;
           setSnapshot(value);
           setConnected(true);
+          setMarketError("");
         }
       } catch {
         setConnected(false);
@@ -62,13 +90,13 @@ export function DataRoot({
       if (stream.readyState !== EventSource.OPEN) fetchSnapshot();
     }, 30000);
     return () => {
-      alive = false;
+      controller.abort();
       stream.close();
       clearInterval(interval);
     };
-  }, []);
+  }, [revision]);
   return (
-    <Context.Provider value={{ snapshot, protocol, config, connected }}>
+    <Context.Provider value={{ snapshot, protocol, config, connected, marketError, protocolError, retryData }}>
       {children}
     </Context.Provider>
   );

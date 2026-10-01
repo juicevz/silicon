@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Official public SILICON token contract address, not a credential"
+regexTarget = "match"
+regexes = ['0x389860f1f8eaba66d8b2925923a40b739a67e6b0']

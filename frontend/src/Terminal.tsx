@@ -3,19 +3,20 @@ import {
   Activity,
   ArrowUpRight,
   Bell,
-  Check,
   CircleHelp,
   Clock3,
   Layers3,
   Radio,
   Search,
   Trophy,
-  X,
 } from "lucide-react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useData, useConfig } from "./data";
 import { useWallet } from "./wallet";
+import GpuMovers from "./components/GpuMovers";
+import BackgroundAlerts, { useAlertInbox } from "./components/BackgroundAlerts";
 import { useBenefits } from "./benefits";
+import { TerminalAssistant } from "./components/ComputeAssistant";
 import {
   api,
   explorer, money,
@@ -23,7 +24,7 @@ import {
   type Leaderboard as LeaderData,
   type Market,
 } from "./api";
-import { Dot, Empty, External, Modal } from "./components/ui";
+import { Dot, Empty, External, Modal, RequestError } from "./components/ui";
 import {
   AssetCards,
   AssetDetail,
@@ -73,7 +74,7 @@ function remember(key: string, value: string) {
 }
 
 function ActivityView({ compact = false }: { compact?: boolean }) {
-  const { protocol } = useData();
+  const { protocol, protocolError } = useData();
   const config = useConfig();
   if (protocol?.activity.length)
     return (
@@ -122,10 +123,11 @@ function ActivityView({ compact = false }: { compact?: boolean }) {
       </div>
       <Empty
         icon={<Radio size={19} />}
-        title="The first trade starts the feed."
+        title={protocolError ? "Activity is unavailable." : !protocol ? "Loading activity…" : "The first trade starts the feed."}
       >
-        Filled positions, collateral deposits and settlements will link directly
-        to their transactions.
+        {protocolError ? "Retry the connection above to check contract activity."
+          : !protocol ? "Checking the latest contract activity."
+          : "Filled positions, collateral deposits and settlements will link directly to their transactions."}
       </Empty>
     </section>
   );
@@ -185,17 +187,30 @@ function Positions({ notify }: { notify: (s: string) => void }) {
 function Leaderboard() {
   const [period, setPeriod] = useState("7d");
   const [result, setResult] = useState<LeaderData | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [revision, setRevision] = useState(0);
   const count = result?.rows.length ?? 0;
   const config = useConfig();
   useEffect(() => {
     const controller = new AbortController();
+    setResult(null);
+    setError("");
+    setLoading(true);
     void api<LeaderData>(`/leaderboard?period=${period}`, {
       signal: controller.signal,
     })
-      .then(setResult)
-      .catch(() => {});
+      .then(value => {
+        if (!controller.signal.aborted) setResult(value);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError("The leaderboard could not be loaded.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => controller.abort();
-  }, [period]);
+  }, [period, revision]);
   if (result?.rows.length)
     return (
       <div className="full-page">
@@ -267,7 +282,7 @@ function Leaderboard() {
       <section className="panel leaderboard-panel">
         <div className="panel-heading">
           <h2>
-            Top performers <span className="count mono">{count}</span>
+            Top performers <span className="count mono">{loading || error ? "—" : count}</span>
           </h2>
           <div className="segmented">
             {[
@@ -292,10 +307,12 @@ function Leaderboard() {
           <span>WIN RATE</span>
           <span>NET P&L</span>
         </div>
-        <Empty icon={<Trophy size={26} />} title="A clean slate.">
+        {error ? <RequestError message={error} retry={() => setRevision(value => value + 1)} retryLabel="Retry leaderboard" />
+        : loading ? <div className="empty-state" role="status">Loading leaderboard…</div>
+        : <Empty icon={<Trophy size={26} />} title="A clean slate.">
           Rankings begin with the first settled contracts. Open positions and
           unrealized gains do not count.
-        </Empty>
+        </Empty>}
       </section>
     </div>
   );
@@ -306,17 +323,15 @@ export default function Terminal({
 }: {
   notify: (message: string) => void;
 }) {
-  const { snapshot, protocol, connected } = useData();
+  const { snapshot, protocol, connected, marketError, protocolError, retryData } = useData();
+  const alertState = useAlertInbox();
   const { eligible } = useBenefits();
-  const alertLimit = eligible ? 100 : 20;
   const journal = useTransactionRecovery();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const [range, setRange] = useState("24h"),
     [detail, setDetail] = useState<Market | null>(null),
     [alertOpen, setAlertOpen] = useState(false),
-    [alertPrice, setAlertPrice] = useState(""),
-    [alertDirection, setAlertDirection] = useState<"above" | "below">("above"),
     [alerts, setAlerts] = useState<PriceAlert[]>(readAlerts),
     [filter, setFilter] = useState(""),
     [showSearch, setShowSearch] = useState(false);
@@ -330,7 +345,7 @@ export default function Terminal({
   const markets = snapshot?.markets ?? [];
   const market =
     markets.find((m) => m.id === params.get("asset")) ?? markets[0];
-  const tab = location.pathname.split("/")[2] ?? "markets";
+  const tab = location.pathname.replace(/^\/terminal\/?/, "").replace(/\/$/, "") || "markets";
   useEffect(() => {
     if (!snapshot) return;
     setAlerts((current) => {
@@ -360,41 +375,16 @@ export default function Terminal({
     setTutorial(false);
     remember("silicon:intro:v3", "seen");
   };
-  const openAlert = () => {
-    setAlertPrice(String(market?.price ?? ""));
-    setAlertOpen(true);
-  };
-  const saveAlert = () => {
-    const price = Number(alertPrice);
-    if (!market || !Number.isFinite(price) || price <= 0) {
-      notify("Enter a rental price above zero.");
-      return;
-    }
-    if (alerts.length >= alertLimit) {
-      notify("Remove an alert before adding another.");
-      return;
-    }
-    const next = [
-      ...alerts,
-      {
-        id: crypto.randomUUID(),
-        market: market.id,
-        price,
-        direction: alertDirection,
-        triggered: false,
-      },
-    ];
-    setAlerts(next);
-    remember("silicon:alerts", JSON.stringify(next));
-    notify("Price alert saved on this browser.");
-    setAlertOpen(false);
-  };
+  const openAlert = () => setAlertOpen(true);
+  useEffect(() => {
+    if (params.get("alerts") === "1") setAlertOpen(true);
+  }, [params]);
   return (
     <>
       <div className="terminal-status">
         <span>
           <Dot state={connected ? "green" : "gold"} />
-          {connected ? "DATA CONNECTED" : "CONNECTING DATA"}
+          {connected ? "DATA CONNECTED" : marketError ? "DATA UNAVAILABLE" : "CONNECTING DATA"}
         </span>
         <span className="status-divider" />
         <span>
@@ -407,13 +397,17 @@ export default function Terminal({
         </span>
         <span className="status-divider" />
         <span>
-          <em>Collateral</em> {money(protocol?.funded ?? 0)} USDG
+          <em>Collateral</em> {money(protocolError ? null : protocol?.funded)} USDG
         </span>
         <span className="status-right">
           <Clock3 size={11} />
           Robinhood Chain · {snapshot?.trading_enabled ? "trading open" : "market data open"}
         </span>
       </div>
+      {(marketError || protocolError) && <div className="terminal-data-errors">
+        {marketError && <RequestError message={`${marketError}${snapshot ? " Showing the last loaded prices." : " Retry to load GPU prices."}`} retry={retryData} retryLabel="Retry market data" />}
+        {protocolError && <RequestError message={protocolError} retry={retryData} retryLabel="Retry contract data" />}
+      </div>}
       {tab === "markets" ? (
         <main className="terminal-body">
           <div className="market-workspace">
@@ -450,7 +444,7 @@ export default function Terminal({
                   onClick={openAlert}
                 >
                   <Bell size={15} />
-                  {alerts.filter((a) => !a.triggered).length > 0 && (
+                  {(alerts.some(a => !a.triggered) || alertState.inbox?.events.some(e => !e.read) || alertState.inbox?.rules.some(r => !r.triggered_at && new Date(r.expires_at).getTime() > Date.now())) && (
                     <span className="notification-dot" />
                   )}
                 </button>
@@ -476,6 +470,7 @@ export default function Terminal({
                   range={range}
                   info={setDetail}
                 />
+                <GpuMovers select={(id) => setParams({ asset: id })} />
                 {market && (
                   <>
                     <Benchmark
@@ -487,6 +482,7 @@ export default function Terminal({
                     />
                     <ProviderTable market={market} />
                     <MarketContextBar market={market} evidence={() => setDetail(market)} />
+                    <TerminalAssistant market={market} />
                   </>
                 )}
                 <div className="positions-activity">
@@ -497,9 +493,9 @@ export default function Terminal({
               </>
             ) : (
               <div className="data-loading">
-                <span className="loading-chip" />
-                <strong>Loading markets.</strong>
-                <p>Loading provider quotes and network status.</p>
+                {!marketError && <span className="loading-chip" />}
+                <strong>{marketError ? "Market data is unavailable." : "Loading markets."}</strong>
+                <p>{marketError ? "Use Retry market data above to reconnect." : "Loading provider quotes and network status."}</p>
               </div>
             )}
           </div>
@@ -511,7 +507,7 @@ export default function Terminal({
         <StrategyLab notify={notify} />
       ) : tab === "leaderboard" ? (
         <Leaderboard />
-      ) : (
+      ) : tab === "activity" ? (
         <main className="full-page">
           <div className="page-intro">
             <span className="eyebrow">FOLLOW THE MARKET</span>
@@ -521,6 +517,14 @@ export default function Terminal({
           <SavedTransactions {...journal} />
           <ActivityView />
           <Positions notify={notify} />
+        </main>
+      ) : (
+        <main className="full-page">
+          <div className="page-intro">
+            <h1>Page not found</h1>
+            <p>This terminal page does not exist.</p>
+          </div>
+          <Link className="button primary" to="/terminal">Back to markets</Link>
         </main>
       )}
       <footer className="terminal-footer">
@@ -557,71 +561,16 @@ export default function Terminal({
         />
       )}
       {alertOpen && (
-        <Modal
-          title={`${market?.name ?? "GPU"} · price alerts`}
-          close={() => setAlertOpen(false)}
-        >
-          <div className="modal-body">
-            <p>
-              Get an in-terminal alert when the published reference crosses your
-              level. Alerts run while this browser has Silicon open.
-            </p>
-            <div className="alert-form">
-              <select
-                aria-label="Alert direction"
-                value={alertDirection}
-                onChange={(e) =>
-                  setAlertDirection(e.target.value as "above" | "below")
-                }
-              >
-                <option value="above">At or above</option>
-                <option value="below">At or below</option>
-              </select>
-              <div className="amount-input">
-                <span>$</span>
-                <input
-                  aria-label="Alert rental price"
-                  type="number"
-                  min=".001"
-                  step=".01"
-                  value={alertPrice}
-                  onChange={(e) => setAlertPrice(e.target.value)}
-                />
-                <span>/hr</span>
-              </div>
-            </div>
-            <button className="button primary full-width" onClick={saveAlert}>
-              <Bell size={13} />
-              Save price alert
-            </button>
-            <div className="saved-alerts">
-              <p className="benefits-note">{alerts.length} / {alertLimit} alerts on this browser. Existing alerts stay available if your benefits change.</p>
-              {alerts.map((a) => (
-                <div key={a.id}>
-                  <span>
-                    {markets.find((m) => m.id === a.market)?.name ?? a.market}
-                  </span>
-                  <span className="mono">
-                    {a.direction === "above" ? "≥" : "≤"} ${money(a.price, 3)}
-                  </span>
-                  <span className={a.triggered ? "green" : "muted"}>
-                    {a.triggered ? <Check size={13} /> : "Watching"}
-                  </span>
-                  <button
-                    className="icon-button"
-                    aria-label="Remove alert"
-                    onClick={() => {
-                      const next = alerts.filter((v) => v.id !== a.id);
-                      setAlerts(next);
-                      remember("silicon:alerts", JSON.stringify(next));
-                    }}
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+        <Modal title={`${market?.name ?? "GPU"} · background alerts`} close={() => {
+          setAlertOpen(false);
+          if (params.has("alerts")) { const next = new URLSearchParams(params); next.delete("alerts"); setParams(next, { replace: true }); }
+        }}>
+          <BackgroundAlerts market={market} markets={markets} state={alertState} notify={notify} legacy={alerts} localLimit={eligible ? 100 : 20} saveLocal={(rule) => {
+            const next = [...alerts, rule]; setAlerts(next); remember("silicon:alerts", JSON.stringify(next));
+          }} migrated={(id) => {
+            const next = alerts.filter(rule => rule.id !== id);
+            setAlerts(next); remember("silicon:alerts", JSON.stringify(next));
+          }} />
         </Modal>
       )}
     </>

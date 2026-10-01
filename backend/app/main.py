@@ -9,6 +9,9 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.responses import JSONResponse
 
 from .chain import Chain
 from .benefits import wallet_benefits
@@ -34,6 +37,11 @@ from .store import Store, now
 from .transactions import Transactions
 from .strategies import PaperBook, PaperRecord, PaperRequest, Strategies, StrategyOverview
 from .insights import MarketContext, VaultAccounting, market_context, vault_accounting
+from .alerts.service import Alerts
+from .alerts.routes import alert_routes
+from .movers import Movers, daily_movers
+from .compute.service import ComputeService
+from .compute.routes import compute_routes
 
 config = settings()
 store = Store(config.data_dir)
@@ -43,6 +51,8 @@ reader = ProtocolReader(chain, store)
 round_readers = {address.lower(): ProtocolReader(chain, store, address) for address in config.vault_round_addresses if address.lower() != config.market_address.lower()}
 transactions = Transactions(chain, reader, round_readers)
 strategies = Strategies(store)
+compute = ComputeService(config, store, data, reader)
+alerts = Alerts(config, store, data)
 rate_limits: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
 
@@ -89,11 +99,14 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(repeat(chain.poll, 15)),
         asyncio.create_task(repeat(reader.poll, 20)),
         *(asyncio.create_task(repeat(r.poll, 60)) for r in round_readers.values()),
+        asyncio.create_task(repeat(compute.reconcile, 60)),
+        asyncio.create_task(repeat(alerts.poll, 30)),
     ]
     yield
     for task in tasks:
         task.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
+    await compute.close()
     store.close()
 
 
@@ -104,20 +117,47 @@ app = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
 )
+app.include_router(compute_routes(compute))
+app.include_router(alert_routes(alerts))
+
+
+@app.exception_handler(RequestValidationError)
+async def safe_validation(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api/v1/compute") or request.url.path == "/api/v1/chat/completions":
+        return JSONResponse({"detail": "Check the request fields and supported limits."}, status_code=422)
+    return await request_validation_exception_handler(request, exc)
 
 
 @app.middleware("http")
 async def security(request: Request, call_next):
+    is_compute = request.url.path.startswith("/api/v1/compute") or request.url.path in {"/api/v1/chat/completions", "/api/v1/models", "/api/v1/key"}
+    is_alerts = request.url.path.startswith("/api/v1/alerts")
+    if (is_compute or is_alerts) and request.method in {"POST", "PUT", "PATCH"}:
+        length = request.headers.get("content-length", "0")
+        if not length.isdigit() or int(length) > 96000:
+            return JSONResponse({"detail": "Request too large."}, status_code=413)
+        body = bytearray()
+        async for chunk in request.stream():
+            if len(body) + len(chunk) > 96000:
+                return JSONResponse({"detail": "Request too large."}, status_code=413)
+            body.extend(chunk)
+        request._body = bytes(body)  # Starlette replays this bounded body downstream.
     if (
         request.url.path.startswith("/api/v1/access")
         or request.url.path == "/api/v1/quote"
         or request.url.path.startswith("/api/v1/transactions")
         or request.url.path.startswith("/api/v1/strategies/paper")
+        or is_compute
+        or is_alerts
     ):
         host = request.client.host if request.client else "unknown"
         transaction = request.url.path.startswith("/api/v1/transactions")
         group, limit = (
-            ("confirmation", 180)
+            ("alerts", 60)
+            if is_alerts
+            else ("compute", 60)
+            if is_compute
+            else ("confirmation", 180)
             if transaction and request.method == "GET"
             else ("transaction", 30)
             if transaction
@@ -131,8 +171,6 @@ async def security(request: Request, call_next):
         while bucket and bucket[0] < at - 60:
             bucket.popleft()
         if len(bucket) >= limit:
-            from fastapi.responses import JSONResponse
-
             return JSONResponse(
                 {"detail": "Too many requests. Please wait a moment."},
                 status_code=429,
@@ -177,6 +215,11 @@ async def snapshot():
         collection_interval=config.collection_interval,
         trading_enabled=execution_ready(),
     )
+
+
+@app.get("/api/v1/movers", response_model=Movers)
+async def movers():
+    return daily_movers(store, data.snapshot())
 
 
 @app.get("/api/v1/history/{market}")

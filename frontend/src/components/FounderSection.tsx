@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 import type { LandingMotion } from "../landingMotion";
-import { GithubLogo, XLogo } from "./SocialIcons";
 
 const FounderWorld = lazy(() => import("./FounderWorld"));
 
@@ -33,11 +32,11 @@ export function FounderSection({ motion, paused, reduced, toggleMotion }: {
       <div className="ambf-copy">
         <p className="ambf-intro" data-reveal>the founder</p>
         <h2 id="ambf-title" data-reveal data-reveal-delay="80">AMBF<span>.</span></h2>
-        <p className="ambf-bio" data-reveal data-reveal-delay="160">researcher &amp; student<br /><a href="https://x.com/Stanford" target="_blank" rel="noreferrer">@Stanford <ArrowUpRight size={17} /></a></p>
-        <div className="ambf-links" data-reveal data-reveal-delay="240">
-          <a href="https://x.com/AMBF" target="_blank" rel="noreferrer" aria-label="AMBF on X"><XLogo /><span>AMBF</span><ArrowUpRight size={16} /></a>
-          <a href="https://github.com/juicevz" target="_blank" rel="noreferrer" aria-label="juicevz on GitHub"><GithubLogo /><span>juicevz</span><ArrowUpRight size={16} /></a>
+        <div className="ambf-links" data-reveal data-reveal-delay="160">
+          <a href="https://x.com/AMBF" target="_blank" rel="noreferrer" aria-label="AMBF on X">X</a>
+          <a href="https://github.com/juicevz" target="_blank" rel="noreferrer" aria-label="juicevz on GitHub">github</a>
         </div>
+        <p className="ambf-bio" data-reveal data-reveal-delay="240">researcher &amp; student<br /><a href="https://x.com/Stanford" target="_blank" rel="noreferrer">@Stanford <ArrowUpRight size={17} /></a></p>
       </div>
       <div className="ambf-portrait" data-reveal data-reveal-delay="180">
         <div className="ambf-portrait-float"><div className="ambf-portrait-glass"><img src="/assets/founder/ambf-avatar.jpg" alt="AMBF’s profile avatar" width="400" height="400" loading="lazy" /></div></div>

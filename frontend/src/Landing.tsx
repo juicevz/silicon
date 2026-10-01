@@ -52,12 +52,12 @@ export default function Landing({ notify }: { notify: (value: string) => void })
       <DreamAtmosphere motion={motion} />
       <Header landing notify={notify} />
       <div className="dream-wrap dream-intro">
-        <h1 id="dream-title" data-reveal data-reveal-delay="60">trade the cost <span>of compute.</span></h1>
-        <p data-reveal data-reveal-delay="160">compute has a price. follow the GPU rental market and take a view on where H100 goes next.</p>
-        <div className="dream-actions" data-reveal data-reveal-delay="260"><TerminalButton /><a className="dream-text-link" href="#how-it-works">how it works <ArrowDown size={17} /></a></div>
+        <h1 id="dream-title" data-reveal data-reveal-delay="620">trade the cost <span>of compute.</span></h1>
+        <p data-reveal data-reveal-delay="760">compute has a price. follow the GPU rental market and take a view on where H100 goes next.</p>
+        <div className="dream-actions" data-reveal data-reveal-delay="900"><TerminalButton /><a className="dream-text-link" href="#how-it-works">how it works <ArrowDown size={17} /></a></div>
         <div data-reveal data-reveal-delay="1020"><TokenAddress landing /></div>
       </div>
-      <div className="dream-objects" data-reveal data-reveal-delay="180">
+      <div className="dream-objects" data-reveal data-reveal-delay="0">
         <Suspense fallback={<SiliconPoster kind="objects" />}><SiliconScene kind="objects" motion={motion} paused={paused} /></Suspense>
       </div>
       <button className="dream-motion" type="button" onClick={() => setPaused(value => !value)} disabled={reduced} aria-pressed={paused} aria-label={reduced ? "Reduced motion" : paused ? "Resume motion" : "Pause motion"} title={reduced ? "Motion follows your system preference" : paused ? "Resume motion" : "Pause motion"}>

@@ -88,14 +88,14 @@ test("payout sizing, capped returns, put direction and persistent alert", async 
   await page
     .getByRole("spinbutton", { name: "Alert rental price" })
     .fill("100");
-  await page.getByRole("button", { name: "Save price alert" }).click();
+  await page.getByRole("button", { name: "Save background alert" }).click();
   await expect(page.getByRole("status")).toContainText("saved");
   await page.reload();
   await page.getByRole("button", { name: "Price alerts", exact: true }).click();
-  await expect(page.locator(".saved-alerts")).toContainText("$100.000");
-  await page.getByRole("button", { name: "Remove alert" }).click();
-  await expect(page.getByRole("button", { name: "Remove alert" })).toHaveCount(0);
-  await expect(page.locator(".saved-alerts")).toContainText("0 / 20 alerts");
+  await expect(page.locator(".server-alert-rules")).toContainText("$100.0000");
+  await page.getByRole("button", { name: /Remove background alert/ }).click();
+  await expect(page.getByRole("button", { name: /Remove background alert/ })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Watching · 0/20" })).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("silicon:alerts") ?? "[]"))).toEqual([]);
 });
 

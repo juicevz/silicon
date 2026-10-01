@@ -17,6 +17,16 @@ export function Brand() {
 export function Dot({ state = "green" }: { state?: string }) {
   return <span className={`status-dot ${state}`} aria-hidden="true" />;
 }
+export function RequestError({ message, retry, retryLabel = "Retry" }: {
+  message: string;
+  retry: () => void;
+  retryLabel?: string;
+}) {
+  return <div className="request-error" role="alert">
+    <span>{message}</span>
+    <button className="button" onClick={retry}>{retryLabel}</button>
+  </div>;
+}
 export function External({
   href,
   children,

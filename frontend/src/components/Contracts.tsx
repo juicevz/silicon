@@ -3,7 +3,7 @@ import { ArrowUpRight, ChevronRight, Copy, FileCode2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useData, useConfig } from "../data";
 import { api, money, short, explorer, type Series, type Protocol } from "../api";
-import { External, Modal } from "./ui";
+import { External, Modal, RequestError } from "./ui";
 import { LiveContract } from "./Live";
 import { TokenAddress } from "./TokenAddress";
 const Gpu = lazy(() => import("./Gpu"));
@@ -31,13 +31,28 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
   const { protocol } = useData();
   const config = useConfig();
   const [rounds, setRounds] = useState<Protocol[]>([]);
+  const [roundError, setRoundError] = useState("");
+  const [roundLoading, setRoundLoading] = useState(true);
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    void api<Protocol[]>("/vaults", { signal: controller.signal }).then(setRounds).catch(() => {
-      if (!controller.signal.aborted) setRounds(current => current.map(round => ({ ...round, verified: false, funding_enabled: false })));
-    });
+    setRoundError("");
+    setRoundLoading(true);
+    void api<Protocol[]>("/vaults", { signal: controller.signal })
+      .then(value => {
+        if (!controller.signal.aborted) setRounds(value);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setRoundError("The contract list could not be refreshed. Any displayed balances are from the last successful check.");
+          setRounds(current => current.map(round => ({ ...round, verified: false, funding_enabled: false })));
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setRoundLoading(false);
+      });
     return () => controller.abort();
-  }, [protocol?.checked_at]);
+  }, [protocol?.checked_at, revision]);
   const contracts = [...new Map([...rounds.flatMap(round => round.contracts), ...(protocol?.contracts ?? [])].map(series => [series.address.toLowerCase(), series])).values()];
   const [selection, setSelected] = useState<{
     asset: (typeof assets)[number];
@@ -61,7 +76,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
   });
   const addressFor = (entry: (typeof entries)[number]) =>
     entry.series?.address ??
-    (entry.asset.id === "h100-sxm" ? config.market_address : null);
+    (entry.asset.id === "h100-sxm" ? config.market_address ?? config.vault_round_addresses?.[0] : null);
   const labelFor = (entry: (typeof entries)[number]) =>
     entry.series?.paused && !entry.series.settled && !entry.series.cancelled ? "Paused" : entry.series?.phase ??
     (addressFor(entry)
@@ -70,6 +85,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
         ? "Awaiting deployment"
         : "Tracking only");
   const address = selected ? addressFor(selected) : null;
+  const missingSelectedData = !!address && !selected?.series;
   const selectedState = address === config.market_address ? protocol : rounds.find(round => round.address === address);
   const events = selectedState?.activity ?? [];
   const copy = async (value: string) => {
@@ -89,11 +105,12 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
       </div>
       <div className="directory-heading">
         <span>{assets.length} assets</span>
-        <span>{contracts.length} deployed series</span>
+        <span>{roundError ? "Series list unavailable" : roundLoading ? "Checking deployed series…" : `${contracts.length} deployed series`}</span>
         <Link to="/docs#positions">
           How contracts work <ArrowUpRight size={16} />
         </Link>
       </div>
+      {roundError && <RequestError message={roundError} retry={() => setRevision(value => value + 1)} retryLabel="Retry contracts" />}
       <div className="contract-list">
         {entries.map((entry) => (
           <div
@@ -126,7 +143,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
               <span className="contract-backing">
                 <small>USDG backing</small>
                 <strong>
-                  {entry.series ? money(entry.series.funded) : "Not funded"}
+                  {entry.series ? money(entry.series.funded) : addressFor(entry) ? "Unavailable" : "Not funded"}
                 </strong>
               </span>
               <ChevronRight size={22} />
@@ -252,6 +269,8 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
                 <p>
                   {selected.series
                     ? `Expiry: ${new Date(selected.series.expiry * 1000).toUTCString()}`
+                    : missingSelectedData
+                      ? "Contract data is unavailable. Retry the connection to check this series and its funding."
                     : selected.asset.id === "h100-sxm"
                       ? "The first series will appear here with its address, expiry and actual funding. No funds have been deposited into an H100 series."
                       : "Rental data is available to explore. This asset has no deployed trading contract."}
@@ -264,10 +283,10 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
                   <LiveContract series={selected.series} state={selectedState ?? undefined} notify={notify} />
                 ) : (
                   <div className="contract-empty">
-                    <strong>No USDG deposited.</strong>
+                    <strong>{missingSelectedData ? "Funding data is unavailable." : "No USDG deposited."}</strong>
                     <p>
-                      Funding and reserved payouts will appear here when a
-                      series is deployed.
+                      {missingSelectedData ? "Retry the connection to check deposited USDG and reserved payouts."
+                        : "Funding and reserved payouts will appear here when a series is deployed."}
                     </p>
                     <Link className="text-button" to="/docs#collateral">
                       Read the funding mechanics <ArrowUpRight size={16} />
@@ -292,7 +311,7 @@ export default function Contracts({ notify }: { notify: (s: string) => void }) {
                   </div>
                 ) : (
                   <div className="contract-empty">
-                    <strong>No contract activity yet.</strong>
+                    <strong>{missingSelectedData ? "Contract activity is unavailable." : "No contract activity yet."}</strong>
                     <p>
                       Deposits, positions and settlements will be listed here
                       with their transactions.

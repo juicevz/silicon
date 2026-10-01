@@ -59,6 +59,10 @@ test("guest benefits show the official token, a connect action and no invented b
 test("verified holder tools unlock and a changed balance removes eligibility", async ({ page }) => {
   const wallet = "0x1111111111111111111111111111111111111111";
   let eligible = true;
+  await page.route("**/api/v1/config", async route => {
+    const config = await (await route.fetch()).json();
+    return route.fulfill({ json: { ...config, privy_app_id: "test-wallet-adapter" } });
+  });
   // Test-only wallet adapter: no real connection, signature or transaction.
   await page.route(/\/(src\/wallet-runtime\.tsx|assets\/wallet-runtime-[^/]+\.js)(\?.*)?$/, async route => {
     // Rollup may expose this lazy entry as a named module namespace. Preserve

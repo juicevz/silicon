@@ -15,6 +15,7 @@ import { X } from "lucide-react";
 import { api, type Config } from "./api";
 import { DataRoot } from "./data";
 import { WalletRoot } from "./wallet";
+import { ComputeRoot } from "./compute-context";
 import Landing from "./Landing";
 import Docs from "./Docs";
 import { Header } from "./components/Header";
@@ -35,6 +36,7 @@ import "./editorial.css";
 import "./founder.css";
 
 const Terminal = lazy(() => import("./Terminal"));
+const Compute = lazy(() => import("./Compute"));
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }
@@ -118,6 +120,7 @@ function App() {
         <Scroll />
         <DataRoot config={config}>
           <WalletRoot config={config}>
+            <ComputeRoot>
               <Routes>
                 <Route path="/" element={<Landing notify={notify} />} />
                 <Route
@@ -125,6 +128,7 @@ function App() {
                   element={<TerminalRoute ready={!!config} error={error} notify={notify} />}
                 />
                 <Route path="/docs" element={<Docs />} />
+                <Route path="/compute" element={<BenefitsRoot><div className="terminal"><Atmosphere tone="dark" /><Header notify={notify} /><Suspense fallback={<main className="terminal-placeholder"><h1>Compute</h1><p>Loading workspace…</p></main>}><Compute /></Suspense></div></BenefitsRoot>} />
                 <Route
                   path="*"
                   element={
@@ -139,6 +143,7 @@ function App() {
                   }
                 />
               </Routes>
+            </ComputeRoot>
           </WalletRoot>
         </DataRoot>
         {toast && (

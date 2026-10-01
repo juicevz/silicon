@@ -25,12 +25,14 @@ export default function Docs() {
           {[
             ["overview", "Overview"],
             ["reference", "Rental reference"],
+            ["monitoring", "Movers and alerts"],
             ["positions", "Calls and puts"],
             ["collateral", "Writer collateral"],
             ["strategies", "Vaults and strategies"],
             ["settlement", "Settlement"],
             ["token", "Token and fees"],
             ["data", "Data and alerts"],
+            ["compute", "Compute and assistant"],
             ["status", "Launch status"],
           ].map(([id, title]) => (
             <a key={id} href={`#${id}`}>
@@ -68,6 +70,14 @@ export default function Docs() {
             <p>Trend and spread records are paper strategies. They move no funds and use assumed premiums, excluding network fees and slippage. Results use the first eligible observations within three hours after expiry; missing data cancels the record after 24 hours. Sparse or flat source history cannot establish a profitable strategy. Records are private to the browser cookie; clearing it loses access.</p>
             <p>The B200 comparison reference needs a fixed benchmark before a live spread can launch. Vault deposits and live trades remain unavailable until their contracts, quotes and funding are configured and verified. The strategy screens show those states explicitly.</p>
             <Link className="text-button" to="/terminal/strategies">Explore strategies <ArrowUpRight size={14} /></Link>
+          </section>
+          <section id="monitoring">
+            <h2>GPU movers and background alerts</h2>
+            <p>The terminal ranks recorded 24-hour rental price moves. Open Source details to see the latest and baseline receipts, their timestamps, and which matched provider listings changed. Each comparison ends at that GPU’s latest source observation. A stale feed, changed basket or missing daily history withholds the percentage.</p>
+            <p>The bell lets you save a price threshold, watch provider listing price changes, or wait for the H100 benchmark to recover. Silicon checks server alerts while your tab is closed. Each rule fires once and expires after 90 days. Threshold alerts fire on the first fresh reading that meets the level, even if it already does when saved. A feed recovery does not open trading.</p>
+            <p>Your private browser inbox stores triggered events for 30 days. Browser notifications are optional and require permission and browser support. Failed push delivery leaves the event in the inbox. On iPhone or iPad, use the installed Home Screen app for push. No wallet is required. Clearing site data loses access to this browser’s inbox.</p>
+            <p>Server alerts have a separate 20-rule limit. Existing browser alerts keep their 20/100 holder allowances and can be moved to the server. They run while Silicon is open. Provider alerts compare the same listing identity, so coverage changes alone do not trigger a price alert. Collection happens periodically; a change between observations may be missed.</p>
+            <Link className="text-button" to="/terminal?alerts=1">Open alert inbox <ArrowUpRight size={14} /></Link>
           </section>
           <section id="reference">
             <h2>The H100 reference</h2>
@@ -256,6 +266,15 @@ export default function Docs() {
               reference. They are not background push notifications or automatic
               trade orders.
             </p>
+          </section>
+          <section id="compute">
+            <h2>Compute, inside Silicon</h2>
+            <p>The Compute workspace brings together a model playground, a market assistant, strategy drafting, API keys and usage. Sign in with a wallet message to use your account. Signing in does not authorize a transaction.</p>
+            <p>The market assistant receives Silicon’s recorded rental references, provider coverage, source timestamps and contract readiness. Its answers include source links. A recent reference does not establish a tradable quote, and model explanations can be wrong.</p>
+            <p>Strategy drafts open in the paper builder with editable assumptions. Supported drafts cover H100 trends and B200 versus H100 spreads over 7, 14 or 30 days. You review the terms and choose whether to record the paper strategy. The assistant cannot place trades.</p>
+            <p>Create a Silicon API key under API access to connect a compatible client. Use the displayed base URL with text chat completions, streaming and tool-call messages. Clients run their own local tools; Silicon does not provide a remote shell. Keys are shown once and can be revoked from the same page.</p>
+            <p>Model availability and usage limits apply. Usage shows recorded request costs; interrupted requests can stay pending until their cost is checked. Silicon keeps request metadata for accounting, without saving conversation text. Prompts are sent through OpenRouter to the selected model provider. Conversations remain in the current page session and clear when you sign out.</p>
+            <Link className="text-button" to="/compute">Open Compute <ArrowUpRight size={14} /></Link>
           </section>
           <section id="status">
             <h2>Launch status</h2>

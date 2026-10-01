@@ -17,12 +17,13 @@ import { short } from "../api";
 import { ThemeToggle } from "./ThemeToggle";
 import { useBenefits } from "../benefits";
 import BenefitsPanel from "./BenefitsPanel";
-import { XLogo } from "./SocialIcons";
+import { GithubLogo, XLogo } from "./SocialIcons";
 
 export const TABS = [
   "Markets",
   "Contracts",
   "Strategies",
+  "Compute",
   "Activity",
   "Leaderboard",
 ] as const;
@@ -53,6 +54,7 @@ export function Header({
         <nav className="landing-nav">
           <a href="/#markets">Markets</a>
           <a href="/#how-it-works">How it works</a>
+          <Link to="/compute">Compute</Link>
           <button
             className="about-toggle"
             onClick={() => setMenu(true)}
@@ -71,6 +73,7 @@ export function Header({
               to={
                 tab === "Markets"
                   ? "/terminal"
+                  : tab === "Compute" ? "/compute"
                   : `/terminal/${tab.toLowerCase()}`
               }
               end
@@ -83,6 +86,7 @@ export function Header({
       <div className="header-right">
         {landing && <div className="silicon-socials" role="group" aria-label="Silicon and founder">
           <a href="https://x.com/SiliconGPU" target="_blank" rel="noreferrer" className="silicon-x-link" aria-label="Silicon on X" title="Silicon on X"><XLogo size={17} /></a>
+          <a href="https://github.com/juicevz/silicon" target="_blank" rel="noreferrer" className="silicon-github-link" aria-label="Silicon on GitHub" title="Silicon on GitHub"><GithubLogo size={17} /></a>
           <a href="/#ambf" className="silicon-founder-link">AMBF</a>
         </div>}
         {!landing && <button className="button benefits-trigger" onClick={benefits.open} aria-label="Benefits" title="$SILICON benefits" aria-haspopup="dialog" aria-expanded={benefits.opened}><BadgePercent size={15} /><span>$SILICON</span></button>}
@@ -183,6 +187,7 @@ export function Header({
                   Documentation <ArrowUpRight size={24} />
                 </span>
               </Link>
+              <Link onClick={() => setMenu(false)} to="/compute"><span>Compute <ArrowUpRight size={24} /></span></Link>
             </div>
           </Modal>
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownUp, ArrowUpRight, Bell, ChartNoAxesCombined, Landmark, SlidersHorizontal } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { readStrategyDraft, type StrategyDraft } from "../compute-api";
 import { api, money, type Protocol } from "../api";
 import type { components } from "../api-schema";
 import { useData } from "../data";
@@ -43,14 +44,14 @@ function PaperHistory({ book }: { book: Book | null }) {
   </section>;
 }
 
-function Builder({ spread, overview, book, refresh, notify }: { spread: boolean; overview: Overview | null; book: Book | null; refresh: () => void; notify: (s: string) => void }) {
+function Builder({ spread, overview, book, refresh, notify, draft }: { spread: boolean; overview: Overview | null; book: Book | null; refresh: () => void; notify: (s: string) => void; draft: StrategyDraft | null }) {
   const { snapshot } = useData();
   const { eligible } = useBenefits();
-  const [side, setSide] = useState<"call" | "put">(spread ? "call" : "put");
-  const [days, setDays] = useState<7 | 14 | 30>(14);
-  const [units, setUnits] = useState(1), [premium, setPremium] = useState("2"), [move, setMove] = useState(spread ? 5 : -5), [h100Move, setH100Move] = useState(0);
+  const [side, setSide] = useState<"call" | "put">(draft?.side ?? (spread ? "call" : "put"));
+  const [days, setDays] = useState<7 | 14 | 30>(draft?.days ?? 14);
+  const [units, setUnits] = useState(Number(draft?.units ?? 1)), [premium, setPremium] = useState(String(draft?.premium_per_unit ?? "2")), [move, setMove] = useState(draft?.scenario_move_pct ?? (spread ? 5 : -5)), [h100Move, setH100Move] = useState(draft?.h100_move_pct ?? 0);
   const [pending, setPending] = useState(false), [error, setError] = useState("");
-  const [thesis, setThesis] = useState("");
+  const [thesis, setThesis] = useState(draft?.thesis ?? "");
   const saving = useRef(false);
   const attempt = useRef<{ body: string; id: string } | null>(null);
   const validPremium = /^\d+(\.\d{1,6})?$/.test(premium) && Number(premium) >= .1 && Number(premium) <= 9.9;
@@ -76,6 +77,7 @@ function Builder({ spread, overview, book, refresh, notify }: { spread: boolean;
     finally { saving.current = false; setPending(false); }
   };
   return <>
+    {draft && <div className="compute-draft-review"><strong>Review your assistant draft</strong><p>These are editable paper assumptions. Nothing has been recorded. Check the terms and scenario before recording a paper strategy.</p><ul>{draft.assumptions.map((assumption, i) => <li key={i}>{assumption}</li>)}</ul></div>}
     <section className="strategy-builder panel">
       <div className="strategy-controls">
         <h2>{spread ? "Which generation leads?" : "What happens to H100 rents?"}</h2>
@@ -121,9 +123,12 @@ function PremiumVault({ notify }: { notify: (s: string) => void }) {
 }
 
 export default function StrategyLab({ notify }: { notify: (s: string) => void }) {
+  const location = useLocation();
+  const incoming = readStrategyDraft((location.state as { computeDraft?: unknown } | null)?.computeDraft);
   const [compare, setCompare] = useState(false);
   const [params, setParams] = useSearchParams();
   const raw = params.get("tool"), tool: Tool = raw === "vault" || raw === "spread" ? raw : "trend";
+  const draft = incoming && (incoming.kind === "generation_spread" ? tool === "spread" : tool === "trend") ? incoming : null;
   const [overview, setOverview] = useState<Overview | null>(null), [book, setBook] = useState<Book | null>(null), [error, setError] = useState("");
   const [revision, setRevision] = useState(0), [legacy, setLegacy] = useState<string | null>(null);
   const openLegacy = async (name: string) => {
@@ -139,7 +144,7 @@ export default function StrategyLab({ notify }: { notify: (s: string) => void })
     <div className="page-intro"><h1>GPU strategies</h1><p>Back a round, test a rental-price thesis, or compare GPU generations.</p></div>
     <div className="strategy-options">{(["vault", "trend", "spread"] as const).map(key => <button className={`panel strategy-option ${key === tool ? "selected" : ""}`} key={key} aria-pressed={key === tool} onClick={() => setParams({ tool: key })}>{key === "vault" ? <Landmark size={24} /> : key === "trend" ? <ChartNoAxesCombined size={24} /> : <ArrowDownUp size={24} />}<h2>{titles[key]}</h2><p>{key === "vault" ? "Earn premiums and fees, less buyer payouts. Your capital backs each round." : key === "trend" ? "Turn an H100 rental-price view into a position with a recorded paper result." : "Model whether B200 rental prices outperform H100 over the same period."}</p><span>{key === "vault" ? "USDG rounds" : "Paper strategies"}<ArrowUpRight size={16} /></span></button>)}</div>
     {error && <p className="inline-error" role="alert">{error} <button className="text-button" onClick={() => setRevision(v => v + 1)}>Retry</button></p>}
-    {tool === "vault" ? <PremiumVault notify={notify} /> : <Builder key={tool} spread={tool === "spread"} overview={overview} book={book} refresh={() => setRevision(v => v + 1)} notify={notify} />}
+    {tool === "vault" ? <PremiumVault notify={notify} /> : <Builder key={`${tool}:${draft ? (location.state as { computeDraftId?: string })?.computeDraftId ?? location.key : "manual"}`} draft={draft} spread={tool === "spread"} overview={overview} book={book} refresh={() => setRevision(v => v + 1)} notify={notify} />}
     <div className="strategy-existing"><span>Analysis tools</span>{[{ name: "Compute spread", icon: <ArrowDownUp size={16} /> }, { name: "Two-way scenario", icon: <SlidersHorizontal size={16} /> }, { name: "Price ladder", icon: <Bell size={16} /> }].map(item => <button key={item.name} className="button" onClick={() => void openLegacy(item.name)}>{item.icon}{item.name}</button>)}</div>
     <button className="button" onClick={() => setCompare(true)}>Compare GPUs</button>
     {compare && <GpuCompare close={() => setCompare(false)} />}

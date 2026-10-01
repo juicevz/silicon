@@ -1,0 +1,11 @@
+{
+  "id": "/",
+  "name": "Silicon Markets",
+  "short_name": "Silicon",
+  "start_url": "/terminal",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101918",
+  "theme_color": "#101918",
+  "icons": [{ "src": "/silicon.svg?v=5", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
