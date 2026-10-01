@@ -9,7 +9,7 @@ test("first visit spotlights each target, contains focus and can replay", async 
   await expect(page.locator(".tour-spotlight")).toHaveAttribute("data-tour-target", ".gpu-market-catalog");
   expect(await page.locator("#root").evaluate(e => e.inert)).toBe(true);
   expect(await tour.evaluate(e => getComputedStyle(e).backgroundImage)).toContain("gradient");
-  const targets = [".benchmark", ".ticket-body", ".providers", ".strategies-shortcut", ".benefits-trigger"];
+  const targets = [".benchmark", ".ticket-body", ".providers", "[aria-label='Explore strategies']", ".benefits-trigger"];
   for (const target of targets) {
     await tour.getByRole("button", { name: "Next", exact: true }).click();
     await expect(page.locator(".tour-spotlight")).toHaveAttribute("data-tour-target", target);

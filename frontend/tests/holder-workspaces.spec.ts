@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockWallet } from "./mock-wallet";
 import type { SavedWorkspace } from "../src/holders-api";
 
 const wallet = "0x1111111111111111111111111111111111111111";
@@ -9,16 +10,7 @@ async function fixture(page: Page, data: Server) {
   let signed = false;
   await page.addInitScript(() => localStorage.setItem("silicon:intro:v3", "seen"));
   await page.route("**/api/v1/config", async route => route.fulfill({ json: { ...await (await route.fetch()).json(), privy_app_id: "test-wallet" } }));
-  await page.route(/\/(src\/wallet-runtime\.tsx|assets\/wallet-runtime-[^/]+\.js)(\?.*)?$/, async route => {
-    let bundled = "";
-    if (route.request().url().includes("/assets/")) {
-      const source = await (await route.fetch()).text();
-      const namespace = source.match(/\b([\w$]+)=Object\.freeze\(Object\.defineProperty\(\{__proto__:null,default:/)?.[1];
-      const alias = namespace && source.match(new RegExp(`${namespace.replace(/\$/g, "\\$")} as ([\\w$]+)`))?.[1];
-      expect(alias).toBeTruthy(); bundled = `export const ${alias}={default:Runtime};`;
-    }
-    await route.fulfill({ contentType: "text/javascript", body: `let handled=0;export default function Runtime({request,success}){if(request>handled){handled=request;queueMicrotask(()=>success('${wallet}',async()=>({request:async({method})=>{if(method==='eth_accounts')return ['${wallet}'];if(method==='personal_sign')return '0x'+'a'.repeat(130);throw new Error('Unexpected wallet method '+method)}})));}return null;} ${bundled}` });
-  });
+  await mockWallet(page, wallet);
   await page.route("**/api/v1/holders/**", async route => {
     const path = new URL(route.request().url()).pathname.split("/holders")[1];
     const method = route.request().method();
@@ -138,4 +130,38 @@ test("holder workspace is discoverable without a wallet and signs out cleanly", 
   await panel.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(panel.getByRole("button", { name: "Sign in with wallet" })).toBeVisible();
   await expect(panel.getByLabel("Research notes")).toHaveCount(0);
+});
+
+if (process.env.SILICON_CAPTURE_RELEASE === "1") test("capture holder workspace product previews", async ({ page }) => {
+  const data = server(); await fixture(page, data);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const panel = await open(page);
+  const directory = "../docs/updates/2026-10-01-holder-workspaces/media/";
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(() => {
+    const label = document.createElement("div"); label.textContent = "product preview · example wallet and research";
+    label.style.cssText = "position:fixed;bottom:12px;left:14px;z-index:1000;padding:8px 12px;background:#17211fe8;color:#bcc9c0;border:1px solid #36443f;border-radius:5px;font:11px monospace";
+    document.body.appendChild(label);
+  });
+  await panel.getByLabel("Workspace name").fill("Hopper research");
+  await panel.getByLabel("Research notes").fill("Watch H100 and H200 rental references.\nCheck which providers changed before revising the thesis.\nWait for the full H100 benchmark before using a percentage signal.");
+  for (const name of ["H100", "H200", "B200"]) await panel.locator(".holder-watchlist").getByRole("button", { name, exact: true }).click();
+  await panel.getByRole("button", { name: "Save workspace", exact: true }).click();
+  await expect(panel.locator(".holder-saved-row")).toHaveCount(1);
+  if (await page.getByRole("button", { name: "Dismiss notification" }).count()) await page.getByRole("button", { name: "Dismiss notification" }).click();
+  await page.screenshot({ path: directory + "workspaces-desktop.png" });
+  await panel.getByRole("tab", { name: "Advanced alerts", exact: true }).click();
+  await panel.getByLabel("Alert name").fill("H100 down, full coverage");
+  await panel.getByRole("button", { name: "Add condition" }).click();
+  await panel.getByLabel("Alert cooldown").selectOption("60");
+  await page.screenshot({ path: directory + "advanced-alerts-desktop.png" });
+  await panel.getByRole("button", { name: "Save advanced alert" }).click();
+  await expect(panel.locator(".holder-rules")).toContainText("H100 down, full coverage");
+  if (await page.getByRole("button", { name: "Dismiss notification" }).count()) await page.getByRole("button", { name: "Dismiss notification" }).click();
+  await panel.locator(".holder-intro").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: directory + "saved-alert-desktop.png" });
+  await panel.getByRole("tab", { name: "Workspaces", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await panel.locator(".holder-intro").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: directory + "workspaces-mobile.png" });
 });

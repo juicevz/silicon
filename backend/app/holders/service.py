@@ -36,7 +36,11 @@ class Holders:
     async def account(self, owner: str, *, fresh: bool = False) -> HolderAccount:
         if fresh:
             self.chain.invalidate_access(owner)
-        access = await self.chain.access(owner)
+        try:
+            access = await asyncio.wait_for(self.chain.access(owner), timeout=8)
+        except Exception:
+            return HolderAccount(address=owner, verified=False, eligible=False,
+                reason="Holder balance could not be verified. Saved work remains available.")
         verified = access.verified and access.benefits_verified
         eligible = verified and access.workflow_benefits
         result = HolderAccount(address=owner, verified=verified, eligible=eligible,

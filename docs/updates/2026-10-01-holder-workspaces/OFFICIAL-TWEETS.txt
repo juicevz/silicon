@@ -1,0 +1,87 @@
+standalone 1
+
+wallet workspaces and advanced alerts are live for $silicon holders.
+
+save gpu watchlists, notes and strategy templates across devices. combine alert conditions and keep monitoring after a trigger.
+
+available above 5,000 $silicon.
+
+siliconmarkets.io
+
+standalone 2
+
+your research can follow your wallet now.
+
+save a workspace in silicon, sign in on another device, and pick up the same watchlist, chart settings, notes and templates.
+
+five saved workspaces, available above 5,000 $silicon.
+
+standalone 3
+
+an alert can now wait for more than one thing.
+
+h100 down at least 3% over 24 hours. all five benchmark providers fresh.
+
+combine those conditions in a holder rule. silicon watches collected prices while the tab is closed.
+
+siliconmarkets.io
+
+standalone 4
+
+recurring alerts need an observed reset before they fire again.
+
+a continuing match does not send the same notification every few minutes. choose a cooldown, and check every triggered event in your wallet inbox.
+
+now in silicon holder tools.
+
+standalone 5
+
+holder workspaces stay readable if your balance changes.
+
+saving and recurring monitoring require more than 5,000 $silicon. your existing notes, templates and alert history remain yours to read or delete.
+
+siliconmarkets.io
+
+thread 1
+
+1/ silicon has two new holder tools: synced workspaces and advanced server alerts.
+
+both are available to wallets holding more than 5,000 $silicon on robinhood chain.
+
+thread 2
+
+2/ open workspaces in the terminal and sign a wallet message.
+
+that proves ownership of your saved research. it costs no gas and gives no permission to move funds.
+
+thread 3
+
+3/ a workspace saves your gpu watchlist, selected model, chart range, search, notes and strategy templates.
+
+keep up to five named workspaces. load them from another device using the same wallet.
+
+thread 4
+
+4/ saves are explicit and versioned.
+
+if another device saved a newer version, silicon keeps your draft and stops the overwrite. load the newer copy or save your draft as another workspace.
+
+thread 5
+
+5/ advanced alerts combine up to three conditions: rental prices, recorded 24-hour changes and full h100 benchmark coverage.
+
+percentage signals wait when history, freshness or matching provider baskets are missing.
+
+thread 6
+
+6/ recurring rules rearm after an observed non-match. a chosen cooldown sets the minimum time between notifications.
+
+rules last 90 days. inbox events stay for 30 days. optional push goes to your enabled browser.
+
+thread 7
+
+7/ new saves and monitoring require verified holder access. saved work stays readable if eligibility changes.
+
+loading a template restores inputs. recording a paper strategy or submitting a trade stays a separate action.
+
+siliconmarkets.io

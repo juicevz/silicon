@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Bell,
   CircleHelp,
+  Calculator,
   Clock3,
   Cloud,
   Layers3,
@@ -441,7 +442,7 @@ export default function Terminal({
               </div>
               <div className="workspace-tools">
                 <button className="strategies-shortcut" aria-label="Open holder workspaces" onClick={() => setHolderTab("workspaces")}><Cloud size={17} /><span>Workspaces</span></button>
-                <Link className="strategies-shortcut" to={`/terminal/planner?asset=${market?.id ?? "h100-sxm"}`}><span>Cost planner</span></Link>
+                <Link className="strategies-shortcut" aria-label="Cost planner" to={`/terminal/planner?asset=${market?.id ?? "h100-sxm"}`}><Calculator size={17} /><span>Cost planner</span></Link>
                 <Link className="strategies-shortcut" to="/terminal/strategies" aria-label="Explore strategies"><Layers3 size={17} /><span>Strategies</span></Link>
                 {showSearch && (
                   <input

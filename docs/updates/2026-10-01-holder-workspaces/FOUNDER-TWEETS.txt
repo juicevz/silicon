@@ -1,0 +1,79 @@
+standalone 1
+
+shipped wallet workspaces and recurring alerts in silicon.
+
+watchlists, notes and templates carry across devices now. alerts can combine conditions and reset after a trigger.
+
+both available above 5k $silicon.
+
+siliconmarkets.io
+
+standalone 2
+
+i kept rebuilding the same gpu view every time i changed devices.
+
+silicon can save it to your wallet now. watchlist, chart, notes and templates. open it elsewhere and carry on.
+
+standalone 3
+
+added a more useful h100 alert:
+
+price down 3% over 24h, with all five benchmark providers fresh.
+
+it waits if the source history cannot support that comparison. a missing listing should not become a price signal.
+
+standalone 4
+
+one detail in the new silicon alerts: a rule has to see a non-match before it can fire again.
+
+i wanted recurring monitoring without getting the same notification every time the server checks.
+
+standalone 5
+
+your saved silicon workspace stays there if your holdings change.
+
+new saves and premium monitoring pause below the threshold. you can still sign in, read your notes and remove old work.
+
+thread 1
+
+1/ added two holder updates to silicon today.
+
+wallet-linked workspaces and recurring alerts. mostly things that make checking the same market every day less repetitive.
+
+thread 2
+
+2/ you sign a message once to open your saved research.
+
+it is separate from a transaction and separate from compute credits. the same wallet can open the workspace on another device.
+
+thread 3
+
+3/ the saved view includes the gpu list, selected model, chart range, search, notes and strategy templates.
+
+i kept saves explicit so another device does not unexpectedly change the screen you are using.
+
+thread 4
+
+4/ there is a version check on each save too.
+
+if the laptop has a newer copy, an old tab cannot quietly overwrite it. you keep the draft and choose which copy to load or save.
+
+thread 5
+
+5/ alerts can combine three conditions now.
+
+rental levels, 24-hour percentage changes, and whether the full h100 reference is available. the percentage comes from recorded sources with matching provider baskets.
+
+thread 6
+
+6/ recurring rules need to reset and respect a cooldown.
+
+the server keeps checking while you are away. browser push is optional, and the wallet inbox keeps the event when a notification cannot be delivered.
+
+thread 7
+
+7/ both tools are available above 5,000 $silicon.
+
+existing research stays readable if eligibility changes. no automatic trades happen when you load a workspace or trigger an alert.
+
+siliconmarkets.io

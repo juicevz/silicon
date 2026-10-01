@@ -66,6 +66,8 @@ class HolderAuth:
             raise HTTPException(401, "Sign with the wallet that started this request.")
         token = secrets.token_urlsafe(40)
         with self.db:
+            if self.db.execute("SELECT COUNT(*) FROM holder_sessions WHERE expires>?", (at,)).fetchone()[0] >= 20000:
+                raise HTTPException(503, "Sign-in is at capacity. Please try again later.")
             used = self.db.execute("UPDATE holder_challenges SET used=1 WHERE id=? AND used=0 AND expires>?", (identifier, at))
             if not used.rowcount:
                 raise HTTPException(401, "This sign-in request has already been used.")

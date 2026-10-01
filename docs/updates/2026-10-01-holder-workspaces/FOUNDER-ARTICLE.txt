@@ -1,0 +1,25 @@
+keeping the same research open
+
+a lot of market research is returning to something you already looked at. the gpu list is familiar. the questions about provider coverage are familiar. the note you wrote yesterday is still useful, if you can find it on the device in front of you.
+
+that is the part of silicon i worked on for this update.
+
+holders can save a workspace to their wallet now. it keeps the watchlist, selected gpu, chart range, search, notes and strategy templates together. open silicon on another device, sign in with the same wallet and load the saved view. there are five workspace slots, with up to 50 templates in each snapshot.
+
+the sign-in is a wallet message. it costs no gas and does not give the app permission to move funds. it is also independent of compute credits. the saved content lives on the server behind wallet authentication, not onchain or in an end-to-end encrypted vault.
+
+i kept saving explicit. if two devices have the same workspace open, the older one cannot quietly overwrite a newer version. the server checks the revision, and the old tab keeps its draft if there is a conflict. you can load the new copy or save the draft as another workspace.
+
+loading a template is still just loading inputs. paper recording and live transaction review remain separate steps.
+
+the other addition is recurring alerts. the basic server alerts already watch a threshold while the browser is closed. holder rules can now combine up to three conditions and keep watching after they trigger.
+
+one example is h100 falling at least 3% over 24 hours while all five benchmark providers are fresh. the relative change has to be supported by recorded receipts with matching provider baskets. if the history or coverage is missing, the rule waits. that felt more useful than treating every displayed number as equally usable.
+
+a recurring rule needs to observe a non-match before it can trigger again. it also respects a cooldown you choose. so a condition staying true does not become the same notification every time the server polls. missing price data cannot rearm a price rule. availability can still be its own signal if you specifically want to watch the benchmark recover.
+
+you get a wallet-linked inbox, with optional browser notifications. rules run for 90 days and inbox events stay for 30 days. monitoring is periodic and can miss a move between collected observations. push goes to the latest browser you enabled and continues after sign-out until you disable it.
+
+both additions require more than 5,000 $silicon on robinhood chain. if the balance changes, new saves and monitoring pause. the saved notes and templates remain readable and removable. i did not want an access check to make someone's existing research disappear.
+
+the update is in the terminal at siliconmarkets.io.

@@ -50,6 +50,8 @@
 .holder-notifications .button { white-space: normal; }
 .holder-watchlist-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 0 0 12px; color: var(--muted); font-size: 11px; }
 @media (max-width: 700px) {
+  .workspace-toolbar { height: auto; min-height: 86px; flex-wrap: wrap; gap: 12px; padding: 16px 0; }
+  .workspace-toolbar > .workspace-tools { flex-wrap: wrap; max-width: 100%; }
   .holder-tools { padding: 18px; }
   .holder-intro { align-items: flex-start; flex-direction: column; gap: 8px; }
   .holder-intro h2 { font-size: 20px; }

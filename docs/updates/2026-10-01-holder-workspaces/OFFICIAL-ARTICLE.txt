@@ -1,0 +1,23 @@
+your gpu research, saved across devices
+
+following gpu rental prices often means returning to the same models, provider questions and assumptions. a workspace should make that routine easier to keep.
+
+silicon now has synced workspaces and advanced server alerts for wallets holding more than 5,000 $silicon on robinhood chain.
+
+open workspaces in the terminal and sign a wallet message. it proves ownership of your private saved research. it does not authorize a transaction or use gas. this session is separate from compute credits.
+
+a workspace contains a gpu watchlist, selected model, chart range, search, notes and up to 50 strategy templates. save up to five named views, then sign in with the same wallet on another device to load them. saves are explicit. every workspace has a version, so an older tab cannot silently overwrite a newer save. the older draft remains available to save separately.
+
+loading a workspace restores the terminal view and merges its templates into the current browser. it does not create a paper record or open a live position. research notes are stored on silicon's server behind wallet authentication. they are not published onchain or end-to-end encrypted.
+
+advanced alerts add up to 100 wallet-linked rules. each can combine three conditions using and: a rental price threshold, a recorded 24-hour percentage change, or all five h100 benchmark providers being fresh. for example, a rule can wait for h100 to fall at least 3% while the complete reference remains available.
+
+the percentage comparison uses matching provider baskets from source receipts. it waits if history is too short, data is stale or the provider basket changed. the 24-hour baseline allows up to two hours of observation tolerance. a missing source does not supply a price signal.
+
+a rule can trigger on its first eligible observation. a recurring rule then needs an observed non-match before it can fire again. the selected cooldown sets the minimum interval between notifications. if the condition matches during the cooldown, it must still match when that interval ends. missing price data cannot reset the rule.
+
+the server monitors while the tab is closed. rules expire after 90 days, and events remain in the wallet inbox for 30 days. push notifications are optional and go to the most recently enabled browser. enabling holder notifications moves that browser's basic-alert push destination; both inboxes retain their events. notifications continue after sign-out until disabled, so turn them off before leaving a shared device.
+
+silicon checks holder eligibility on the backend. losing eligibility or an unavailable balance check pauses premium monitoring and new saves. existing research and events remain readable and deletable through the same wallet. market browsing, basic alerts and paper tools keep their existing access.
+
+open siliconmarkets.io/terminal?workspaces=1 to get started.

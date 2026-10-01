@@ -27,6 +27,7 @@ export default function Docs() {
             ["reference", "Rental reference"],
             ["planner", "Rental cost planner"],
             ["monitoring", "Movers and alerts"],
+            ["holder-workspaces", "Holder workspaces"],
             ["positions", "Calls and puts"],
             ["collateral", "Writer collateral"],
             ["strategies", "Vaults and strategies"],
@@ -77,8 +78,20 @@ export default function Docs() {
             <p>The terminal ranks recorded 24-hour rental price moves. Open Source details to see the latest and baseline receipts, their timestamps, and which matched provider listings changed. Each comparison ends at that GPU’s latest source observation. A stale feed, changed basket or missing daily history withholds the percentage.</p>
             <p>The bell lets you save a price threshold, watch provider listing price changes, or wait for the H100 benchmark to recover. Silicon checks server alerts while your tab is closed. Each rule fires once and expires after 90 days. Threshold alerts fire on the first fresh reading that meets the level, even if it already does when saved. A feed recovery does not open trading.</p>
             <p>Your private browser inbox stores triggered events for 30 days. Browser notifications are optional and require permission and browser support. Failed push delivery leaves the event in the inbox. On iPhone or iPad, use the installed Home Screen app for push. No wallet is required. Clearing site data loses access to this browser’s inbox.</p>
-            <p>Server alerts have a separate 20-rule limit. Existing browser alerts keep their 20/100 holder allowances and can be moved to the server. They run while Silicon is open. Provider alerts compare the same listing identity, so coverage changes alone do not trigger a price alert. Collection happens periodically; a change between observations may be missed.</p>
+            <p>Basic server alerts have a separate 20-rule limit. Existing browser alerts keep their 20/100 holder allowances and can be moved to the server. They run while Silicon is open. Provider alerts compare the same listing identity, so coverage changes alone do not trigger a price alert. Collection happens periodically; a change between observations may be missed.</p>
             <Link className="text-button" to="/terminal?alerts=1">Open alert inbox <ArrowUpRight size={14} /></Link>
+          </section>
+          <section id="holder-workspaces">
+            <h2>Your research, across devices</h2>
+            <p>Wallet workspaces and advanced alerts are available above 5,000 SILICON on Robinhood Chain. Open Workspaces in the terminal and sign a message to prove wallet ownership. It costs no gas and grants no transaction permission. This sign-in is independent of Compute access and lasts 12 hours.</p>
+            <p>Save up to five named workspaces. Each includes a GPU watchlist, the selected GPU, chart range, search, research notes and up to 50 strategy templates. Sign in with the same wallet elsewhere to load it. Saves are explicit. A version check stops an older device from silently overwriting a newer save; load the latest version or save your draft as a new workspace.</p>
+            <p>Loading restores your terminal settings and merges templates into the current browser. It does not open a paper record or a live position. If the combined template count would exceed 50, loading stops and preserves both copies. Saved notes and templates are stored on Silicon's server, accessible through your signed-in wallet session; they are not published onchain or end-to-end encrypted.</p>
+            <h3>Advanced recurring alerts</h3>
+            <p>Save up to 100 wallet-linked server rules, separate from the basic browser inbox. Combine up to three conditions with AND: a rental price threshold, a recorded 24-hour percentage change, or all five H100 benchmark providers being fresh. A percentage condition compares matching provider baskets and waits if data is stale, history is missing or the basket changed. The baseline is the nearest earlier observation at least 24 hours before the latest, with at most two hours of baseline tolerance.</p>
+            <p>A rule can fire on the first eligible observation, even if its conditions already match when saved. Recurring rules must observe a non-match before they can fire again, with a minimum interval of 5 minutes, 15 minutes, 30 minutes, 1 hour, 4 hours or 24 hours. If a new match occurs inside that interval, it waits until the cooldown ends and must still match. Missing price data cannot rearm a rule. Benchmark availability is its own true-or-false condition.</p>
+            <p>Rules expire 90 days after creation. The monitor runs periodically, normally every 30 seconds; it sees collected observations and can miss changes between them. Holder eligibility is rechecked during monitoring, with at most a 60-second cached check. Loss of eligibility or a failed balance read pauses premium monitoring. New saves always require a fresh server-side check. Previously saved work and events remain readable and deletable.</p>
+            <p>Events stay in your wallet inbox for 30 days, with the latest 100 shown. Push is optional and goes to the most recently enabled browser. Enabling holder notifications transfers that browser's basic-alert push destination; both inboxes keep their events. Notifications continue after sign-out until disabled or the subscription expires. Disable them before leaving a shared device. Delivery failures retain the inbox event.</p>
+            <Link className="text-button" to="/terminal?workspaces=1">Open holder workspaces <ArrowUpRight size={14} /></Link>
           </section>
           <section id="reference">
             <h2>The H100 reference</h2>
@@ -247,7 +260,7 @@ export default function Docs() {
             </tbody></table>
             <p>A round fixes its optional benefits token at deployment. Rounds launched without a token charge the standard fee throughout their lifetime. Configuring a token later does not change an existing round. Exactly 5,000 tokens does not qualify for the waiver.</p>
             <p>The contract checks the balance when a trade executes. If that check fails, the standard fee applies, still bounded by the maximum cost you approved. A changed fee cannot silently exceed your reviewed cost. Claims and withdrawals do not require a Silicon holding.</p>
-            <p>Qualified holders can keep 100 browser alerts and 50 strategy templates, compare up to 16 GPUs, and export comparison and paper history CSV files. Standard access includes 20 alerts, 10 templates and two-model comparison. Existing saved items remain available after eligibility changes. Alerts work while the terminal is open; templates are browser-local inputs, separate from recorded paper positions.</p>
+            <p>Qualified holders can keep 100 browser alerts and 50 strategy templates, compare up to 16 GPUs, and export comparison and paper history CSV files. Standard access includes 20 alerts, 10 templates and two-model comparison. Existing saved items remain available after eligibility changes. These browser alerts work while the terminal is open; local templates are inputs, separate from recorded paper positions. Wallet workspaces sync saved templates across devices, and advanced holder alerts run on the server. See Holder workspaces for sign-in, limits and recurrence rules.</p>
             <p>The Benefits panel shows verified eligibility and fees waived on confirmed purchases across configured rounds, excluding cancelled rounds. It shows unavailable history honestly. Paper results and hypothetical trades never increase recorded savings.</p>
             <p>Premiums and platform fees stay in the collateral pool for its capital providers and buyer obligations. No token buyback, staking return or reward stream is activated by these benefits. ETH network fees remain separate.</p>
           </section>
@@ -267,10 +280,10 @@ export default function Docs() {
               stale.
             </p>
             <p>
-              Price alerts are saved on your current browser and run while
-              Silicon is open. They compare your level with the published
-              reference. They are not background push notifications or automatic
-              trade orders.
+              Browser alerts run while Silicon is open. Basic server alerts and
+              wallet-linked holder rules continue in the background and can send
+              optional browser notifications. Alerts compare collected references
+              and never submit trade orders.
             </p>
           </section>
           <section id="compute">

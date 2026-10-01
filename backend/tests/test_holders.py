@@ -185,6 +185,22 @@ async def test_holder_loss_and_rpc_failure_pause_monitoring_keep_data(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_rpc_exception_does_not_hide_saved_research(tmp_path, monkeypatch):
+    _, store, _, service, chain = holder_setup(tmp_path)
+    service.save(OWNER, workspace())
+    async def unavailable(_owner):
+        raise OSError("RPC unavailable")
+    monkeypatch.setattr(chain, "access", unavailable)
+    account = await service.account(OWNER)
+    assert not account.eligible and not account.verified
+    assert service.workspaces(OWNER)[0].state.notes == "Private thesis"
+    with pytest.raises(HTTPException) as result:
+        await service.require_holder(OWNER)
+    assert result.value.status_code == 503
+    store.close()
+
+
+@pytest.mark.asyncio
 async def test_once_push_retries_after_completion_and_remains_private(tmp_path, monkeypatch):
     settings, store, data, service, _ = holder_setup(tmp_path)
     key = tmp_path / "vapid.pem"

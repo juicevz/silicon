@@ -506,3 +506,86 @@ entitlements, not server authorization or financial permissions.
 ### Rental planner and API key controls
 
 See the [release notes](docs/updates/2026-10-01-cost-planner-key-controls/README.md) for planner inputs, estimate assumptions, per-key lifetime caps, atomic reservations, pause/resume and usage attribution. Public routes: `/terminal/planner` and `/compute?view=api`. No additional service or credentials are required.
+
+
+## Synced holder workspaces and recurring alerts
+
+Open `/terminal?workspaces=1` or `/terminal?holderAlerts=1`. This release adds
+five wallet-linked workspaces and 100 advanced server rules for verified balances
+**strictly greater than 5,000 SILICON** on chain 4663. Public data, basic server
+alerts and the existing paper tools retain their current access.
+
+A gas-free wallet message establishes a separate 12-hour HttpOnly, Secure,
+SameSite Strict holder cookie. It does not create a Compute grant or authorize
+transactions. Challenges bind domain, URI, chain, random nonce, five-minute
+expiry and browser cookie. Signatures are verified and nonces consumed once;
+only hashes of session tokens are stored. Private requests must include
+`X-Silicon-Wallet` matching the authenticated owner. Writes require
+`Origin=COMPUTE_ORIGIN`; this existing setting must match the site's origin.
+No new key or environment variable is needed. This EOA message flow follows
+Silicon's existing wallet sign-in; contract-wallet signature verification is not
+implemented.
+
+Workspace snapshots contain a name, selected GPU, 1h/6h/24h range, search,
+watchlist, notes (10,000 characters) and at most 50 validated templates. Save is
+explicit. Updates and deletes require the version last read. A conflicting save
+returns 409 and retains the client draft. Loading merges templates without opening
+paper or live positions, and refuses a merge above 50. Data is stored in shared
+SQLite, not onchain or end-to-end encrypted. Authenticated owners retain read
+and delete access after losing eligibility. New saves and advanced rule creation
+recheck holdings on the backend; UI gating alone never grants access.
+
+Advanced rules AND together up to three price, 24-hour percentage-change or
+complete/fresh H100 benchmark conditions. Relative changes reuse immutable
+matched-provider receipts from GPU movers: the baseline is at least 24 hours
+old relative to the latest source, with two hours of tolerance. Unsupported
+history, stale/future data and changed baskets withhold the percentage. A first
+match can trigger immediately. A recurring rule needs an observed non-match to
+rearm, then must match after its chosen 5/15/30/60/240/1440-minute cooldown.
+Unknown price data cannot rearm it. Benchmark availability is a boolean condition.
+Rules expire after 90 days; one-shot rules complete after the first match.
+
+The monitor runs every 30 seconds after each evaluation, checks eligible owners
+with bounded RPC concurrency and at most a 60-second eligibility cache, and
+pauses on failed verification. Collection cadence bounds what can be observed.
+Rule states and last triggers survive restarts. Wallet inboxes use a distinct
+owner namespace from anonymous alerts; the latest 100 events are visible for
+30 days. The existing Web Push sender handles opt-in delivery with three attempts.
+Only the holder monitor can deliver holder events, after eligibility verification.
+One browser push destination is retained per wallet; enabling another replaces
+it. In the UI, opting into holder push transfers this browser's basic-alert push
+subscription. Events stay in both inboxes. Sign-out revokes the session, not the
+explicit background subscription. Disable notifications on shared devices.
+
+Tables `holder_challenges`, `holder_sessions`, `holder_workspaces` and
+`holder_rules` are created additively at startup in the existing shared database.
+No contract, token threshold, environment secret or VAPID key is replaced.
+Back up shared SQLite before a release; roll back with the prior immutable
+release symlink. Existing versions ignore these new tables. Private writes have
+a 96 KB body cap and the holder route group has a 90-request/minute per-IP limit.
+Auth challenges also have a separate five-per-minute IP/wallet limit.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /api/v1/holders/auth/challenge` | Request a browser-bound wallet message |
+| `POST /api/v1/holders/auth/verify` | Verify the signature and create a session |
+| `POST /api/v1/holders/auth/logout` | Revoke the current holder session |
+| `GET /api/v1/holders/account` | Authenticated owner and current eligibility |
+| `GET /api/v1/holders/workspaces` | Read this wallet's saved snapshots |
+| `POST /api/v1/holders/workspaces` | Create a workspace at revision zero |
+| `PUT /api/v1/holders/workspaces/{id}` | Save using the last-read revision |
+| `DELETE /api/v1/holders/workspaces/{id}?revision=N` | Delete a known version |
+| `GET /api/v1/holders/alerts` | Wallet rules, events and push availability |
+| `POST /api/v1/holders/alerts` | Create a conditional server rule |
+| `DELETE /api/v1/holders/alerts/{id}` | Delete this wallet's rule and its events |
+| `POST /api/v1/holders/alerts/read` | Mark this wallet's events read |
+| `POST /api/v1/holders/alerts/push` | Opt into one browser push destination |
+| `DELETE /api/v1/holders/alerts/push/subscription` | Disable holder push |
+
+`backend/tests/test_holders.py` covers signed session ownership, replay/binding,
+expiry, cross-device concurrency, strict write gates, durable storage, limits,
+recurrence, missing data and notification retries. Browser coverage is in
+`frontend/tests/holder-workspaces.spec.ts`; wallet/provider fixtures are used
+without signing transactions or spending Compute credit.
+
+Release details and post-ready copy: [holder workspace update](docs/updates/2026-10-01-holder-workspaces/README.md).
