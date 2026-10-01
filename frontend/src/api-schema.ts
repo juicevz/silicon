@@ -121,7 +121,8 @@ export interface paths {
         delete: operations["revoke_key_api_v1_compute_keys__key_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Key */
+        patch: operations["update_key_api_v1_compute_keys__key_id__patch"];
         trace?: never;
     };
     "/api/v1/compute/usage": {
@@ -530,6 +531,23 @@ export interface paths {
         get: operations["snapshot_api_v1_markets_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rental-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Plan Rental */
+        post: operations["plan_rental_api_v1_rental_plan_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1360,11 +1378,44 @@ export interface components {
             last_used_at: number | null;
             /** Revoked */
             revoked: boolean;
+            /**
+             * Paused
+             * @default false
+             */
+            paused: boolean;
+            /** Limit Usd */
+            limit_usd?: string | null;
+            /**
+             * Used Usd
+             * @default 0.000000000
+             */
+            used_usd: string;
+            /**
+             * Pending Usd
+             * @default 0.000000000
+             */
+            pending_usd: string;
+            /** Available Usd */
+            available_usd?: string | null;
+            /**
+             * Request Count
+             * @default 0
+             */
+            request_count: number;
         };
         /** KeyRequest */
         KeyRequest: {
             /** Name */
             name: string;
+            /** Limit Usd */
+            limit_usd?: number | string | null;
+        };
+        /** KeyUpdate */
+        KeyUpdate: {
+            /** Limit Usd */
+            limit_usd?: number | string | null;
+            /** Paused */
+            paused?: boolean | null;
         };
         /** LeaderRow */
         LeaderRow: {
@@ -1949,6 +2000,88 @@ export interface components {
             /** Address */
             address?: string | null;
         };
+        /** RentalEstimate */
+        RentalEstimate: {
+            /** Provider */
+            provider: string;
+            /** Provider Id */
+            provider_id: string;
+            /** Instance */
+            instance: string | null;
+            /** Region */
+            region: string | null;
+            /** Rate Usd Per Gpu Hour */
+            rate_usd_per_gpu_hour: string;
+            /** Daily Usd */
+            daily_usd: string;
+            /** Monthly Usd */
+            monthly_usd: string;
+            /** Total Usd */
+            total_usd: string;
+            /** Source Time */
+            source_time: string;
+            /** Source Url */
+            source_url: string;
+            /** Included In Reference */
+            included_in_reference: boolean;
+        };
+        /** RentalPlan */
+        RentalPlan: {
+            /** Market */
+            market: string;
+            /** Name */
+            name: string;
+            /** Machines */
+            machines: number;
+            /** Gpus Per Machine */
+            gpus_per_machine: number;
+            /** Total Gpus */
+            total_gpus: number;
+            /** Hours Per Day */
+            hours_per_day: string;
+            /** Days */
+            days: number;
+            /** Total Gpu Hours */
+            total_gpu_hours: string;
+            /** Generated At */
+            generated_at: string;
+            /** Reference Stale */
+            reference_stale: boolean;
+            /** Excluded Stale Listings */
+            excluded_stale_listings: number;
+            /** Estimates */
+            estimates: components["schemas"]["RentalEstimate"][];
+            /** Assumptions */
+            assumptions: string[];
+        };
+        /** RentalPlanRequest */
+        RentalPlanRequest: {
+            /**
+             * Market
+             * @enum {string}
+             */
+            market: "h100-sxm" | "a100-80" | "b200" | "h200" | "b300" | "l40s" | "l40" | "l4" | "a10" | "t4" | "rtx-pro-6000" | "rtx-6000-ada" | "rtx-a6000" | "rtx-5090" | "rtx-4090" | "a100-40";
+            /**
+             * Machines
+             * @default 1
+             */
+            machines: number;
+            /**
+             * Gpus Per Machine
+             * @default 1
+             */
+            gpus_per_machine: number;
+            /**
+             * Hours Per Day
+             * @default 24
+             */
+            hours_per_day: number | string;
+            /**
+             * Days
+             * @default 30
+             */
+            days: number;
+        };
         /** ReviewedTransaction */
         ReviewedTransaction: {
             /** Chain Id */
@@ -2196,6 +2329,10 @@ export interface components {
         };
         /** UsageRecord */
         UsageRecord: {
+            /** Key Id */
+            key_id?: string | null;
+            /** Key Name */
+            key_name?: string | null;
             /** Id */
             id: string;
             /** Model */
@@ -2525,9 +2662,46 @@ export interface operations {
             };
         };
     };
-    usage_api_v1_compute_usage_get: {
+    update_key_api_v1_compute_keys__key_id__patch: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeyInfo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    usage_api_v1_compute_usage_get: {
+        parameters: {
+            query?: {
+                key_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2541,6 +2715,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UsageRecord"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3248,6 +3431,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Snapshot"];
+                };
+            };
+        };
+    };
+    plan_rental_api_v1_rental_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RentalPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RentalPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

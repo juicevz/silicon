@@ -25,6 +25,7 @@ export default function Docs() {
           {[
             ["overview", "Overview"],
             ["reference", "Rental reference"],
+            ["planner", "Rental cost planner"],
             ["monitoring", "Movers and alerts"],
             ["positions", "Calls and puts"],
             ["collateral", "Writer collateral"],
@@ -144,6 +145,11 @@ export default function Docs() {
               references using the median of each provider’s cheapest eligible
               region, with at least three distinct providers. They are not initially tradable.
             </p>
+          </section>
+          <section id="planner">
+            <h2>Rental cost planner</h2>
+            <p>Choose a GPU, machine count, GPUs per machine, runtime and duration in the <Link to="/terminal/planner">planner</Link>. Fresh provider listings produce daily, 30-day and selected-period estimates. Compare source links, share the plan URL or export a CSV.</p>
+            <p>Rates are normalized per GPU-hour. Machine sizes are your assumptions; provider minimum configurations may differ. Estimates hold rates constant and exclude tax, storage and bandwidth. Hardware capacity and availability remain separate.</p>
           </section>
           <section id="positions">
             <h2>Capped calls and puts</h2>
@@ -275,6 +281,11 @@ export default function Docs() {
             <p>Create a Silicon API key under API access to connect a compatible client. Use the displayed base URL with text chat completions, streaming and tool-call messages. Clients run their own local tools; Silicon does not provide a remote shell. Keys are shown once and can be revoked from the same page.</p>
             <p>Model availability and usage limits apply. Usage shows recorded request costs; interrupted requests can stay pending until their cost is checked. Silicon keeps request metadata for accounting, without saving conversation text. Prompts are sent through OpenRouter to the selected model provider. Conversations remain in the current page session and clear when you sign out.</p>
             <Link className="text-button" to="/compute">Open Compute <ArrowUpRight size={14} /></Link>
+          </section>
+          <section id="key-controls">
+            <h2>Compute API key controls</h2>
+            <p>In <Link to="/compute?view=api">API access</Link>, set each tool’s lifetime USD cap, pause or resume its key, and inspect its used costs and pending holds. Usage can be filtered by key. Account and platform capacity still apply; a key cap does not add credit.</p>
+            <p>New calls reserve estimated costs before reaching the provider. Pending calls keep their holds through interruptions and restarts. Pausing or reducing a cap blocks new calls without cancelling active ones. Actual reported provider costs are recorded even if they exceed a reservation. Caps do not reset monthly. Earlier API requests remain explicitly unattributed.</p>
           </section>
           <section id="status">
             <h2>Launch status</h2>

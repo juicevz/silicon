@@ -16,7 +16,7 @@ from typing import Iterator
 from fastapi import HTTPException
 
 from ..config import Settings
-from .models import ComputeAccount, CreatedKey, KeyInfo, UsageRecord
+from .models import ComputeAccount, CreatedKey, KeyInfo, KeyUpdate, UsageRecord
 
 SCALE = Decimal(1_000_000_000)
 
@@ -68,6 +68,15 @@ class ComputeLedger:
         CREATE INDEX IF NOT EXISTS compute_keys_owner ON compute_keys(address);
         CREATE INDEX IF NOT EXISTS compute_challenge_client ON compute_challenges(client_hash, created_at);
         """)
+
+        # Additive upgrades preserve existing keys and all unresolved reservations.
+        columns = {row[1] for row in self.db.execute("PRAGMA table_info(compute_keys)")}
+        for name, definition in (("paused", "INTEGER NOT NULL DEFAULT 0"), ("spend_limit", "INTEGER")):
+            if name not in columns:
+                self.db.execute(f"ALTER TABLE compute_keys ADD COLUMN {name} {definition}")
+        if "key_id" not in {row[1] for row in self.db.execute("PRAGMA table_info(compute_requests)")}:
+            self.db.execute("ALTER TABLE compute_requests ADD COLUMN key_id TEXT")
+        self.db.execute("CREATE INDEX IF NOT EXISTS compute_usage_key ON compute_requests(key_id, status)")
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
@@ -144,30 +153,61 @@ class ComputeLedger:
             access = "unavailable"
         return ComputeAccount(address=address, available_usd=dollars(available), used_usd=dollars(row["used"]), pending_usd=dollars(pending), request_count=count, access=access)
 
-    @staticmethod
-    def key_info(row: sqlite3.Row) -> KeyInfo:
-        return KeyInfo(**{name: row[name] for name in KeyInfo.model_fields})
+    def authenticate_key(self, token: str) -> tuple[str, str]:
+        address = self.authenticate(token, api_key=True)
+        row = self.db.execute("SELECT id FROM compute_keys WHERE hash=? AND address=? AND revoked=0", (digest(token), address)).fetchone()
+        if row is None:
+            raise HTTPException(401, "Invalid or revoked Silicon API key.")
+        return address, row["id"]
+
+    def key_info(self, row: sqlite3.Row) -> KeyInfo:
+        held, used, count = self.db.execute("SELECT COALESCE(SUM(CASE WHEN status IN ('reserved','pending') THEN reserved ELSE 0 END),0), COALESCE(SUM(CASE WHEN status NOT IN ('reserved','pending') THEN COALESCE(cost,0) ELSE 0 END),0),COUNT(*) FROM compute_requests WHERE key_id=? AND address=?", (row["id"], row["address"])).fetchone()
+        limit = row["spend_limit"]
+        return KeyInfo(id=row["id"], name=row["name"], prefix=row["prefix"], created_at=row["created_at"],
+            last_used_at=row["last_used_at"], revoked=bool(row["revoked"]), paused=bool(row["paused"]),
+            limit_usd=dollars(limit) if limit is not None else None, used_usd=dollars(used), pending_usd=dollars(held),
+            available_usd=dollars(max(0, limit - used - held)) if limit is not None else None, request_count=count)
 
     def keys(self, address: str) -> list[KeyInfo]:
         return [self.key_info(row) for row in self.db.execute("SELECT * FROM compute_keys WHERE address=? ORDER BY created_at DESC LIMIT 100", (address,))]
 
-    def create_key(self, address: str, name: str) -> CreatedKey:
+    def key(self, address: str, key_id: str) -> KeyInfo:
+        row = self.db.execute("SELECT * FROM compute_keys WHERE address=? AND id=?", (address, key_id)).fetchone()
+        if row is None:
+            raise HTTPException(404, "Key not found.")
+        return self.key_info(row)
+
+    def create_key(self, address: str, name: str, limit_usd: Decimal | None = None) -> CreatedKey:
         token = "sil_" + secrets.token_urlsafe(32)
         key_id = secrets.token_urlsafe(18)
         with self.transaction() as db:
             count = db.execute("SELECT COUNT(*) FROM compute_keys WHERE address=? AND revoked=0", (address,)).fetchone()[0]
             if count >= 5:
                 raise HTTPException(409, "Revoke an unused key before creating another.")
-            db.execute("INSERT INTO compute_keys(id,address,hash,name,prefix,created_at) VALUES (?,?,?,?,?,?)", (key_id, address, digest(token), name, token[:8] + "…" + token[-4:], int(time())))
+            db.execute("INSERT INTO compute_keys(id,address,hash,name,prefix,created_at,spend_limit) VALUES (?,?,?,?,?,?,?)", (key_id, address, digest(token), name, token[:8] + "…" + token[-4:], int(time()), atoms(limit_usd) if limit_usd is not None else None))
             row = db.execute("SELECT * FROM compute_keys WHERE id=?", (key_id,)).fetchone()
         return CreatedKey(key=token, info=self.key_info(row))
+
+    def update_key(self, address: str, key_id: str, body: KeyUpdate) -> KeyInfo:
+        with self.transaction() as db:
+            row = db.execute("SELECT * FROM compute_keys WHERE id=? AND address=?", (key_id, address)).fetchone()
+            if row is None:
+                raise HTTPException(404, "Key not found.")
+            if row["revoked"]:
+                raise HTTPException(409, "Revoked keys cannot be changed. Create a new key.")
+            if "limit_usd" in body.model_fields_set:
+                limit = atoms(body.limit_usd) if body.limit_usd is not None else None
+                db.execute("UPDATE compute_keys SET spend_limit=? WHERE id=? AND address=?", (limit, key_id, address))
+            if "paused" in body.model_fields_set:
+                db.execute("UPDATE compute_keys SET paused=? WHERE id=? AND address=?", (int(body.paused), key_id, address))
+        return self.key(address, key_id)
 
     def revoke_key(self, address: str, key_id: str) -> None:
         result = self.db.execute("UPDATE compute_keys SET revoked=1 WHERE id=? AND address=?", (key_id, address))
         if not result.rowcount:
             raise HTTPException(404, "Key not found.")
 
-    def reserve(self, address: str, client_id: str, fingerprint: str, model: str, mode: str, amount: int) -> str:
+    def reserve(self, address: str, client_id: str, fingerprint: str, model: str, mode: str, amount: int, key_id: str | None = None) -> str:
         at = int(time())
         request_id = secrets.token_urlsafe(18)
         with self.transaction() as db:
@@ -185,10 +225,21 @@ class ComputeLedger:
                 raise HTTPException(429, "Please wait a moment before sending another request.")
             if amount <= 0 or account["granted"] - account["used"] - held < amount:
                 raise HTTPException(402, "There is not enough available usage for this request. Try a shorter conversation.")
+            if mode == "api" and key_id is None:
+                raise HTTPException(401, "A verified API key is required.")
+            if key_id is not None:
+                key = db.execute("SELECT * FROM compute_keys WHERE id=? AND address=?", (key_id, address)).fetchone()
+                if key is None or key["revoked"]:
+                    raise HTTPException(401, "Invalid or revoked Silicon API key.")
+                if key["paused"]:
+                    raise HTTPException(403, "This API key is paused. Resume it in Compute API access.")
+                key_total = db.execute("SELECT COALESCE(SUM(CASE WHEN status IN ('reserved','pending') THEN reserved ELSE COALESCE(cost,0) END),0) FROM compute_requests WHERE key_id=? AND address=?", (key_id, address)).fetchone()[0]
+                if key["spend_limit"] is not None and key_total + amount > key["spend_limit"]:
+                    raise HTTPException(402, "This API key has reached its spending limit. Check its used and pending costs.")
             total, global_active = db.execute("SELECT COALESCE(SUM(CASE WHEN status IN ('reserved','pending') THEN reserved ELSE COALESCE(cost,0) END),0),COALESCE(SUM(CASE WHEN status IN ('reserved','pending') THEN 1 ELSE 0 END),0) FROM compute_requests").fetchone()
             if total + amount > atoms(self.settings.compute_spend_limit_usd) or global_active >= 10:
                 raise HTTPException(503, "Compute is at capacity. Please try again later.")
-            db.execute("INSERT INTO compute_requests(id,address,client_id,fingerprint,model,mode,reserved,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'reserved',?,?)", (request_id, address, client_id, fingerprint, model, mode, amount, at, at))
+            db.execute("INSERT INTO compute_requests(id,address,client_id,fingerprint,model,mode,reserved,status,created_at,updated_at,key_id) VALUES (?,?,?,?,?,?,?,'reserved',?,?,?)", (request_id, address, client_id, fingerprint, model, mode, amount, at, at, key_id))
         return request_id
 
     def generation(self, request_id: str, generation_id: str) -> None:
@@ -210,9 +261,11 @@ class ComputeLedger:
     def unreconciled(self) -> list[sqlite3.Row]:
         return self.db.execute("SELECT * FROM compute_requests WHERE status IN ('reserved','pending') AND updated_at<? ORDER BY updated_at LIMIT 20", (int(time()) - 120,)).fetchall()
 
-    def usage(self, address: str) -> list[UsageRecord]:
-        rows = self.db.execute("SELECT * FROM compute_requests WHERE address=? ORDER BY created_at DESC,rowid DESC LIMIT 50", (address,)).fetchall()
-        return [UsageRecord(id=row["id"], model=row["model"], mode=row["mode"], status=row["status"], cost_usd=dollars(row["cost"]) if row["cost"] is not None else None, prompt_tokens=row["prompt_tokens"], completion_tokens=row["completion_tokens"], created_at=row["created_at"]) for row in rows]
+    def usage(self, address: str, key_id: str | None = None) -> list[UsageRecord]:
+        if key_id is not None:
+            self.key(address, key_id)
+        rows = self.db.execute("SELECT r.*, k.name AS key_name FROM compute_requests r LEFT JOIN compute_keys k ON k.id=r.key_id AND k.address=r.address WHERE r.address=? AND (? IS NULL OR r.key_id=?) ORDER BY r.created_at DESC,r.rowid DESC LIMIT 50", (address, key_id, key_id)).fetchall()
+        return [UsageRecord(key_id=row["key_id"], key_name=row["key_name"], id=row["id"], model=row["model"], mode=row["mode"], status=row["status"], cost_usd=dollars(row["cost"]) if row["cost"] is not None else None, prompt_tokens=row["prompt_tokens"], completion_tokens=row["completion_tokens"], created_at=row["created_at"]) for row in rows]
 
     def close(self) -> None:
         self.db.close()

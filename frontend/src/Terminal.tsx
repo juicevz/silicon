@@ -14,6 +14,7 @@ import {
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useData, useConfig } from "./data";
 import { useWallet } from "./wallet";
+import RentalPlanner from "./components/RentalPlanner";
 import GpuMovers from "./components/GpuMovers";
 import BackgroundAlerts, { useAlertInbox } from "./components/BackgroundAlerts";
 import { useBenefits } from "./benefits";
@@ -440,6 +441,7 @@ export default function Terminal({
               </div>
               <div className="workspace-tools">
                 <button className="strategies-shortcut" aria-label="Open holder workspaces" onClick={() => setHolderTab("workspaces")}><Cloud size={17} /><span>Workspaces</span></button>
+                <Link className="strategies-shortcut" to={`/terminal/planner?asset=${market?.id ?? "h100-sxm"}`}><span>Cost planner</span></Link>
                 <Link className="strategies-shortcut" to="/terminal/strategies" aria-label="Explore strategies"><Layers3 size={17} /><span>Strategies</span></Link>
                 {showSearch && (
                   <input
@@ -526,6 +528,8 @@ export default function Terminal({
           </div>
           {market && <Ticket market={market} notify={notify} />}
         </main>
+      ) : tab === "planner" ? (
+        <main className="full-page"><div className="page-intro"><span className="eyebrow">SILICON / RENTAL ESTIMATES</span><h1>GPU cost planner</h1><p>Compare provider listing costs for your machine count and runtime.</p></div><RentalPlanner /></main>
       ) : tab === "contracts" ? (
         <Contracts notify={notify} />
       ) : tab === "strategies" ? (

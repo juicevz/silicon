@@ -1,0 +1,9 @@
+silicon update
+
+• gpu rental cost planner with provider comparisons, shareable plans and csv exports
+• lifetime compute caps, pause controls and usage per api key
+• gpu movers and background price alerts
+
+rental estimates use observed listings.
+
+siliconmarkets.io
