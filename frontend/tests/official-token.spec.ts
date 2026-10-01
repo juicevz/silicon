@@ -60,10 +60,19 @@ test("verified holder tools unlock and a changed balance removes eligibility", a
   const wallet = "0x1111111111111111111111111111111111111111";
   let eligible = true;
   // Test-only wallet adapter: no real connection, signature or transaction.
-  await page.route(/\/(src\/wallet-runtime\.tsx|assets\/wallet-runtime-[^/]+\.js)(\?.*)?$/, route => route.fulfill({
-    contentType: "text/javascript",
-    body: `let handled = 0; export default function Runtime({request, success}) { if (request > handled) { handled = request; queueMicrotask(() => success('${wallet}', async () => ({ request: async ({method}) => method === 'eth_chainId' ? '0x1237' : ['${wallet}'] }))); } return null; }`,
-  }));
+  await page.route(/\/(src\/wallet-runtime\.tsx|assets\/wallet-runtime-[^/]+\.js)(\?.*)?$/, async route => {
+    // Rollup may expose this lazy entry as a named module namespace. Preserve
+    // that export shape so the same adapter works on dev and production builds.
+    let bundledExport = "";
+    if (route.request().url().includes("/assets/")) {
+      const source = await (await route.fetch()).text();
+      const namespace = source.match(/\b([\w$]+)=Object\.freeze\(Object\.defineProperty\(\{__proto__:null,default:/)?.[1];
+      const alias = namespace && source.match(new RegExp(`${namespace.replace(/\$/g, "\\$")} as ([\\w$]+)`))?.[1];
+      expect(alias, "lazy wallet module namespace").toBeTruthy();
+      bundledExport = `export const ${alias} = {default:Runtime};`;
+    }
+    await route.fulfill({ contentType: "text/javascript", body: `let handled = 0; export default function Runtime({request, success}) { if (request > handled) { handled = request; queueMicrotask(() => success('${wallet}', async () => ({ request: async ({method}) => method === 'eth_chainId' ? '0x1237' : ['${wallet}'] }))); } return null; } ${bundledExport}` });
+  });
   const access = () => ({ address: wallet, verified: true, advanced: true, benefits_verified: true, token_configured: true, token_balance: eligible ? "5000.000000000000000001" : "5000", holder: true, workflow_benefits: eligible, fee_free: eligible, fee_bps: eligible ? 0 : 100, alert_limit: eligible ? 100 : 20, template_limit: eligible ? 50 : 10, usdg: "0", eth: "0", checked_at: new Date().toISOString() });
   await page.route(`**/api/v1/access/${wallet}`, route => route.fulfill({ json: access() }));
   await page.route(`**/api/v1/benefits/${wallet}`, route => route.fulfill({ json: { access: access(), recorded_savings: null, recorded_trades: 0, history_complete: false } }));
